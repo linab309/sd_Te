@@ -98,6 +98,7 @@ static void MX_TIM2_Init(void);
 static void MX_RTC_Init(void);
 void StartDefaultTask(void const * argument);
 void  My_Fs_Init(void);
+static void RTC_AlarmConfig(void);
 
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
@@ -126,6 +127,12 @@ transmission */
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+uint8_t str_cmpx(uint8_t* s1,uint8_t* s2,uint8_t len)
+{
+	uint8_t i;
+	for(i=0;i<len;i++)if((*s1++)!=*s2++)return 0;
+	return 1;
+}
 
 /* USER CODE END 0 */
 
@@ -154,11 +161,12 @@ int main(void)
   MX_RTC_Init();
 
   /* USER CODE BEGIN 2 */
+  RTC_AlarmConfig();
   printf("USER CODE BEGIN 2 \r\n");
   My_Fs_Init();
 
   /* init code for USB_DEVICE */
-  //MX_USB_DEVICE_Init();
+  MX_USB_DEVICE_Init();
 
   /* USER CODE END 2 */
 
@@ -471,8 +479,8 @@ void  My_Fs_Init(void)
 {
 
 	uint32_t counter = 0;
-//	FRESULT fr;
-//	FIL fil;
+	FRESULT fr;
+	FIL fil;
 	static FATFS *SD_FatFs = NULL;
 
 
@@ -501,7 +509,6 @@ void  My_Fs_Init(void)
 		pDirectoryFiles[counter] = malloc(11); 
 	  }
 
-#if 0
 	  fr = open_append(&fil, "logfile.txt");
 	  if (fr != FR_OK)
 	  {
@@ -513,10 +520,103 @@ void  My_Fs_Init(void)
 
 	  /* Close the file */
 	  f_close(&fil);  
-#endif	  
 }  
 
 }
+
+
+
+/**
+  * @brief  Configure the current time and date.
+  * @param  None
+  * @retval None
+  */
+static void RTC_AlarmConfig(void)
+{
+  RTC_DateTypeDef  sdatestructure;
+  RTC_TimeTypeDef  stimestructure;
+  uint8_t temp[3];
+  uint8_t i,mon;
+  uint8_t date;
+  uint16_t year;
+  uint8_t sec,min,hour;
+
+  const uint8_t *COMPILED_TIME=__TIME__;//??¦Ì?¡À¨¤¨°?¨º¡À??
+  const uint8_t *COMPILED_DATE=__DATE__;//??¦Ì?¡À¨¤¨°?¨¨??¨²
+
+  const uint8_t Month_Tab[12][3]={"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+  //¡Á??¡¥¨¦¨¨??¨º¡À???a¡À¨¤¨°??¡Â¨º¡À??
+ 
+
+  
+  for(i=0;i<3;i++)temp[i]=COMPILED_DATE[i];
+  for(i=0;i<12;i++)if(str_cmpx((uint8_t*)Month_Tab[i],temp,3))break;
+  mon=i+1;//¦Ì?¦Ì???¡¤Y
+  if(COMPILED_DATE[4]==' ')date=COMPILED_DATE[5]-'0';
+  else date=10*(COMPILED_DATE[4]-'0')+COMPILED_DATE[5]-'0';
+  year=/*1000*(COMPILED_DATE[7]-'0')+100*(COMPILED_DATE[8]-'0')*/+10*(COMPILED_DATE[9]-'0')+COMPILED_DATE[10]-'0';
+  hour=10*(COMPILED_TIME[0]-'0')+COMPILED_TIME[1]-'0';
+  min=10*(COMPILED_TIME[3]-'0')+COMPILED_TIME[4]-'0';
+  sec=10*(COMPILED_TIME[6]-'0')+COMPILED_TIME[7]-'0';
+
+ 
+  /*##-1- Configure the Date #################################################*/
+  /* Set Date: Tuesday February 18th 2014 */
+  sdatestructure.Year = year;
+  sdatestructure.Month = mon;
+  sdatestructure.Date = date; 
+  
+  if(HAL_RTC_SetDate(&hrtc,&sdatestructure,RTC_FORMAT_BCD) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler(); 
+  } 
+  
+  /*##-2- Configure the Time #################################################*/
+  /* Set Time: 02:20:00 */
+  stimestructure.Hours = hour;
+  stimestructure.Minutes = min;
+  stimestructure.Seconds = sec;
+  stimestructure.TimeFormat = RTC_HOURFORMAT12_AM;
+  stimestructure.DayLightSaving = RTC_DAYLIGHTSAVING_NONE ;
+  stimestructure.StoreOperation = RTC_STOREOPERATION_RESET;
+  
+  if(HAL_RTC_SetTime(&hrtc,&stimestructure,RTC_FORMAT_BCD) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler(); 
+  }  
+
+}
+
+
+/**
+  * @brief  Display the current time.
+  * @param  showtime : pointer to buffer
+  * @retval None
+  */
+void RTC_TimeShow(DWORD* fattime)
+{
+  RTC_DateTypeDef sdatestructureget;
+  RTC_TimeTypeDef stimestructureget;
+
+  //DWORD fattime = 0;
+	
+  /* Get the RTC current Time */
+  HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BIN);
+  /* Get the RTC current Date */
+  HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BIN);
+  /* Display time Format : hh:mm:ss */
+  printf("time: %02d:%02d:%02d \r\n",stimestructureget.Hours, stimestructureget.Minutes, stimestructureget.Seconds);
+  printf("date: %02d:%02d:%02d \r\n",sdatestructureget.Year, sdatestructureget.Month, sdatestructureget.Date);
+
+  *fattime =  ((DWORD)((sdatestructureget.Year + 20) << 25) | (DWORD)(sdatestructureget.Month<< 21) | (DWORD)(sdatestructureget.Date<< 16));
+  *fattime |= ((DWORD)(stimestructureget.Hours << 11) | (DWORD)(stimestructureget.Minutes<< 5)|((DWORD)(stimestructureget.Seconds)/2));  
+ } 
+
+
+
+
 /* StartDefaultTask function */
 void StartDefaultTask(void const * argument)
 {

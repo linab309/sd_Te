@@ -314,7 +314,8 @@ uint8_t BSP_SD_GetCardInfo(SD_CardInfo *pCardInfo)
   if(flag_SDHC == 1 )
   {
     pCardInfo->CardBlockSize = 512;
-    pCardInfo->CardCapacity = (pCardInfo->Csd.version.v2.DeviceSize + 1) * pCardInfo->CardBlockSize;
+    //pCardInfo->CardCapacity = (pCardInfo->Csd.version.v2.DeviceSize + 1) * pCardInfo->CardBlockSize ;
+	 pCardInfo->CardCapacity = (uint64_t)((((uint64_t)pCardInfo->Csd.version.v2.DeviceSize + 1)) * 512 * 1024);
   }
   else
   {

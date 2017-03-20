@@ -114,6 +114,13 @@ const int8_t  STORAGE_Inquirydata_FS[] = {/* 36 */
 /* USER CODE END INQUIRY_DATA_FS */ 
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
+
+uint32_t sd_block_num;
+uint16_t sd_block_size;
+
+
+
+
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -209,6 +216,9 @@ int8_t STORAGE_GetCapacity_FS (uint8_t lun, uint32_t *block_num, uint16_t *block
     *block_size = STORAGE_BLK_SIZ;
     ret = 0;
   }
+
+  sd_block_size = *block_size;
+  sd_block_num  = *block_num ;
   //printf("*block_num :%d \r\n",*block_num);
   //printf("*block_size :%d \r\n",*block_size);
 
@@ -268,7 +278,7 @@ int8_t STORAGE_Read_FS (uint8_t lun,
         ret = 0;
     }
     //printf("*blk_len :%d \r\n",blk_len);    
-    printf("*r :%d \r\n",blk_addr);    
+    //printf("*r :%d \r\n",blk_addr);    
 
     return ret;
 
@@ -294,8 +304,8 @@ int8_t STORAGE_Write_FS (uint8_t lun,
       STORAGE_BLK_SIZ, blk_len);
       ret = 0;
   }
-  printf("* blk_len :%d \r\n",blk_len);    
-  printf("*blk_addr :%d \r\n",blk_addr);    
+  //printf("* blk_len :%d \r\n",blk_len);    
+  //printf("*blk_addr :%d \r\n",blk_addr);    
   
   return ret; 
 }

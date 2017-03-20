@@ -71,7 +71,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* Disk status */
 static volatile DSTATUS Stat = STA_NOINIT;
-
+static  UINT my_block_size = 0;
 /* USER CODE END DECL */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -230,20 +230,25 @@ DRESULT USER_ioctl (
   /* Get number of sectors on the disk (DWORD) */
   case GET_SECTOR_COUNT :
     BSP_SD_GetCardInfo(&CardInfo);
-    *(DWORD*)buff = CardInfo.CardCapacity / BLOCK_SIZE;
+    *(DWORD*)buff = CardInfo.CardCapacity / CardInfo.CardBlockSize;
+	printf("GET_SECTOR_COUNT :%d \r\n",*(DWORD*)buff);
+
     res = RES_OK;
     break;
   
   /* Get R/W sector size (WORD) */
   case GET_SECTOR_SIZE :
-    *(WORD*)buff = BLOCK_SIZE;
+	BSP_SD_GetCardInfo(&CardInfo);
+    *(WORD*)buff = CardInfo.CardBlockSize;
+	printf("GET_SECTOR_SIZE :%d \r\n",*(WORD*)buff);
     res = RES_OK;
     break;
   
   /* Get erase block size in unit of sector (DWORD) */
   case GET_BLOCK_SIZE :
     BSP_SD_GetCardInfo(&CardInfo);
-    *(DWORD*)buff = BLOCK_SIZE;
+    *(DWORD*)buff = CardInfo.CardBlockSize;
+	printf("GET_BLOCK_SIZE :%d \r\n",*(DWORD*)buff);
     break;
   
   default:

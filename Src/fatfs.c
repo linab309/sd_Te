@@ -42,13 +42,19 @@
   */
 
 #include "fatfs.h"
+#include "main.h"
 
+/* USER CODE BEGIN Variables */
 uint8_t retUSER;    /* Return value for USER */
 char USER_Path[4];  /* USER logical drive path */
 
-/* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */    
+
+
+extern void RTC_TimeShow(DWORD* fattime);
+
+
 
 void MX_FATFS_Init(void) 
 {
@@ -66,8 +72,13 @@ void MX_FATFS_Init(void)
   */
 DWORD get_fattime(void)
 {
-  /* USER CODE BEGIN get_fattime */
-  return 0;
+	DWORD fattime = 0;
+
+	RTC_TimeShow(&fattime);
+
+	return fattime;
+
+
   /* USER CODE END get_fattime */  
 }
 
