@@ -48,3 +48,10 @@ Temporary Items
 
 *.o
 *.lst
+*.crf
+*.d
+*.htm
+*.map
+*.bak
+*.dep
+*.axf
