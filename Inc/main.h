@@ -52,15 +52,10 @@
 /* Private define ------------------------------------------------------------*/
 
 /* USER CODE BEGIN Private defines */
-
-/* USER CODE END Private defines */
-
-
-/* Exported types ------------------------------------------------------------*/
-/* Exported constants --------------------------------------------------------*/
 #define  MAX_BMP_FILES  25
 #define  MAX_BMP_FILE_NAME 11
 
+/* USER CODE END Private defines */
 
 /**
   * @}

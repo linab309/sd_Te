@@ -43,9 +43,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_storage_if.h"
+/* USER CODE BEGIN INCLUDE */
 #include "stm32_adafruit_sd.h"
 
-/* USER CODE BEGIN INCLUDE */
 /* USER CODE END INCLUDE */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -117,8 +117,6 @@ const int8_t  STORAGE_Inquirydata_FS[] = {/* 36 */
 
 uint32_t sd_block_num;
 uint16_t sd_block_size;
-
-
 
 
 /* USER CODE END PRIVATE_VARIABLES */
@@ -269,6 +267,8 @@ int8_t STORAGE_Read_FS (uint8_t lun,
                         uint32_t blk_addr,                       
                         uint16_t blk_len)
 {
+  /* USER CODE BEGIN 6 */ 
+
     int8_t ret = -1;  
 
     //if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
@@ -281,7 +281,7 @@ int8_t STORAGE_Read_FS (uint8_t lun,
     //printf("*r :%d \r\n",blk_addr);    
 
     return ret;
-
+  /* USER CODE END 6 */ 
 }
 
 /*******************************************************************************
@@ -296,6 +296,8 @@ int8_t STORAGE_Write_FS (uint8_t lun,
                          uint32_t blk_addr,
                          uint16_t blk_len)
 {
+  /* USER CODE BEGIN 7 */ 
+
   int8_t ret = -1;  
   
   //if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
@@ -308,6 +310,7 @@ int8_t STORAGE_Write_FS (uint8_t lun,
   //printf("*blk_addr :%d \r\n",blk_addr);    
   
   return ret; 
+  /* USER CODE END 7 */ 
 }
 
 /*******************************************************************************

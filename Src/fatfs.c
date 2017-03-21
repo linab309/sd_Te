@@ -42,26 +42,26 @@
   */
 
 #include "fatfs.h"
-#include "main.h"
 
-/* USER CODE BEGIN Variables */
 uint8_t retUSER;    /* Return value for USER */
 char USER_Path[4];  /* USER logical drive path */
 
-
-/* USER CODE END Variables */    
-
+/* USER CODE BEGIN Variables */
+static FATFS SD_FatFs ;
 
 extern void RTC_TimeShow(DWORD* fattime);
+void  My_Fs_Init(void);
 
 
+/* USER CODE END Variables */    
 
 void MX_FATFS_Init(void) 
 {
   /*## FatFS: Link the USER driver ###########################*/
   retUSER = FATFS_LinkDriver(&USER_Driver, USER_Path);
 
-  /* USER CODE BEGIN Init */   
+  /* USER CODE BEGIN Init */
+  My_Fs_Init();
   /* USER CODE END Init */
 }
 
@@ -72,6 +72,8 @@ void MX_FATFS_Init(void)
   */
 DWORD get_fattime(void)
 {
+  /* USER CODE BEGIN get_fattime */
+
 	DWORD fattime = 0;
 
 	RTC_TimeShow(&fattime);
@@ -83,6 +85,69 @@ DWORD get_fattime(void)
 }
 
 /* USER CODE BEGIN Application */
+/*------------------------------------------------------------/
+/ Open or create a file in append mode
+/------------------------------------------------------------*/
+
+FRESULT open_append (
+    FIL* fp,            /* [OUT] File object to create */
+    const char* path    /* [IN]  File name to be opened */
+)
+{
+    FRESULT fr;
+
+    /* Opens an existing file. If not exist, creates a new file. */
+    fr = f_open(fp, path, FA_WRITE | FA_OPEN_ALWAYS);
+    if (fr == FR_OK) {
+        /* Seek to end of the file to append data */
+        fr = f_lseek(fp, f_size(fp));
+        if (fr != FR_OK)
+            f_close(fp);
+    }
+    return fr;
+}
+
+/* USER CODE END 4 */
+
+void  My_Fs_Init(void)
+{
+
+	//uint32_t counter = 0;
+	FRESULT fr;
+	FIL fil;
+
+	/* init code for FATFS */
+	MX_FATFS_Init();
+
+	/* Check the mounted device */
+	if(f_mount(&SD_FatFs, (TCHAR const*)"/", 0) != FR_OK)
+	{
+	   printf("BSP_SD_INIT_FAILED \r\n");
+	}  
+	else
+	{
+#if 0	
+	  /* Initialize the Directory Files pointers (heap) */
+	  for (counter = 0; counter < MAX_BMP_FILES; counter++)
+	  {
+		pDirectoryFiles[counter] = malloc(11); 
+	  }
+#endif
+	  fr = open_append(&fil, "logfile.txt");
+	  if (fr != FR_OK)
+	  {
+		 printf("open_append FAILED \r\n"); 
+	  }
+
+	  /* Append a line */
+	  f_printf(&fil, "%s\n", __DATE__);
+
+	  /* Close the file */
+	  f_close(&fil);  
+    }  
+
+}
+
      
 /* USER CODE END Application */
 
