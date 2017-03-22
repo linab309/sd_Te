@@ -72,6 +72,8 @@ char* pDirectoryFiles[MAX_BMP_FILES];
 //FATFS SD_FatFs;  /* File system object for SD card logical drive */
 char SD_Path[4]; /* SD card logical drive path */
 
+nmea_msg *gpsx; 	
+
 /* Private function prototypes 
 -----------------------------------------------*/
 #ifdef __GNUC__
@@ -592,10 +594,14 @@ void StartDefaultTask(void const * argument)
 void Get_gps_info(void const * argument)
 {
   /* USER CODE BEGIN Get_gps_info */
+
+  gpsx = malloc(sizeof(nmea_msg));    
+  memset(gpsx,0,sizeof(nmea_msg));
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+      GPS_Analysis(gpsx,uint8_t * buf);
+      osDelay(1);
   }
   /* USER CODE END Get_gps_info */
 }

@@ -54,6 +54,7 @@ void DebugMon_Handler(void);
 void SysTick_Handler(void);
 void USB_LP_IRQHandler(void);
 void TIM3_IRQHandler(void);
+void USART3_IRQHandler(void);
 
 #ifdef __cplusplus
 }

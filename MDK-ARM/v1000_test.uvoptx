@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <ProjectOpt xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="project_optx.xsd">
 
   <SchemaVersion>1.0</SchemaVersion>
@@ -43,7 +43,7 @@
         <PageWidth>79</PageWidth>
         <PageLength>66</PageLength>
         <TabStop>8</TabStop>
-        <ListingPath></ListingPath>
+        <ListingPath />
       </OPTLEX>
       <ListingPage>
         <CreateCListing>1</CreateCListing>
@@ -100,16 +100,16 @@
         <sRunDeb>0</sRunDeb>
         <sLrtime>0</sLrtime>
         <nTsel>11</nTsel>
-        <sDll></sDll>
-        <sDllPa></sDllPa>
-        <sDlgDll></sDlgDll>
-        <sDlgPa></sDlgPa>
-        <sIfile></sIfile>
-        <tDll></tDll>
-        <tDllPa></tDllPa>
-        <tDlgDll></tDlgDll>
-        <tDlgPa></tDlgPa>
-        <tIfile></tIfile>
+        <sDll />
+        <sDllPa />
+        <sDlgDll />
+        <sDlgPa />
+        <sIfile />
+        <tDll />
+        <tDllPa />
+        <tDlgDll />
+        <tDlgPa />
+        <tIfile />
         <pMon>STLink\ST-LINKIII-KEIL_SWO.dll</pMon>
       </DebugOpt>
       <TargetDriverDllRegistry>
@@ -121,7 +121,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>ARMDBGFLAGS</Key>
-          <Name></Name>
+          <Name />
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -153,8 +153,8 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>..\Drivers\BSP\Adafruit_Shield\stm32_adafruit_sd.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
+          <ExecCommand />
+          <Expression />
         </Bp>
         <Bp>
           <Number>1</Number>
@@ -169,8 +169,8 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>../Middlewares/Third_Party/FatFs/src/ff.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
+          <ExecCommand />
+          <Expression />
         </Bp>
         <Bp>
           <Number>2</Number>
@@ -185,8 +185,8 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>../Middlewares/Third_Party/FatFs/src/ff.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
+          <ExecCommand />
+          <Expression />
         </Bp>
         <Bp>
           <Number>3</Number>
@@ -201,8 +201,8 @@
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>../Src/user_diskio.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
+          <ExecCommand />
+          <Expression />
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -315,8 +315,8 @@
         <newCpu>0</newCpu>
         <uProt>0</uProt>
       </DebugFlag>
-      <LintExecutable></LintExecutable>
-      <LintConfigFile></LintConfigFile>
+      <LintExecutable />
+      <LintConfigFile />
     </TargetOption>
   </Target>
 
@@ -464,6 +464,19 @@
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
+    <File>
+      <GroupNumber>2</GroupNumber>
+      <FileNumber>11</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>../Src/stm32l1xx_hal_timebase_TIM.c</PathWithFileName>
+      <FilenameWithoutPath>stm32l1xx_hal_timebase_TIM.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
   </Group>
 
   <Group>
@@ -474,7 +487,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>3</GroupNumber>
-      <FileNumber>11</FileNumber>
+      <FileNumber>12</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -487,7 +500,7 @@
     </File>
     <File>
       <GroupNumber>3</GroupNumber>
-      <FileNumber>12</FileNumber>
+      <FileNumber>13</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -500,7 +513,7 @@
     </File>
     <File>
       <GroupNumber>3</GroupNumber>
-      <FileNumber>13</FileNumber>
+      <FileNumber>14</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -513,7 +526,7 @@
     </File>
     <File>
       <GroupNumber>3</GroupNumber>
-      <FileNumber>14</FileNumber>
+      <FileNumber>15</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -526,7 +539,7 @@
     </File>
     <File>
       <GroupNumber>3</GroupNumber>
-      <FileNumber>15</FileNumber>
+      <FileNumber>16</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -539,7 +552,7 @@
     </File>
     <File>
       <GroupNumber>3</GroupNumber>
-      <FileNumber>16</FileNumber>
+      <FileNumber>17</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -552,7 +565,7 @@
     </File>
     <File>
       <GroupNumber>3</GroupNumber>
-      <FileNumber>17</FileNumber>
+      <FileNumber>18</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -565,7 +578,7 @@
     </File>
     <File>
       <GroupNumber>3</GroupNumber>
-      <FileNumber>18</FileNumber>
+      <FileNumber>19</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -578,7 +591,7 @@
     </File>
     <File>
       <GroupNumber>3</GroupNumber>
-      <FileNumber>19</FileNumber>
+      <FileNumber>20</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -599,7 +612,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>4</GroupNumber>
-      <FileNumber>20</FileNumber>
+      <FileNumber>21</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -620,7 +633,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>5</GroupNumber>
-      <FileNumber>21</FileNumber>
+      <FileNumber>22</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -633,7 +646,7 @@
     </File>
     <File>
       <GroupNumber>5</GroupNumber>
-      <FileNumber>22</FileNumber>
+      <FileNumber>23</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -646,7 +659,7 @@
     </File>
     <File>
       <GroupNumber>5</GroupNumber>
-      <FileNumber>23</FileNumber>
+      <FileNumber>24</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -659,7 +672,7 @@
     </File>
     <File>
       <GroupNumber>5</GroupNumber>
-      <FileNumber>24</FileNumber>
+      <FileNumber>25</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -672,7 +685,7 @@
     </File>
     <File>
       <GroupNumber>5</GroupNumber>
-      <FileNumber>25</FileNumber>
+      <FileNumber>26</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
@@ -680,19 +693,6 @@
       <bDave2>0</bDave2>
       <PathWithFileName>../Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_rcc_ex.c</PathWithFileName>
       <FilenameWithoutPath>stm32l1xx_hal_rcc_ex.c</FilenameWithoutPath>
-      <RteFlg>0</RteFlg>
-      <bShared>0</bShared>
-    </File>
-    <File>
-      <GroupNumber>5</GroupNumber>
-      <FileNumber>26</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <Focus>0</Focus>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <bDave2>0</bDave2>
-      <PathWithFileName>../Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_wwdg.c</PathWithFileName>
-      <FilenameWithoutPath>stm32l1xx_hal_wwdg.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

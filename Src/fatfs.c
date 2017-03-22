@@ -116,9 +116,6 @@ void  My_Fs_Init(void)
 	FRESULT fr;
 	FIL fil;
 
-	/* init code for FATFS */
-	MX_FATFS_Init();
-
 	/* Check the mounted device */
 	if(f_mount(&SD_FatFs, (TCHAR const*)"/", 0) != FR_OK)
 	{
