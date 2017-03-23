@@ -56,6 +56,7 @@
 "v1000_test\usbd_msc.o"
 "v1000_test\stm32_adafruit_sd.o"
 "v1000_test\stm32l1xx_nucleo.o"
+"v1000_test\gps.o"
 --library_type=microlib --strict --scatter "v1000_test\v1000_test.sct"
 
 --diag_suppress=L6329 --summary_stderr --info summarysizes --map --xref --callgraph --symbols

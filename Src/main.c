@@ -48,7 +48,7 @@
 #include "usb_device.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "gps.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -59,12 +59,14 @@ RTC_HandleTypeDef hrtc;
 SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
 
 osThreadId defaultTaskHandle;
 osThreadId Get_gps_info_Handle;
+osMutexId gpsMutexHandle;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
@@ -73,6 +75,13 @@ char* pDirectoryFiles[MAX_BMP_FILES];
 char SD_Path[4]; /* SD card logical drive path */
 
 nmea_msg *gpsx; 	
+
+__align(8) uint8_t uart3_buffer[MAX_UART3_LEN];
+
+
+/*GPS 数据接收标志位*/
+uint16_t USART2_RX_STA = 0; 
+
 
 /* Private function prototypes 
 -----------------------------------------------*/
@@ -98,6 +107,7 @@ static void MX_ADC_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_RTC_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_TIM6_Init(void);
 void StartDefaultTask(void const * argument);
 void Get_gps_info(void const * argument);
 
@@ -144,11 +154,17 @@ int main(void)
   MX_TIM2_Init();
   MX_RTC_Init();
   MX_USART3_UART_Init();
+  MX_TIM6_Init();
 
   /* USER CODE BEGIN 2 */
   RTC_AlarmConfig();
   printf("USER CODE BEGIN 2 \r\n");
   /* USER CODE END 2 */
+
+  /* Create the mutex(es) */
+  /* definition and creation of gpsMutex */
+  osMutexDef(gpsMutex);
+  gpsMutexHandle = osMutexCreate(osMutex(gpsMutex));
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -410,6 +426,30 @@ static void MX_TIM2_Init(void)
 
 }
 
+/* TIM6 init function */
+static void MX_TIM6_Init(void)
+{
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 3199;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 99;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+}
+
 /* USART1 init function */
 static void MX_USART1_UART_Init(void)
 {
@@ -570,6 +610,36 @@ void RTC_TimeShow(DWORD* fattime)
  } 
 
 
+
+/**
+  * @brief  Rx Transfer completed callbacks.
+  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  *                the configuration information for the specified UART module.
+  * @retval None
+  */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+
+    if(huart->Instance == USART3)
+    {
+    	if(USART2_RX_STA < MAX_UART3_LEN)		//还可以接收数据
+    	{
+    		TIM4->CNT = 0;							//计数器清空
+    		if(USART2_RX_STA == 0)
+    		{
+    		    __HAL_TIM_ENABLE(&htim6);
+                __HAL_TIM_SET_COUNTER(&htim6,0);
+    		}//使能定时器4的中断 
+            USART2_RX_STA = huart->RxXferCount ; 
+    	}
+		else 
+    	{
+    		USART2_RX_STA|=1<<15;					//强制标记接收完成
+    	} 
+    }
+}
+
+
 /* USER CODE END 4 */
 
 /* StartDefaultTask function */
@@ -594,13 +664,20 @@ void StartDefaultTask(void const * argument)
 void Get_gps_info(void const * argument)
 {
   /* USER CODE BEGIN Get_gps_info */
+  uint16_t rxlen = 0;
 
   gpsx = malloc(sizeof(nmea_msg));    
   memset(gpsx,0,sizeof(nmea_msg));
   /* Infinite loop */
   for(;;)
   {
-      GPS_Analysis(gpsx,uint8_t * buf);
+      if(USART2_RX_STA & 0x8000)
+      {
+          rxlen = USART2_RX_STA&0x7FFF;   //得到数据长度
+          uart3_buffer[rxlen] = 0;
+          GPS_Analysis(gpsx,uart3_buffer);
+		  USART2_RX_STA = 0;           //启动下一次接收
+      }
       osDelay(1);
   }
   /* USER CODE END Get_gps_info */
@@ -623,6 +700,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
 /* USER CODE BEGIN Callback 1 */
+
+if (htim->Instance == TIM6) {
+    USART2_RX_STA |= 1<<15;	//标记接收完成
+    __HAL_TIM_DISABLE(&htim6);
+  }
+
 
 /* USER CODE END Callback 1 */
 }
