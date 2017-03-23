@@ -49,6 +49,8 @@
 
 /* USER CODE BEGIN Includes */
 #include "gps.h"
+#include <stdarg.h>
+
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -129,6 +131,53 @@ uint8_t str_cmpx(uint8_t* s1,uint8_t* s2,uint8_t len)
 	return 1;
 }
 
+
+/**
+  * @brief  Retargets the C library printf function to the USART.
+  * @param  None
+  * @retval None
+  */
+PUTCHAR_PROTOTYPE
+{
+  /* Place your implementation of fputc here */
+  /* e.g. write a character to the EVAL_COM1 and Loop until the end of transmission */
+  while(HAL_UART_GetState(&huart1) == HAL_UART_STATE_BUSY_TX){}
+  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+
+  return ch;
+}
+
+
+static int inHandlerMode (void)
+{
+	 return __get_IPSR() != 0;
+}
+
+void print_usart1(char *format, ...)
+{
+    char buf[64];
+    
+    if(inHandlerMode() != 0)
+        taskDISABLE_INTERRUPTS();
+    else
+    {
+    	 while(HAL_UART_GetState(&huart1) == HAL_UART_STATE_BUSY_TX)
+    			 osThreadYield();
+    }
+    
+    va_list ap;
+    va_start(ap, format);
+    if(vsprintf(buf, format, ap) > 0)
+    {
+    	 HAL_UART_Transmit(&huart1, (uint8_t *)buf, strlen(buf), 100);
+    }
+    va_end(ap);
+    
+    if(inHandlerMode() != 0)
+    	 taskENABLE_INTERRUPTS();
+}
+
+
 /* USER CODE END 0 */
 
 int main(void)
@@ -149,9 +198,9 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
-  MX_SPI1_Init();
+  //MX_SPI1_Init();
   MX_ADC_Init();
-  MX_TIM2_Init();
+  //MX_TIM2_Init();
   MX_RTC_Init();
   MX_USART3_UART_Init();
   MX_TIM6_Init();
@@ -180,11 +229,11 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 256);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of Get_gps_info_ */
-  osThreadDef(Get_gps_info_, Get_gps_info, osPriorityHigh, 0, 128);
+  osThreadDef(Get_gps_info_, Get_gps_info, osPriorityNormal, 0, 256);
   Get_gps_info_Handle = osThreadCreate(osThread(Get_gps_info_), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -230,9 +279,9 @@ void SystemClock_Config(void)
     /**Initializes the CPU, AHB and APB busses clocks 
     */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
-  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
-  RCC_OscInitStruct.LSEState = RCC_LSE_BYPASS;
+                              |RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = 16;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -645,6 +694,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 /* StartDefaultTask function */
 void StartDefaultTask(void const * argument)
 {
+
+ 
+
   /* init code for FATFS */
   MX_FATFS_Init();
 
@@ -652,6 +704,9 @@ void StartDefaultTask(void const * argument)
   MX_USB_DEVICE_Init();
 
   /* USER CODE BEGIN 5 */
+  printf("StartDefaultTask \r\n");
+
+
   /* Infinite loop */
   for(;;)
   {
@@ -669,16 +724,20 @@ void Get_gps_info(void const * argument)
   gpsx = malloc(sizeof(nmea_msg));    
   memset(gpsx,0,sizeof(nmea_msg));
   /* Infinite loop */
+  printf("Get_gps_info\r\n");
+
   for(;;)
   {
       if(USART2_RX_STA & 0x8000)
       {
           rxlen = USART2_RX_STA&0x7FFF;   //得到数据长度
           uart3_buffer[rxlen] = 0;
+		  //printf("%s\r\n",uart3_buffer);
           GPS_Analysis(gpsx,uart3_buffer);
 		  USART2_RX_STA = 0;           //启动下一次接收
       }
-      osDelay(1);
+      osDelay(500);
+
   }
   /* USER CODE END Get_gps_info */
 }
@@ -700,12 +759,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
 /* USER CODE BEGIN Callback 1 */
-
-if (htim->Instance == TIM6) {
-    USART2_RX_STA |= 1<<15;	//标记接收完成
+  if (htim->Instance == TIM6) {
+  	USART2_RX_STA |= 1<<15;
     __HAL_TIM_DISABLE(&htim6);
   }
-
 
 /* USER CODE END Callback 1 */
 }
