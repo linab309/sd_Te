@@ -50,7 +50,7 @@ char USER_Path[4];  /* USER logical drive path */
 
 
 extern void RTC_TimeShow(DWORD* fattime);
-void  My_Fs_Init(void);
+
 
 
 /* USER CODE END Variables */    
@@ -61,7 +61,7 @@ void MX_FATFS_Init(void)
   retUSER = FATFS_LinkDriver(&USER_Driver, USER_Path);
 
   /* USER CODE BEGIN Init */
-  My_Fs_Init();
+
   /* USER CODE END Init */
 }
 
@@ -109,16 +109,15 @@ FRESULT open_append (
 
 /* USER CODE END 4 */
 
-void  My_Fs_Init(void)
+void  My_Fs_Init(FATFS *SD_FatFs)
 {
 
 	//uint32_t counter = 0;
 	FRESULT fr;
 	FIL fil;
-	static FATFS SD_FatFs ;
-
+	
 	/* Check the mounted device */
-	if(f_mount(&SD_FatFs, (TCHAR const*)"/", 0) != FR_OK)
+	if(f_mount(SD_FatFs, (TCHAR const*)"/", 0) != FR_OK)
 	{
 	   printf("BSP_SD_INIT_FAILED \r\n");
 	}  
