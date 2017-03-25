@@ -42,9 +42,13 @@
   */
 
 #include "fatfs.h"
+#include "main.h"
+#include "stm32l1xx_hal.h"
+
 
 uint8_t retUSER;    /* Return value for USER */
 char USER_Path[4];  /* USER logical drive path */
+static FATFS SD_FatFs ;
 
 /* USER CODE BEGIN Variables */
 
@@ -52,6 +56,7 @@ char USER_Path[4];  /* USER logical drive path */
 extern void RTC_TimeShow(DWORD* fattime);
 void  My_Fs_Init(void);
 
+//char* pDirectoryFiles[MAX_BMP_FILES];
 
 /* USER CODE END Variables */    
 
@@ -114,8 +119,7 @@ void  My_Fs_Init(void)
 
 	//uint32_t counter = 0;
 	FRESULT fr;
-	FIL fil;
-	static FATFS SD_FatFs ;
+	FIL fil;	
 
 	/* Check the mounted device */
 	if(f_mount(&SD_FatFs, (TCHAR const*)"/", 0) != FR_OK)

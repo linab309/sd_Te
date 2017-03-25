@@ -72,9 +72,8 @@ osMutexId gpsMutexHandle;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-char* pDirectoryFiles[MAX_BMP_FILES];
+
 //FATFS SD_FatFs;  /* File system object for SD card logical drive */
-char SD_Path[4]; /* SD card logical drive path */
 
 nmea_msg *gpsx; 	
 
@@ -208,6 +207,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
   RTC_AlarmConfig();
   printf("USER CODE BEGIN 2 \r\n");
+
+  MX_FATFS_Init();
+  
   /* USER CODE END 2 */
 
   /* Create the mutex(es) */
@@ -233,7 +235,7 @@ int main(void)
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of Get_gps_info_ */
-  osThreadDef(Get_gps_info_, Get_gps_info, osPriorityNormal, 0, 256);
+  osThreadDef(Get_gps_info_, Get_gps_info, osPriorityHigh, 0, 256);
   Get_gps_info_Handle = osThreadCreate(osThread(Get_gps_info_), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -695,21 +697,66 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 void StartDefaultTask(void const * argument)
 {
 
- 
+  FRESULT fr;
+  FIL gps_fp ;
+  char   track_file[26] ={0};
+  DIR* dp = NULL;
+  RTC_DateTypeDef sdatestructureget;
+  RTC_TimeTypeDef stimestructureget;
+
 
   /* init code for FATFS */
-  MX_FATFS_Init();
+
 
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
 
   /* USER CODE BEGIN 5 */
-  printf("StartDefaultTask \r\n");
+  print_usart1("StartDefaultTask \r\n");
 
+
+
+  //DWORD fattime = 0;
+	
+  /* Get the RTC current Time */
+  HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BIN);
+  /* Get the RTC current Date */
+  HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BIN);
+
+  
+  sprintf(track_file,"%04d-%02d",sdatestructureget.Year ,sdatestructureget.Month); 
+  fr= f_opendir(dp,track_file);
+  if((FR_OK  == fr) && (FR_EXIST == fr)) 
+  {
+      print_usart1("track file dir exist %d\r\n",fr);
+      //return;
+  }
+  else  
+  {
+      fr = f_mkdir(track_file);
+  }
+  sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.GPS",sdatestructureget.Year,sdatestructureget.Month,sdatestructureget.Date,
+                          stimestructureget.Hours,stimestructureget.Minutes,stimestructureget.Seconds);
+
+  fr = open_append(&gps_fp, track_file);
 
   /* Infinite loop */
   for(;;)
   {
+
+    if (osMutexWait(gpsMutexHandle, osWaitForever) == osOK)
+    {    
+
+         
+    
+        if (osMutexRelease(gpsMutexHandle) != osOK)
+        {
+            Error_Handler();
+        }
+
+        //ThreadResume(Get_gps_info_Handle);
+    }
+    
     osDelay(1);
   }
   /* USER CODE END 5 */ 
@@ -724,19 +771,32 @@ void Get_gps_info(void const * argument)
   gpsx = malloc(sizeof(nmea_msg));    
   memset(gpsx,0,sizeof(nmea_msg));
   /* Infinite loop */
-  printf("Get_gps_info\r\n");
+  print_usart1("Get_gps_info\r\n");
 
   for(;;)
   {
+   
       if(USART2_RX_STA & 0x8000)
       {
-          rxlen = USART2_RX_STA&0x7FFF;   //得到数据长度
-          uart3_buffer[rxlen] = 0;
-		  //printf("%s\r\n",uart3_buffer);
-          GPS_Analysis(gpsx,uart3_buffer);
-		  USART2_RX_STA = 0;           //启动下一次接收
+
+          if (osMutexWait(gpsMutexHandle, 0) == osOK)
+          {
+              rxlen = USART2_RX_STA&0x7FFF;   //得到数据长度
+              uart3_buffer[rxlen] = 0;
+              GPS_Analysis(gpsx,uart3_buffer);
+    		  USART2_RX_STA = 0;           //启动下一次接收
+    		  
+              if (osMutexRelease(gpsMutexHandle) != osOK)
+              {
+                  Error_Handler();
+              }  		  
+          }
+
       }
-      osDelay(500);
+      
+      osDelay(1);
+      /* Suspend ourselves to the medium priority thread can execute */
+      //ThreadSuspend(NULL);
 
   }
   /* USER CODE END Get_gps_info */
