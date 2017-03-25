@@ -76,6 +76,7 @@ osMutexId gpsMutexHandle;
 
 nmea_msg *gpsx; 
 FATFS *SD_FatFs;
+system_flag *system_flag_table;
 
 
 __align(8) uint8_t uart3_buffer[MAX_UART3_LEN];
@@ -127,7 +128,7 @@ uint8_t str_cmpx(uint8_t* s1,uint8_t* s2,uint8_t len)
 	return 1;
 }
 
-
+#if 0
 /**
   * @brief  Retargets the C library printf function to the USART.
   * @param  None
@@ -142,7 +143,7 @@ PUTCHAR_PROTOTYPE
 
   return ch;
 }
-
+#endif
 
 static int inHandlerMode (void)
 {
