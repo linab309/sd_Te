@@ -46,6 +46,7 @@
 #include "cmsis_os.h"
 #include "fatfs.h"
 #include "usb_device.h"
+#include "menutal.h"
 
 /* USER CODE BEGIN Includes */
 #include "gps.h"
@@ -67,7 +68,9 @@ UART_HandleTypeDef huart3;
 
 osThreadId defaultTaskHandle;
 osThreadId Get_gps_info_Handle;
+osThreadId SystemCallHandle;
 osMutexId gpsMutexHandle;
+osMutexId SaveGpsMessHandle;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
@@ -78,6 +81,8 @@ nmea_msg *gpsx;
 FATFS *SD_FatFs;
 system_flag *system_flag_table;
 
+FRESULT fr;
+FIL gps_fp ;
 
 __align(8) uint8_t uart3_buffer[MAX_UART3_LEN];
 
@@ -112,6 +117,7 @@ static void MX_USART3_UART_Init(void);
 static void MX_TIM6_Init(void);
 void StartDefaultTask(void const * argument);
 void Get_gps_info(void const * argument);
+void MySystem(void const * argument);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -213,6 +219,10 @@ int main(void)
   osMutexDef(gpsMutex);
   gpsMutexHandle = osMutexCreate(osMutex(gpsMutex));
 
+  /* definition and creation of SaveGpsMess */
+  osMutexDef(SaveGpsMess);
+  SaveGpsMessHandle = osMutexCreate(osMutex(SaveGpsMess));
+
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
@@ -223,6 +233,12 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
+
+  gpsx = malloc(sizeof(nmea_msg));    
+  memset(gpsx,0,sizeof(nmea_msg));
+  system_flag_table = malloc(sizeof(system_flag));    
+  memset(system_flag_table,0,sizeof(system_flag));
+
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the thread(s) */
@@ -233,6 +249,10 @@ int main(void)
   /* definition and creation of Get_gps_info_ */
   osThreadDef(Get_gps_info_, Get_gps_info, osPriorityHigh, 0, 256);
   Get_gps_info_Handle = osThreadCreate(osThread(Get_gps_info_), NULL);
+
+  /* definition and creation of SystemCall */
+  osThreadDef(SystemCall, MySystem, osPriorityIdle, 0, 128);
+  SystemCallHandle = osThreadCreate(osThread(SystemCall), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -277,7 +297,7 @@ void SystemClock_Config(void)
     /**Initializes the CPU, AHB and APB busses clocks 
     */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE;
+                              |RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -545,15 +565,13 @@ static void RTC_AlarmConfig(void)
   uint8_t date;
   uint16_t year;
   uint8_t sec,min,hour;
-
+  
   const uint8_t *COMPILED_TIME=__TIME__;//??μ?±àò?ê±??
   const uint8_t *COMPILED_DATE=__DATE__;//??μ?±àò?è??ú
 
   const uint8_t Month_Tab[12][3]={"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
   //×??ˉéè??ê±???a±àò??÷ê±??
  
-
-  
   for(i=0;i<3;i++)temp[i]=COMPILED_DATE[i];
   for(i=0;i<12;i++)if(str_cmpx((uint8_t*)Month_Tab[i],temp,3))break;
   mon=i+1;//μ?μ???·Y
@@ -655,16 +673,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 /* StartDefaultTask function */
 void StartDefaultTask(void const * argument)
 {
-
-
-  FRESULT fr;
-  FIL gps_fp ;
-  char   track_file[26] ={0};
-  DIR* dp = NULL;
-  RTC_DateTypeDef sdatestructureget;
-  RTC_TimeTypeDef stimestructureget;
-
   /* init code for FATFS */
+  MX_FATFS_Init();
 
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
@@ -675,7 +685,7 @@ void StartDefaultTask(void const * argument)
   SD_FatFs = malloc(sizeof(FATFS));   
   My_Fs_Init(SD_FatFs);
 
-
+#if 0
   //DWORD fattime = 0;
 	
   /* Get the RTC current Time */
@@ -685,7 +695,7 @@ void StartDefaultTask(void const * argument)
 
   
   sprintf(track_file,"%04d-%02d",sdatestructureget.Year ,sdatestructureget.Month); 
-  fr= f_opendir(dp,track_file);
+  fr = f_opendir(dp,track_file);
   if((FR_OK  == fr) && (FR_EXIST == fr)) 
   {
       print_usart1("track file dir exist %d\r\n",fr);
@@ -699,16 +709,14 @@ void StartDefaultTask(void const * argument)
                           stimestructureget.Hours,stimestructureget.Minutes,stimestructureget.Seconds);
 
   fr = open_append(&gps_fp, track_file);
-
+#endif
   /* Infinite loop */
   for(;;)
   {
 
     if (osMutexWait(gpsMutexHandle, osWaitForever) == osOK)
-    {    
-
-         
-    
+    {          
+        Recording_guji(&gps_fp,system_flag_table,gpsx);
         if (osMutexRelease(gpsMutexHandle) != osOK)
         {
             Error_Handler();
@@ -717,7 +725,7 @@ void StartDefaultTask(void const * argument)
         //ThreadResume(Get_gps_info_Handle);
     }
     print_usart1("StartDefaultTask go\r\n");
-    osDelay(1000);
+    osDelay(1);
 
   }
   /* USER CODE END 5 */ 
@@ -728,9 +736,6 @@ void Get_gps_info(void const * argument)
 {
   /* USER CODE BEGIN Get_gps_info */
   uint16_t rxlen = 0;
-
-  gpsx = malloc(sizeof(nmea_msg));    
-  memset(gpsx,0,sizeof(nmea_msg));
   /* Infinite loop */
   print_usart1("Get_gps_info\r\n");
 
@@ -747,18 +752,23 @@ void Get_gps_info(void const * argument)
               print_usart1("%s",uart3_buffer);
               GPS_Analysis(gpsx,uart3_buffer);
     		  USART2_RX_STA = 0;           //启动下一次接收
-    		  
+              if((gpsx->fixmode >= 2)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
+              {
+                  if(system_flag_table->guji_mode == RECORED_START_DOING)
+                      save_guiji_message(gpsx,system_flag_table,'T');
+              } 		  
               if (osMutexRelease(gpsMutexHandle) != osOK)
               {
                   Error_Handler();
               }  		  
           }
+          
 
       }
-
+     
       
 	  print_usart1("Get_gps_info go\r\n");
-      osDelay(500);
+      osDelay(1);
 
       /* Suspend ourselves to the medium priority thread can execute */
       //ThreadSuspend(NULL);
@@ -766,6 +776,28 @@ void Get_gps_info(void const * argument)
 
   }
   /* USER CODE END Get_gps_info */
+}
+
+/* MySystem function */
+void MySystem(void const * argument)
+{
+  /* USER CODE BEGIN MySystem */
+  RTC_DateTypeDef sdatestructureget;
+  RTC_TimeTypeDef stimestructureget;  
+  /* Infinite loop */
+  for(;;)
+  {
+         /* Get the RTC current Time */
+      HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BIN);
+      /* Get the RTC current Date */
+      HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BIN);   
+
+      system_flag_table->RTC_DateStructure = sdatestructureget;
+      system_flag_table->RTC_TimeStructure = stimestructureget;
+
+      osDelay(50);
+  }
+  /* USER CODE END MySystem */
 }
 
 /**

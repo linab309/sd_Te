@@ -1,11 +1,15 @@
+#include "main.h"
 #include "menutal.h"
+#include "cmsis_os.h"
+#include "string.h"
+#include "fatfs.h"
 
 
 #define PRESSURE 0
 #define TEMPERATURE 0
 #define ALTITUDE 0
 
-
+extern osMutexId SaveGpsMessHandle;
 
 
 typedef union { /* PMU_IRQ_CLR_RTC */
@@ -44,18 +48,8 @@ typedef union { /* FPC_Reg6964_Dat6 */
 } GUJI_DATE;
 #endif
 
-typedef struct 
-{	//公历日月年周
-	u16 w_year;
-	u8  w_month;
-	u8  w_date;
-	u8  week;		 
-	u8  sec;		 
-}tm;	
 
-
-
-const u8 timer_zone_Aarry[][7]=
+const uint8_t timer_zone_Aarry[][7]=
 {
 	"-12:00",   // 1
 	"-11:00",   // 2
@@ -114,13 +108,18 @@ const u8 timer_zone_Aarry[][7]=
 };
 
 //Monday Tuesday Wednesday Thursday Friday Saturday SunUay
-const u8 week_word[7][3]={"SUN","MON","TUE","WED","THU","FRI","SAT"};
+const uint8_t week_word[7][3]={"SUN","MON","TUE","WED","THU","FRI","SAT"};
 
 
 
 const uint8_t  table_week[12]={0,3,3,6,1,4,6,2,5,0,3,5}; //月修正数据表
 //平年的月份日期表
 const uint8_t mon_table[12]={31,28,31,30,31,30,31,31,30,31,30,31};
+
+
+void Del_oldfile_nospace(system_flag *system_flag_table);
+
+
 
 //获得现在是星期几
 //功能描述:输入公历日期得到星期(只允许1901-2099年)
@@ -150,7 +149,7 @@ uint8_t RTC_Get_Week(uint16_t year,uint8_t month,uint8_t day)
 //非闰年 31 28 31 30 31 30 31 31 30 31 30 31
 //输入:年份
 //输出:该年份是不是闰年.1,是.0,不是
-u8 Is_Leap_Year(u16 year)
+uint8_t Is_Leap_Year(uint16_t year)
 {
 	if(year%4==0) //必须能被4整除
 	{
@@ -167,10 +166,10 @@ u8 Is_Leap_Year(u16 year)
 
 //得到当前的时间
 //返回值:0,成功;其他:错误代码.
-u8 RTC_Get(u8 flag,tm *my_timer)
+uint8_t RTC_Get(uint8_t flag,tm *my_timer)
 {
 //	extern tm my_timer;
-	u16 temp1=0;
+	uint16_t temp1=0;
 	if(flag)
 	{
 		my_timer->w_date +=1;  //得到日期
@@ -226,7 +225,7 @@ u8 RTC_Get(u8 flag,tm *my_timer)
 }
 
 
-void  rtc_set(system_flag *system_flag_table,u16 syear,u8 smon,u8 sday,u8 hour,u8 min,u8 sec,u8 week)
+void  rtc_set(system_flag *system_flag_table,uint16_t syear,uint8_t smon,uint8_t sday,uint8_t hour,uint8_t min,uint8_t sec,uint8_t week)
 {
 
     RTC_DateTypeDef RTC_DateStructure;
@@ -234,20 +233,20 @@ void  rtc_set(system_flag *system_flag_table,u16 syear,u8 smon,u8 sday,u8 hour,u
     extern RTC_HandleTypeDef hrtc;
 
     RTC_DateStructure = system_flag_table->RTC_DateStructure;
-    RTC_DateStructure = system_flag_table->RTC_TimeStructure;
+    RTC_TimeStructure = system_flag_table->RTC_TimeStructure;
     
 
 	print_usart1("rtc_set %d-%d-%d  %d:%d:%d %d\n",syear ,smon,sday,hour,min,sec,week);
-	RTC_TimeStructure.RTC_Hours =hour;
-	RTC_TimeStructure.RTC_Minutes = min;
-	RTC_TimeStructure.RTC_Seconds = sec;
+	RTC_TimeStructure.Hours =hour;
+	RTC_TimeStructure.Minutes = min;
+	RTC_TimeStructure.Seconds = sec;
 
 
 
-	RTC_DateStructure.RTC_WeekDay =  RTC_Get_Week(syear+2000, smon, sday);
-	RTC_DateStructure.RTC_Date = sday;
-	RTC_DateStructure.RTC_Month = smon;
-	RTC_DateStructure.RTC_Year = syear;
+	RTC_DateStructure.WeekDay =  RTC_Get_Week(syear+2000, smon, sday);
+	RTC_DateStructure.Date = sday;
+	RTC_DateStructure.Month = smon;
+	RTC_DateStructure.Year = syear;
     
     if(HAL_RTC_SetDate(&hrtc,&RTC_DateStructure,RTC_FORMAT_BCD) != HAL_OK)
     {
@@ -271,17 +270,18 @@ void check_time(nmea_msg *gpsx ,system_flag *system_flag_table,float time_zone)
     uint16_t hour_timer,min_timer;
     tm *my_timer = NULL;
     int16_t diff_tone = 0.0;
-    uint32_t setting_tp = 0;
+//    uint32_t setting_tp = 0;
 
     RTC_DateTypeDef RTC_DateStructure;
     RTC_TimeTypeDef RTC_TimeStructure;
 
     RTC_DateStructure = system_flag_table->RTC_DateStructure;
-    RTC_DateStructure = system_flag_table->RTC_TimeStructure;
+    RTC_TimeStructure = system_flag_table->RTC_TimeStructure;
 
 	print_usart1("check_time\r\n");
-    my_timer = system_flag_table->sys_tm;
-    if((system_flag_table->run_mode == 1)&&(gpsx->svnum >= 2))
+    my_timer = &system_flag_table->sys_tm;
+    
+    if(gpsx->svnum >= 2)
     {
         if((gpsx->utc.year < 2014)||(gpsx->utc.year == 2080))
         {
@@ -301,7 +301,7 @@ void check_time(nmea_msg *gpsx ,system_flag *system_flag_table,float time_zone)
     		print_usart1("\n\r hour_timer : %d   min_timer :%d  ",hour_timer,min_timer);
     		if((gpsx_utc +(hour_timer*60+min_timer))>=(24*60))
     	    {
-                RTC_Get(1,&my_timer);
+                RTC_Get(1,my_timer);
                 gpsx_utc  = (gpsx_utc + (hour_timer*60 + min_timer) - (24*60));
     
                 hour_timer = gpsx_utc/60;
@@ -335,7 +335,7 @@ void check_time(nmea_msg *gpsx ,system_flag *system_flag_table,float time_zone)
     
                 hour_timer = gpsx_utc/60;
                 min_timer  = gpsx_utc - hour_timer*60;
-                RTC_Get(0,&my_timer);
+                RTC_Get(0,my_timer);
     		}
 		 }
 
@@ -355,19 +355,19 @@ void check_time(nmea_msg *gpsx ,system_flag *system_flag_table,float time_zone)
  
          if(diff_tone >= (24*60))
          {
-             RTC_Get(1,&my_timer);
+             RTC_Get(1,my_timer);
              diff_tone = diff_tone - (24*60);
          }
          if(diff_tone < 0)
          {
-             RTC_Get(0,&my_timer);
+             RTC_Get(0,my_timer);
              diff_tone = diff_tone + (24*60);
          }
          hour_timer = diff_tone/60;
          min_timer  = diff_tone - hour_timer*60;
      }
 
-	rtc_set(my_timer->w_year,my_timer->w_month,my_timer->w_date,hour_timer,min_timer,my_timer->sec,my_timer->week);
+	rtc_set(system_flag_table,my_timer->w_year,my_timer->w_month,my_timer->w_date,hour_timer,min_timer,my_timer->sec,my_timer->week);
 
 	system_flag_table->index_timerzone = time_zone;
 }
@@ -411,14 +411,12 @@ uint8_t get_space(void)
         return (uint8_t)tp;
 
     }
-
-    return (uint8_t)tp;      
+    
 }
 
 
 
-uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_t guji_record_type,
-                              RTC_DateTypeDef RTC_DateStructure,RTC_TimeTypeDef RTC_TimeStructure)
+uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_t guji_record_type)
 {
     uint8_t one_shot_buffer[28];
     uint8_t index = 0;
@@ -426,145 +424,163 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
     GUJI_DATE guji_data ;
     uint8_t error = 0;
 
-//	one_shot_buffer[index++] = (uint8_t)(Message_head_number>>24)&0xff;  // 1mb
-	one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>16)&0xff;  // 1mb
-	one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>8)&0xff;  // 2mb
-	one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1))&0xff;  // 3 mb
 
-    flag.all = 0;
-    guji_data.all = 0;
-
-    if(guji_record_type == 'T')
-    {
-       flag.bitc.tag = 0;
-    }
-    else if(guji_record_type == 'C')
-    {
-       flag.bitc.tag = 1;  
-    }
-
-    if(gpsx->nshemi == 'N')
-    {
-       flag.bitc.ns = 0;    
-    }
-    else if(gpsx->nshemi == 'S')
-    {
-       flag.bitc.ns = 1;     
-    }
-    else
-    {
-       error = 1;
-    }
+    RTC_DateTypeDef RTC_DateStructure;
+    RTC_TimeTypeDef RTC_TimeStructure;
 
 
-    if(gpsx->ewhemi== 'E')
+    if (osMutexWait(SaveGpsMessHandle, osWaitForever) == osOK)
     {
-       flag.bitc.ew = 0;    
-    }
-    else if(gpsx->ewhemi== 'W')
-    {
-       flag.bitc.ew = 1;    
-    }
-    else
-    {
-       error = 1;
-    }
-
-
-    if(error != 0)
-        return error;
+        RTC_DateStructure = system_flag_table->RTC_DateStructure;
+        RTC_TimeStructure = system_flag_table->RTC_TimeStructure;
     
-    one_shot_buffer[index++]  = flag.all;  // 4mb
-
-	if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)
-	{
-		guji_data.bitc.year  = gpsx->utc.year-2016;
-		guji_data.bitc.month = gpsx->utc.month;
-		guji_data.bitc.date  = gpsx->utc.date;
-		guji_data.bitc.hour  = gpsx->utc.hour;
-		guji_data.bitc.min   =  gpsx->utc.min;
-		guji_data.bitc.sec   =  gpsx->utc.sec;
-	}
-	else
-    {
-        if(gpsx->utc.sec != RTC_TimeStructure.Seconds)
+        //	one_shot_buffer[index++] = (uint8_t)(Message_head_number>>24)&0xff;  // 1mb
+        one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>16)&0xff;  // 1mb
+        one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>8)&0xff;  // 2mb
+        one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1))&0xff;  // 3 mb
+    
+        flag.all = 0;
+        guji_data.all = 0;
+    
+        if(guji_record_type == 'T')
         {
-            check_time();
+            flag.bitc.tag = 0;
         }
+        else if(guji_record_type == 'C')
+        {
+            flag.bitc.tag = 1;  
+        }
+    
+        if(gpsx->nshemi == 'N')
+        {
+            flag.bitc.ns = 0;    
+        }
+        else if(gpsx->nshemi == 'S')
+        {
+            flag.bitc.ns = 1;     
+        }
+        else
+        {
+            error = 1;
+        }
+    
+    
+        if(gpsx->ewhemi== 'E')
+        {
+            flag.bitc.ew = 0;    
+        }
+        else if(gpsx->ewhemi== 'W')
+        {
+            flag.bitc.ew = 1;    
+        }
+        else
+        {
+            error = 1;
+        }
+    
+    
+        if(error != 0)
+            return error;
+    
+        one_shot_buffer[index++]  = flag.all;  // 4mb
+    
+        if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)
+        {
+            guji_data.bitc.year  = gpsx->utc.year-2016;
+            guji_data.bitc.month = gpsx->utc.month;
+            guji_data.bitc.date  = gpsx->utc.date;
+            guji_data.bitc.hour  = gpsx->utc.hour;
+            guji_data.bitc.min   =  gpsx->utc.min;
+            guji_data.bitc.sec   =  gpsx->utc.sec;
+        }
+        else
+        {
+            if(gpsx->utc.sec != RTC_TimeStructure.Seconds)
+            {
+                check_time(gpsx,system_flag_table,8.0);
+            }
         
-		guji_data.bitc.year  = (RTC_DateStructure.Year-16);
-		guji_data.bitc.month = RTC_DateStructure.Month;
-		guji_data.bitc.date  = RTC_DateStructure.Date;
-		guji_data.bitc.hour  = RTC_TimeStructure.Hours;
-		guji_data.bitc.min =   RTC_TimeStructure.Minutes;
-		guji_data.bitc.sec =   RTC_TimeStructure.Seconds;
-	}
-   // print_usart1("date :%x \r\n",guji_data.all);
+            guji_data.bitc.year  = (RTC_DateStructure.Year-16);
+            guji_data.bitc.month = RTC_DateStructure.Month;
+            guji_data.bitc.date  = RTC_DateStructure.Date;
+            guji_data.bitc.hour  = RTC_TimeStructure.Hours;
+            guji_data.bitc.min =   RTC_TimeStructure.Minutes;
+            guji_data.bitc.sec =   RTC_TimeStructure.Seconds;
+        }
+        // print_usart1("date :%x \r\n",guji_data.all);
+    
+        //  memcpy(one_shot_buffer+index,&guji_data.all,4);
+        //   index = index+4;
+        one_shot_buffer[index++]  = (uint8_t)((guji_data.all>>24)&0xff);  // 11mb
+        one_shot_buffer[index++]  = (uint8_t)((guji_data.all>>16)&0xff);  // 12mb
+        one_shot_buffer[index++]  = (uint8_t)((guji_data.all>>8)&0xff);  // 13mb
+        one_shot_buffer[index++]  = (uint8_t)((guji_data.all)&0xff);  // 14mb
+    
+        one_shot_buffer[index++]  = (uint8_t)((gpsx->latitude>>24)&0xff);  // 11mb
+        one_shot_buffer[index++]  = (uint8_t)((gpsx->latitude>>16)&0xff);  // 12mb
+        one_shot_buffer[index++]  = (uint8_t)((gpsx->latitude>>8)&0xff);  // 13mb
+        one_shot_buffer[index++]  = (uint8_t)((gpsx->latitude)&0xff);  // 14mb
+    
+        one_shot_buffer[index++]  = (uint8_t)((gpsx->longitude>>24)&0xff);  // 15mb
+        one_shot_buffer[index++]  = (uint8_t)((gpsx->longitude>>16)&0xff);  // 16mb
+        one_shot_buffer[index++]  = (uint8_t)((gpsx->longitude>>8)&0xff);  // 17mb
+        one_shot_buffer[index++]  = (uint8_t)((gpsx->longitude)&0xff);  // 18mb
+    
+        one_shot_buffer[index++]  = (uint8_t)((ALTITUDE>>24)&0xff);  // 15mb
+        one_shot_buffer[index++]  = (uint8_t)((ALTITUDE>>16)&0xff);  // 16mb
+        one_shot_buffer[index++]  = (uint8_t)((ALTITUDE>>8)&0xff);  // 21mb
+        one_shot_buffer[index++]  = (uint8_t)((ALTITUDE)&0xff);  // 22mb
+    
+        one_shot_buffer[index++]  = (uint8_t)(((gpsx->speed/100)>>8)&0xff);  // 23mb
+        one_shot_buffer[index++]  = (uint8_t)(((gpsx->speed/100))&0xff);  // 24mb
+    
+        one_shot_buffer[index++]  = (uint8_t)(((gpsx->angle/1000)>>8)&0xff);  // 25mb
+        one_shot_buffer[index++]  = (uint8_t)((gpsx->angle/1000)&0xff);  // 26mb
+    
+    
+        one_shot_buffer[index++]  = (uint8_t)(PRESSURE>>8)&0xff;  // 29mb
+        one_shot_buffer[index++]  = (uint8_t)(PRESSURE)&0xff;  // 30mb
+    
+    
+        one_shot_buffer[index++]  = (uint8_t)(TEMPERATURE>>8)&0xff;  // 27mb
+        one_shot_buffer[index++]  = (uint8_t)(TEMPERATURE)&0xff;  // 28mb
+    
+    
+    
+        memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index],one_shot_buffer,28);
+    
+        system_flag_table->guji_buffer_Index  += 28;
+        system_flag_table->Message_head_number++;
 
-  //  memcpy(one_shot_buffer+index,&guji_data.all,4);
- //   index = index+4;
-	one_shot_buffer[index++]  = (uint8_t)((guji_data.all>>24)&0xff);  // 11mb
-	one_shot_buffer[index++]  = (uint8_t)((guji_data.all>>16)&0xff);  // 12mb
-	one_shot_buffer[index++]  = (uint8_t)((guji_data.all>>8)&0xff);  // 13mb
-	one_shot_buffer[index++]  = (uint8_t)((guji_data.all)&0xff);  // 14mb
-	
-	one_shot_buffer[index++]  = (uint8_t)((gpsx->latitude>>24)&0xff);  // 11mb
-	one_shot_buffer[index++]  = (uint8_t)((gpsx->latitude>>16)&0xff);  // 12mb
-	one_shot_buffer[index++]  = (uint8_t)((gpsx->latitude>>8)&0xff);  // 13mb
-	one_shot_buffer[index++]  = (uint8_t)((gpsx->latitude)&0xff);  // 14mb
-
-	one_shot_buffer[index++]  = (uint8_t)((gpsx->longitude>>24)&0xff);  // 15mb
-	one_shot_buffer[index++]  = (uint8_t)((gpsx->longitude>>16)&0xff);  // 16mb
-	one_shot_buffer[index++]  = (uint8_t)((gpsx->longitude>>8)&0xff);  // 17mb
-	one_shot_buffer[index++]  = (uint8_t)((gpsx->longitude)&0xff);  // 18mb
-
-	one_shot_buffer[index++]  = (uint8_t)((ALTITUDE>>24)&0xff);  // 15mb
-	one_shot_buffer[index++]  = (uint8_t)((ALTITUDE>>16)&0xff);  // 16mb
-	one_shot_buffer[index++]  = (uint8_t)((ALTITUDE>>8)&0xff);  // 21mb
-	one_shot_buffer[index++]  = (uint8_t)((ALTITUDE)&0xff);  // 22mb
-
-	one_shot_buffer[index++]  = (uint8_t)(((gpsx->speed/100)>>8)&0xff);  // 23mb
-	one_shot_buffer[index++]  = (uint8_t)(((gpsx->speed/100))&0xff);  // 24mb
-
-	one_shot_buffer[index++]  = (uint8_t)(((gpsx->angle/1000)>>8)&0xff);  // 25mb
-	one_shot_buffer[index++]  = (uint8_t)((gpsx->angle/1000)&0xff);  // 26mb
-
-
-	one_shot_buffer[index++]  = (uint8_t)(PRESSURE>>8)&0xff;  // 29mb
-	one_shot_buffer[index++]  = (uint8_t)(PRESSURE)&0xff;  // 30mb
-
-
-	one_shot_buffer[index++]  = (uint8_t)(TEMPERATURE>>8)&0xff;  // 27mb
-	one_shot_buffer[index++]  = (uint8_t)(TEMPERATURE)&0xff;  // 28mb
-
-	
-
-	memcpy(system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index],one_shot_buffer,28);
-
-    system_flag_table->guji_buffer_Index  += 28;
-    system_flag_table->Message_head_number++;
+        if (osMutexRelease(SaveGpsMessHandle) != osOK)
+        {
+            //Error_Handler();
+        }        
+    }
+  
 
     return error;
 
 }
 
 
-void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table,uint16_t munber)
+void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table)
 {
-    uint16_t index = 0,angle = 0,i = 0;
+    uint16_t index = 0,angle = 0;
     uint8_t lat_flag,lon_flag,record_type;
     uint32_t message_number_index;
     int32_t attiautl;
-    int16_t tsemp;
+    int16_t temp;
     float tp_lat =0.0,tp_lon =0.0,per=0.0,speed =0.0;
     GUJI_TAG flag ;
     GUJI_DATE guji_data ;
     FRESULT sys_fr ;
     uint8_t *buffer;
     __align(4) uint8_t dtbuf[50];                                //打印缓存器
+    uint16_t munber;
 
     buffer = system_flag_table->guji_buffer;
-
+    munber = system_flag_table->guji_buffer_Index;
     do
     {
         message_number_index = (buffer[2 + index]|(buffer[1 + index]<<8)|(buffer[0 + index]<<16));
@@ -649,8 +665,7 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table,uint16_t munber
                     guji_data.bitc.year+16,guji_data.bitc.month,guji_data.bitc.date);
                 
                 f_printf(sys_fp,"%s",(char *)dtbuf);
-                sprintf((char *)dtbuf,"%02d%02d%02d,%.6f%c,",guji_data.bitc.
-                guji_data.bitc.min,guji_data.bitc.sec,tp_lat/1000000,lat_flag);
+                sprintf((char *)dtbuf,"%02d%02d%02d,%.6f%c,",guji_data.bitc.hour,guji_data.bitc.min,guji_data.bitc.sec,tp_lat/1000000,lat_flag);
         
                 f_printf(sys_fp,"%s",(char *)dtbuf);
                 sprintf((char *)dtbuf,"%.6f%c,%d,%.1f,%d,%.1f,%d",tp_lon/1000000,lon_flag,attiautl/10,(speed/10),angle,per/10,(int)(temp/10));	
@@ -695,7 +710,7 @@ topografix.com/GPX/1/1/gpx.xsd">
 
 void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the file by true*/
 {
-    int wb = 0;
+    UINT wb = 0;
     
     if(system_flag_table->guji_buffer_Index)
     {
@@ -704,7 +719,7 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
             if(system_flag_table->guji_record.recoed_meth == 0)
             {
       
-                Del_oldfile_nospace();
+                Del_oldfile_nospace(system_flag_table);
                 
             }
             else
@@ -729,7 +744,7 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
         else if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)
         {
             //todo:add gpx file conote
-            buffer_Analysis(system_flag_table->guji_buffer,system_flag_table);
+            buffer_Analysis(sys_fp,system_flag_table);
         }
     
         system_flag_table->guji_buffer_Index = 0;
@@ -834,7 +849,7 @@ void Del_oldfile_nospace(system_flag *system_flag_table)
     char buff[64] = {0};    /* Working buffer */
     char out_buff[64] = {0};    /* Working buffer */
     int filenumber = 0;
-	extern uint16_t  Flash_write_buffer_Index ;
+	  extern uint16_t  Flash_write_buffer_Index ;
     
     strcpy(buff, "/");  /* Directory to be emptied */
 
@@ -905,7 +920,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
     RTC_TimeTypeDef RTC_TimeStructure;
 
     RTC_DateStructure = system_flag_table->RTC_DateStructure;
-    RTC_DateStructure = system_flag_table->RTC_TimeStructure;
+    RTC_TimeStructure = system_flag_table->RTC_TimeStructure;
 
 	switch(system_flag_table->guji_mode )
     {
@@ -929,7 +944,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 				    }
 					else
 				    {
-				        Del_oldfile_nospace();			
+				        Del_oldfile_nospace(system_flag_table);			
 						if(system_flag_table->guji_mode == RECORED_STOP)
 					    {
 						    system_flag_table->guji_mode = RECORED_IDLE;
@@ -994,10 +1009,10 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     else if(system_flag_table->guji_record.recoed_formats == GUJI_FORMATS_GPX)
                     {
                         //todo: add gpx file head.
-                        gpx_filehead_write(track_file);
+                        gpx_filehead_write(sys_fp,track_file);
                     }
                     
-        			save_guiji_message('T');
+        			save_guiji_message(gpsx,system_flag_table,'T');
         		
         			system_flag_table->guji_mode = RECORED_START_DOING;
         			interst_pos_number = 0;
@@ -1006,26 +1021,25 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
         			//	OLED_ShowString(17,32,dtbuf);
         			//stm_write_eerpom(GUJI_INTERST_POS,interst_pos_number);
                }
-               else
-                   system_flag_table->recored_run_flag = 1;
+
 			}
-			else
-			{
-			    system_flag_table->recored_run_flag = 1;
-			}
+
 
 			break;
 		case RECORED_START_DOING:
+#if 0            
 			if((gpsx->fixmode >= 2)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
 			{
-				save_guiji_message('T');
+				save_guiji_message(system_flag_table,gpsx,'T');
 			}
 			else
 			{
 			}
+#endif            
+            write_flash(sys_fp,system_flag_table);   
 			break;
 		case RECORED_T:
-			save_guiji_message('C');
+			save_guiji_message(gpsx,system_flag_table,'C');
 			//stm_read_eerpom(GUJI_INTERST_POS ,&interst_pos_number);
 			//if(interst_pos_number>100)
 			//	interst_pos_number = 0;
@@ -1040,8 +1054,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 			if(system_flag_table->baifenbi > 0)
 		    {
               	if((gpsx->fixmode >= 2)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
-              	    save_guiji_message('T');              
-              	write_flash();              
+              	    save_guiji_message(gpsx,system_flag_table,'T');              
+              	write_flash(sys_fp,system_flag_table);              
               	//stm_write_eerpom(CUURENT_FLASH_ADDRER ,Flash_Index);
                 print_usart1("\r\n close file \r\n ");
 			}
@@ -1056,7 +1070,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     f_printf(sys_fp,"</gpx>\n");
 
                 }
-                f_close(&sys_fp);
+                f_close(sys_fp);
             }
 
 			break;

@@ -55,6 +55,10 @@
 #define  MAX_BMP_FILES  25
 #define  MAX_BMP_FILE_NAME 11
 #define  MAX_UART3_LEN 0x200
+
+
+extern void print_usart1(char *format, ...);
+
 /* USER CODE END Private defines */
 
 /**

@@ -1,6 +1,10 @@
 #ifndef __MENUTAL_H
 #define __MENUTAL_H	 
 
+#include "stm32l1xx_hal.h"
+#include "gps.h"
+#include "ff.h"
+
 
 #define SYSTEM_POWER_STANBY 0
 #define SYSTEM_POWER_ON 1
@@ -127,18 +131,36 @@ typedef enum
     AUTO_OFF,
 }AUTO_MODEL_OPTIONS;
 
+typedef struct 
+{	//公历日月年周
+	uint16_t w_year;
+	uint8_t  w_month;
+	uint8_t  w_date;
+	uint8_t  week;		 
+	uint8_t  sec;		 
+}tm;	
 
 
 typedef struct  
-{										    
-	uint8_t  guji_mode;
-	uint8_t* guji_buffer;
+{		
+	  uint8_t recoed_meth;  /*自动覆盖或是记满停止*/
+	  uint8_t auto_recoed_flag;
+    uint8_t recoed_formats;
+}GUJI_RECOCE_TABLE; 
+
+
+
+typedef struct  
+{
+    GUJI_RECOCE_TABLE guji_record;
+    uint8_t  guji_mode;
+    uint8_t* guji_buffer;
     uint16_t guji_buffer_Index;
     uint32_t Message_head_number;
     uint8_t  gujiFormats;
     uint8_t  baifenbi;
     uint32_t Flash_write_buffer_Index;
-    u8       time_zone;
+    uint8_t  time_zone;
     float    index_timerzone;
     tm       sys_tm;    
     RTC_DateTypeDef RTC_DateStructure;
@@ -146,6 +168,8 @@ typedef struct
 }system_flag;
 
 
+extern uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_t guji_record_type);
+extern void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx);
 
 #endif
 

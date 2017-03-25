@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=G:/work/sd_Te/Inc
+HeaderPath=D:/Documents/GitHub/sd_Te/Inc
 HeaderFiles=ffconf.h;user_diskio.h;fatfs.h;FreeRTOSConfig.h;stm32l1xx_it.h;stm32l1xx_hal_conf.h;main.h;usb_device.h;usbd_conf.h;usbd_desc.h;usbd_storage_if.h;
-SourcePath=G:/work/sd_Te/Src
+SourcePath=D:/Documents/GitHub/sd_Te/Src
 SourceFiles=ffconf.h;user_diskio.h;fatfs.h;FreeRTOSConfig.h;stm32l1xx_it.h;stm32l1xx_hal_conf.h;main.h;user_diskio.c;fatfs.c;freertos.c;stm32l1xx_it.c;stm32l1xx_hal_msp.c;main.c;usb_device.h;usbd_conf.h;usbd_desc.h;usbd_storage_if.h;usb_device.c;usbd_conf.c;usbd_desc.c;usbd_storage_if.c;stm32l1xx_hal_timebase_TIM.c;
 
 [PreviousLibFiles]

@@ -66,6 +66,7 @@ extern FRESULT open_append (
     FIL* fp,            /* [OUT] File object to create */
     const char* path    /* [IN]  File name to be opened */
 );
+extern void  My_Fs_Init(FATFS *SD_FatFs);
 
 /* USER CODE END Prototypes */
 #ifdef __cplusplus

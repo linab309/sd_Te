@@ -42,9 +42,6 @@
   */
 
 #include "fatfs.h"
-#include "main.h"
-#include "stm32l1xx_hal.h"
-
 
 uint8_t retUSER;    /* Return value for USER */
 char USER_Path[4];  /* USER logical drive path */
