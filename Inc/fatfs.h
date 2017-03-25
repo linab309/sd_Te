@@ -62,6 +62,10 @@ extern char USER_Path[4]; /* USER logical drive path */
 void MX_FATFS_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+extern FRESULT open_append (
+    FIL* fp,            /* [OUT] File object to create */
+    const char* path    /* [IN]  File name to be opened */
+);
 
 /* USER CODE END Prototypes */
 #ifdef __cplusplus

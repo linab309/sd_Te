@@ -48,13 +48,12 @@
 
 uint8_t retUSER;    /* Return value for USER */
 char USER_Path[4];  /* USER logical drive path */
-static FATFS SD_FatFs ;
 
 /* USER CODE BEGIN Variables */
 
 
 extern void RTC_TimeShow(DWORD* fattime);
-void  My_Fs_Init(void);
+
 
 //char* pDirectoryFiles[MAX_BMP_FILES];
 
@@ -66,7 +65,7 @@ void MX_FATFS_Init(void)
   retUSER = FATFS_LinkDriver(&USER_Driver, USER_Path);
 
   /* USER CODE BEGIN Init */
-  My_Fs_Init();
+
   /* USER CODE END Init */
 }
 
@@ -114,15 +113,15 @@ FRESULT open_append (
 
 /* USER CODE END 4 */
 
-void  My_Fs_Init(void)
+void  My_Fs_Init(FATFS *SD_FatFs)
 {
 
 	//uint32_t counter = 0;
-	FRESULT fr;
-	FIL fil;	
+	//FRESULT fr;
+	//FIL fil;	
 
 	/* Check the mounted device */
-	if(f_mount(&SD_FatFs, (TCHAR const*)"/", 0) != FR_OK)
+	if(f_mount(SD_FatFs, (TCHAR const*)"/", 0) != FR_OK)
 	{
 	   printf("BSP_SD_INIT_FAILED \r\n");
 	}  
@@ -134,7 +133,7 @@ void  My_Fs_Init(void)
 	  {
 		pDirectoryFiles[counter] = malloc(11); 
 	  }
-#endif
+
 	  fr = open_append(&fil, "logfile.txt");
 	  if (fr != FR_OK)
 	  {
@@ -146,6 +145,7 @@ void  My_Fs_Init(void)
 
 	  /* Close the file */
 	  f_close(&fil);  
+#endif      
     }  
 
 }

@@ -60,7 +60,6 @@ RTC_HandleTypeDef hrtc;
 
 SPI_HandleTypeDef hspi1;
 
-TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart1;
@@ -75,7 +74,9 @@ osMutexId gpsMutexHandle;
 
 //FATFS SD_FatFs;  /* File system object for SD card logical drive */
 
-nmea_msg *gpsx; 	
+nmea_msg *gpsx; 
+FATFS *SD_FatFs;
+
 
 __align(8) uint8_t uart3_buffer[MAX_UART3_LEN];
 
@@ -105,15 +106,11 @@ static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_ADC_Init(void);
-static void MX_TIM2_Init(void);
 static void MX_RTC_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM6_Init(void);
 void StartDefaultTask(void const * argument);
 void Get_gps_info(void const * argument);
-
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-                                
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -197,19 +194,17 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
-  //MX_SPI1_Init();
+  MX_SPI1_Init();
   MX_ADC_Init();
-  //MX_TIM2_Init();
   MX_RTC_Init();
   MX_USART3_UART_Init();
   MX_TIM6_Init();
 
   /* USER CODE BEGIN 2 */
   RTC_AlarmConfig();
-  printf("USER CODE BEGIN 2 \r\n");
 
-  MX_FATFS_Init();
-  
+  print_usart1("USER CODE BEGIN 2 \r\n");
+
   /* USER CODE END 2 */
 
   /* Create the mutex(es) */
@@ -231,7 +226,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 256);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 512);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of Get_gps_info_ */
@@ -440,43 +435,6 @@ static void MX_SPI1_Init(void)
 
 }
 
-/* TIM2 init function */
-static void MX_TIM2_Init(void)
-{
-
-  TIM_MasterConfigTypeDef sMasterConfig;
-  TIM_OC_InitTypeDef sConfigOC;
-
-  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 40;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 400;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  if (HAL_TIM_OC_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  sConfigOC.OCMode = TIM_OCMODE_TIMING;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_OC_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  HAL_TIM_MspPostInit(&htim2);
-
-}
-
 /* TIM6 init function */
 static void MX_TIM6_Init(void)
 {
@@ -653,8 +611,8 @@ void RTC_TimeShow(DWORD* fattime)
   /* Get the RTC current Date */
   HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BIN);
   /* Display time Format : hh:mm:ss */
-  printf("time: %02d:%02d:%02d \r\n",stimestructureget.Hours, stimestructureget.Minutes, stimestructureget.Seconds);
-  printf("date: %02d:%02d:%02d \r\n",sdatestructureget.Year, sdatestructureget.Month, sdatestructureget.Date);
+  print_usart1("time: %02d:%02d:%02d \r\n",stimestructureget.Hours, stimestructureget.Minutes, stimestructureget.Seconds);
+  print_usart1("date: %02d:%02d:%02d \r\n",sdatestructureget.Year, sdatestructureget.Month, sdatestructureget.Date);
 
   *fattime =  ((DWORD)((sdatestructureget.Year + 20) << 25) | (DWORD)(sdatestructureget.Month<< 21) | (DWORD)(sdatestructureget.Date<< 16));
   *fattime |= ((DWORD)(stimestructureget.Hours << 11) | (DWORD)(stimestructureget.Minutes<< 5)|((DWORD)(stimestructureget.Seconds)/2));  
@@ -697,6 +655,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 void StartDefaultTask(void const * argument)
 {
 
+
   FRESULT fr;
   FIL gps_fp ;
   char   track_file[26] ={0};
@@ -704,9 +663,7 @@ void StartDefaultTask(void const * argument)
   RTC_DateTypeDef sdatestructureget;
   RTC_TimeTypeDef stimestructureget;
 
-
   /* init code for FATFS */
-
 
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
@@ -714,6 +671,8 @@ void StartDefaultTask(void const * argument)
   /* USER CODE BEGIN 5 */
   print_usart1("StartDefaultTask \r\n");
 
+  SD_FatFs = malloc(sizeof(FATFS));   
+  My_Fs_Init(SD_FatFs);
 
 
   //DWORD fattime = 0;
@@ -756,8 +715,9 @@ void StartDefaultTask(void const * argument)
 
         //ThreadResume(Get_gps_info_Handle);
     }
-    
-    osDelay(1);
+    print_usart1("StartDefaultTask go\r\n");
+    osDelay(1000);
+
   }
   /* USER CODE END 5 */ 
 }
@@ -783,6 +743,7 @@ void Get_gps_info(void const * argument)
           {
               rxlen = USART2_RX_STA&0x7FFF;   //得到数据长度
               uart3_buffer[rxlen] = 0;
+              print_usart1("%s",uart3_buffer);
               GPS_Analysis(gpsx,uart3_buffer);
     		  USART2_RX_STA = 0;           //启动下一次接收
     		  
@@ -793,10 +754,14 @@ void Get_gps_info(void const * argument)
           }
 
       }
+
       
-      osDelay(1);
+	  print_usart1("Get_gps_info go\r\n");
+      osDelay(500);
+
       /* Suspend ourselves to the medium priority thread can execute */
       //ThreadSuspend(NULL);
+
 
   }
   /* USER CODE END Get_gps_info */
@@ -804,7 +769,7 @@ void Get_gps_info(void const * argument)
 
 /**
   * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM3 interrupt took place, inside
+  * @note   This function is called  when TIM7 interrupt took place, inside
   * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
   * a global variable "uwTick" used as application time base.
   * @param  htim : TIM handle
@@ -815,7 +780,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 /* USER CODE BEGIN Callback 0 */
 
 /* USER CODE END Callback 0 */
-  if (htim->Instance == TIM3) {
+  if (htim->Instance == TIM7) {
     HAL_IncTick();
   }
 /* USER CODE BEGIN Callback 1 */
