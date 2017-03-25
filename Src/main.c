@@ -46,11 +46,11 @@
 #include "cmsis_os.h"
 #include "fatfs.h"
 #include "usb_device.h"
-#include "menutal.h"
 
 /* USER CODE BEGIN Includes */
 #include "gps.h"
 #include <stdarg.h>
+#include "menutal.h"
 
 /* USER CODE END Includes */
 
@@ -83,12 +83,15 @@ system_flag *system_flag_table;
 
 FRESULT fr;
 FIL gps_fp ;
+uint32_t gps_data_time = 0xffffffff;
 
-__align(8) uint8_t uart3_buffer[MAX_UART3_LEN];
+uint8_t uart3_buffer[MAX_UART3_LEN];
 
 
 /*GPS 数据接收标志位*/
-uint16_t USART2_RX_STA = 0; 
+uint16_t USART2_RX_STA_RP = 0; 
+uint16_t USART2_RX_STA_WP = 0; 
+uint8_t USART2_RX_STA = 0; 
 
 
 /* Private function prototypes 
@@ -113,8 +116,8 @@ static void MX_USART1_UART_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_ADC_Init(void);
 static void MX_RTC_Init(void);
-static void MX_USART3_UART_Init(void);
 static void MX_TIM6_Init(void);
+static void MX_USART3_UART_Init(void);
 void StartDefaultTask(void const * argument);
 void Get_gps_info(void const * argument);
 void MySystem(void const * argument);
@@ -134,7 +137,7 @@ uint8_t str_cmpx(uint8_t* s1,uint8_t* s2,uint8_t len)
 	return 1;
 }
 
-#if 0
+#if 1
 /**
   * @brief  Retargets the C library printf function to the USART.
   * @param  None
@@ -144,8 +147,8 @@ PUTCHAR_PROTOTYPE
 {
   /* Place your implementation of fputc here */
   /* e.g. write a character to the EVAL_COM1 and Loop until the end of transmission */
-  while(HAL_UART_GetState(&huart1) == HAL_UART_STATE_BUSY_TX){}
-  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+  while(HAL_UART_GetState(&huart3) == HAL_UART_STATE_BUSY_TX){}
+  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 0xFFFF);
 
   return ch;
 }
@@ -158,13 +161,13 @@ static int inHandlerMode (void)
 
 void print_usart1(char *format, ...)
 {
-    char buf[64];
+    char buf[160];
     
     if(inHandlerMode() != 0)
         taskDISABLE_INTERRUPTS();
     else
     {
-    	 while(HAL_UART_GetState(&huart1) == HAL_UART_STATE_BUSY_TX)
+    	 while(HAL_UART_GetState(&huart3) == HAL_UART_STATE_BUSY_TX)
     			 osThreadYield();
     }
     
@@ -172,7 +175,7 @@ void print_usart1(char *format, ...)
     va_start(ap, format);
     if(vsprintf(buf, format, ap) > 0)
     {
-    	 HAL_UART_Transmit(&huart1, (uint8_t *)buf, strlen(buf), 100);
+    	 HAL_UART_Transmit(&huart3, (uint8_t *)buf, strlen(buf), 160);
     }
     va_end(ap);
     
@@ -201,16 +204,24 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
-  MX_SPI1_Init();
+  //MX_SPI1_Init();
   MX_ADC_Init();
   MX_RTC_Init();
+ // MX_TIM6_Init();
   MX_USART3_UART_Init();
-  MX_TIM6_Init();
 
   /* USER CODE BEGIN 2 */
   RTC_AlarmConfig();
 
   print_usart1("USER CODE BEGIN 2 \r\n");
+
+
+  /*##-4- Put UART peripheral in reception process ###########################*/  
+  if(HAL_UART_Receive_IT(&huart1, (uint8_t *)uart3_buffer, 1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
 
   /* USER CODE END 2 */
 
@@ -239,6 +250,13 @@ int main(void)
   system_flag_table = malloc(sizeof(system_flag));    
   memset(system_flag_table,0,sizeof(system_flag));
 
+
+  system_flag_table->guji_buffer = malloc(0x100);    
+  memset( system_flag_table->guji_buffer,0,sizeof(0x100));
+
+  system_flag_table->time_zone = 29;
+  system_flag_table->gujiFormats = GUJI_FORMATS_GPX;
+
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the thread(s) */
@@ -251,7 +269,7 @@ int main(void)
   Get_gps_info_Handle = osThreadCreate(osThread(Get_gps_info_), NULL);
 
   /* definition and creation of SystemCall */
-  osThreadDef(SystemCall, MySystem, osPriorityIdle, 0, 128);
+  osThreadDef(SystemCall, MySystem, osPriorityNormal, 0, 128);
   SystemCallHandle = osThreadCreate(osThread(SystemCall), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -297,7 +315,7 @@ void SystemClock_Config(void)
     /**Initializes the CPU, AHB and APB busses clocks 
     */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
+                              |RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -471,12 +489,6 @@ static void MX_TIM6_Init(void)
     Error_Handler();
   }
 
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
 
 }
 
@@ -508,7 +520,7 @@ static void MX_USART3_UART_Init(void)
   huart3.Init.WordLength = UART_WORDLENGTH_8B;
   huart3.Init.StopBits = UART_STOPBITS_1;
   huart3.Init.Parity = UART_PARITY_NONE;
-  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.Mode = UART_MODE_TX;
   huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart3) != HAL_OK)
@@ -648,22 +660,23 @@ void RTC_TimeShow(DWORD* fattime)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 
-    if(huart->Instance == USART3)
+    if(huart->Instance == USART1)
     {
-    	if(USART2_RX_STA < MAX_UART3_LEN)		//还可以接收数据
+       
+       /* Start another reception: provide the buffer pointer with offset and the buffer size */
+      
+    	if(USART2_RX_STA_WP < (MAX_UART3_LEN-1))		//还可以接收数据
     	{
-    		TIM4->CNT = 0;							//计数器清空
-    		if(USART2_RX_STA == 0)
-    		{
-    		    __HAL_TIM_ENABLE(&htim6);
-                __HAL_TIM_SET_COUNTER(&htim6,0);
-    		}//使能定时器4的中断 
-            USART2_RX_STA = huart->RxXferCount ; 
+            USART2_RX_STA_WP ++ ; 
     	}
 		else 
     	{
-    		USART2_RX_STA|=1<<15;					//强制标记接收完成
+    		USART2_RX_STA_WP = 0;
     	} 
+		
+		gps_data_time = HAL_GetTick(); 
+
+	    HAL_UART_Receive_IT(&huart1, (uint8_t *)(uart3_buffer + USART2_RX_STA_WP), 1); 		
     }
 }
 
@@ -717,6 +730,7 @@ void StartDefaultTask(void const * argument)
     if (osMutexWait(gpsMutexHandle, osWaitForever) == osOK)
     {          
         Recording_guji(&gps_fp,system_flag_table,gpsx);
+        //print_usart1("Recording_guji \r\n");
         if (osMutexRelease(gpsMutexHandle) != osOK)
         {
             Error_Handler();
@@ -724,7 +738,7 @@ void StartDefaultTask(void const * argument)
 
         //ThreadResume(Get_gps_info_Handle);
     }
-    print_usart1("StartDefaultTask go\r\n");
+    //print_usart1("StartDefaultTask go\r\n");
     osDelay(1);
 
   }
@@ -736,27 +750,55 @@ void Get_gps_info(void const * argument)
 {
   /* USER CODE BEGIN Get_gps_info */
   uint16_t rxlen = 0;
+  uint8_t *gps_data = NULL;
   /* Infinite loop */
   print_usart1("Get_gps_info\r\n");
 
   for(;;)
   {
    
-      if(USART2_RX_STA & 0x8000)
+      if(USART2_RX_STA == 1)
       {
-
+		  
           if (osMutexWait(gpsMutexHandle, 0) == osOK)
           {
-              rxlen = USART2_RX_STA&0x7FFF;   //得到数据长度
-              uart3_buffer[rxlen] = 0;
-              print_usart1("%s",uart3_buffer);
-              GPS_Analysis(gpsx,uart3_buffer);
-    		  USART2_RX_STA = 0;           //启动下一次接收
-              if((gpsx->fixmode >= 2)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
+			  USART2_RX_STA = 0;		   //启动下一次接收
+
+			  if(USART2_RX_STA_RP > USART2_RX_STA_WP)
+			  {
+                  gps_data = malloc(USART2_RX_STA_WP+MAX_UART3_LEN -USART2_RX_STA_RP+1);
+
+			      memcpy(gps_data,uart3_buffer+USART2_RX_STA_RP,(MAX_UART3_LEN-USART2_RX_STA_RP));
+			      memcpy(gps_data + (MAX_UART3_LEN-USART2_RX_STA_RP),uart3_buffer,USART2_RX_STA_WP);
+                  rxlen = USART2_RX_STA_WP+MAX_UART3_LEN -USART2_RX_STA_RP;
+                   //print_usart1("len-- :%d \r\n",rxlen);
+
+			  }
+			  else
+			  {
+			      gps_data = malloc((USART2_RX_STA_WP-USART2_RX_STA_RP)+1);
+			      memcpy(gps_data,uart3_buffer+USART2_RX_STA_RP,(USART2_RX_STA_WP-USART2_RX_STA_RP));
+                  rxlen = (USART2_RX_STA_WP-USART2_RX_STA_RP);
+                    //print_usart1("len :%d \r\n",rxlen);
+			  }
+		      gps_data[rxlen] = 0;
+			  USART2_RX_STA_RP = USART2_RX_STA_WP;	 //得到数据长度
+			  //print_usart1("len :%d \r\n",rxlen);
+              //print_usart1("%s",gps_data);
+              GPS_Analysis(gpsx,gps_data);
+			  free(gps_data);
+              //print_usart1("%d ,%d ,%d  \r\n",gpsx->gpssta,gpsx->latitude,gpsx->longitude);
+              if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
               {
+                  if(system_flag_table->guji_mode == RECORED_IDLE)
+                    system_flag_table->guji_mode = RECORED_START;
+                  
                   if(system_flag_table->guji_mode == RECORED_START_DOING)
                       save_guiji_message(gpsx,system_flag_table,'T');
-              } 		  
+              } 	
+
+
+			  
               if (osMutexRelease(gpsMutexHandle) != osOK)
               {
                   Error_Handler();
@@ -767,7 +809,7 @@ void Get_gps_info(void const * argument)
       }
      
       
-	  print_usart1("Get_gps_info go\r\n");
+	  //print_usart1("Get_gps_info go\r\n");
       osDelay(1);
 
       /* Suspend ourselves to the medium priority thread can execute */
@@ -817,9 +859,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
 /* USER CODE BEGIN Callback 1 */
-  if (htim->Instance == TIM6) {
-  	USART2_RX_STA |= 1<<15;
-    __HAL_TIM_DISABLE(&htim6);
+  if (htim->Instance == TIM7) {
+  	if(HAL_GetTick() > (gps_data_time + 10))
+  	{
+  	    if(USART2_RX_STA_RP!= USART2_RX_STA_WP)
+        { 
+  	        USART2_RX_STA = 1;
+        }
+		gps_data_time = 0xffffffff;
+    }
+//    __HAL_TIM_DISABLE(&htim6);
   }
 
 /* USER CODE END Callback 1 */

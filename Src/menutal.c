@@ -232,8 +232,6 @@ void  rtc_set(system_flag *system_flag_table,uint16_t syear,uint8_t smon,uint8_t
     RTC_TimeTypeDef RTC_TimeStructure;
     extern RTC_HandleTypeDef hrtc;
 
-    RTC_DateStructure = system_flag_table->RTC_DateStructure;
-    RTC_TimeStructure = system_flag_table->RTC_TimeStructure;
     
 
 	print_usart1("rtc_set %d-%d-%d  %d:%d:%d %d\n",syear ,smon,sday,hour,min,sec,week);
@@ -259,6 +257,8 @@ void  rtc_set(system_flag *system_flag_table,uint16_t syear,uint8_t smon,uint8_t
         /* Initialization Error */
         print_usart1("Error_Handler()\r\n"); 
     }  
+    system_flag_table->RTC_DateStructure = RTC_DateStructure;
+    system_flag_table->RTC_TimeStructure = RTC_TimeStructure ;
 
 }
 
@@ -275,20 +275,21 @@ void check_time(nmea_msg *gpsx ,system_flag *system_flag_table,float time_zone)
     RTC_DateTypeDef RTC_DateStructure;
     RTC_TimeTypeDef RTC_TimeStructure;
 
-    RTC_DateStructure = system_flag_table->RTC_DateStructure;
-    RTC_TimeStructure = system_flag_table->RTC_TimeStructure;
 
-	print_usart1("check_time\r\n");
+
+	print_usart1("check_time :%d \r\n",gpsx->posslnum);
+	print_usart1("%d :%d:%d \r\n",gpsx->utc.year,gpsx->utc.month,gpsx->utc.date);
+
     my_timer = &system_flag_table->sys_tm;
     
-    if(gpsx->svnum >= 2)
+    if(gpsx->posslnum >= 2)
     {
         if((gpsx->utc.year < 2014)||(gpsx->utc.year == 2080))
         {
             return;
         }
         my_timer->w_year = gpsx->utc.year -2000;
-        my_timer->w_month =gpsx->utc.month;
+        my_timer->w_month = gpsx->utc.month;
         my_timer->w_date = gpsx->utc.date;
         my_timer->week = RTC_Get_Week(gpsx->utc.year ,my_timer->w_month,my_timer->w_date);
         gpsx_utc = (gpsx->utc.hour*60+gpsx->utc.min);
@@ -408,6 +409,7 @@ uint8_t get_space(void)
 			else
 				tp = 1.0;
         }
+        print_usart1("get_space :%d\r\n",(uint8_t)tp);
         return (uint8_t)tp;
 
     }
@@ -914,7 +916,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
     char   track_file[26] ={0};
     FRESULT fr;
     FRESULT sys_fr;
-
+    static uint32_t write_cnt = 0;
     UINT wb;
     RTC_DateTypeDef RTC_DateStructure;
     RTC_TimeTypeDef RTC_TimeStructure;
@@ -929,7 +931,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 			break;
 		case RECORED_START:
 			system_flag_table->Message_head_number = 0;
-			if((gpsx->fixmode >= 2)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
+			if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
 			{
 				system_flag_table->guji_buffer_Index = 0;
                 check_time(gpsx,system_flag_table,8.0);  
@@ -953,7 +955,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 				    }					 
                 }
 	
-				
+				print_usart1("RTC_DateStructure.Year  :%d \r\n",RTC_DateStructure.Year );
                 if(RTC_DateStructure.Year  >= 15)
                 {
                     sprintf(track_file,"%04d-%02d",RTC_DateStructure.Year + 2000,RTC_DateStructure.Month); 
@@ -1028,7 +1030,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 			break;
 		case RECORED_START_DOING:
 #if 0            
-			if((gpsx->fixmode >= 2)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
+			if((gpsx->gpssta >= 2)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
 			{
 				save_guiji_message(system_flag_table,gpsx,'T');
 			}
@@ -1037,6 +1039,15 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 			}
 #endif            
             write_flash(sys_fp,system_flag_table);   
+            print_usart1("write_cnt :%d \r\n ",write_cnt);
+
+            if(write_cnt >1000)
+            {
+                write_cnt =0;
+                system_flag_table->guji_mode = RECORED_STOP;
+            }
+            else
+                write_cnt ++;
 			break;
 		case RECORED_T:
 			save_guiji_message(gpsx,system_flag_table,'C');
@@ -1051,17 +1062,17 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 			break;
 		case RECORED_STOP:
 
-			if(system_flag_table->baifenbi > 0)
+			if(get_space() > 0)
 		    {
-              	if((gpsx->fixmode >= 2)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
+              	if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
               	    save_guiji_message(gpsx,system_flag_table,'T');              
               	write_flash(sys_fp,system_flag_table);              
               	//stm_write_eerpom(CUURENT_FLASH_ADDRER ,Flash_Index);
                 print_usart1("\r\n close file \r\n ");
 			}
 			
-			system_flag_table->guji_mode = RECORED_IDLE;
-            if(FR_OK == sys_fr)
+			//system_flag_table->guji_mode = RECORED_IDLE;
+            //if(FR_OK == sys_fr)
             {
                 if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)
                 {
