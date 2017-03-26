@@ -51,6 +51,7 @@
 #include "gps.h"
 #include <stdarg.h>
 #include "menutal.h"
+#include "stm32l1xx_nucleo.h"
 
 /* USER CODE END Includes */
 
@@ -83,6 +84,7 @@ system_flag *system_flag_table;
 
 FRESULT fr;
 FIL gps_fp ;
+
 uint32_t gps_data_time = 0xffffffff;
 
 uint8_t uart3_buffer[MAX_UART3_LEN];
@@ -92,6 +94,9 @@ uint8_t uart3_buffer[MAX_UART3_LEN];
 uint16_t USART2_RX_STA_RP = 0; 
 uint16_t USART2_RX_STA_WP = 0; 
 uint8_t USART2_RX_STA = 0; 
+
+
+uint8_t button_flag = 0; 
 
 
 /* Private function prototypes 
@@ -251,11 +256,12 @@ int main(void)
   memset(system_flag_table,0,sizeof(system_flag));
 
 
-  system_flag_table->guji_buffer = malloc(0x100);    
-  memset( system_flag_table->guji_buffer,0,sizeof(0x100));
+  system_flag_table->guji_buffer = malloc(MAX_GUJI_BUFFER_MAX_LEN);    
+  memset( system_flag_table->guji_buffer,0,MAX_GUJI_BUFFER_MAX_LEN);
 
   system_flag_table->time_zone = 29;
   system_flag_table->gujiFormats = GUJI_FORMATS_GPX;
+  system_flag_table->guji_record.recoed_formats = GUJI_FORMATS_GPX;
 
   /* USER CODE END RTOS_TIMERS */
 
@@ -600,7 +606,7 @@ static void RTC_AlarmConfig(void)
   sdatestructure.Year = year;
   sdatestructure.Month = mon;
   sdatestructure.Date = date; 
-  
+  sdatestructure.WeekDay = RTC_Get_Week(year,mon,date);   
   if(HAL_RTC_SetDate(&hrtc,&sdatestructure,RTC_FORMAT_BCD) != HAL_OK)
   {
     /* Initialization Error */
@@ -621,6 +627,7 @@ static void RTC_AlarmConfig(void)
     /* Initialization Error */
     Error_Handler(); 
   }  
+
 
 }
 
@@ -767,11 +774,9 @@ void Get_gps_info(void const * argument)
 			  if(USART2_RX_STA_RP > USART2_RX_STA_WP)
 			  {
                   gps_data = malloc(USART2_RX_STA_WP+MAX_UART3_LEN -USART2_RX_STA_RP+1);
-
 			      memcpy(gps_data,uart3_buffer+USART2_RX_STA_RP,(MAX_UART3_LEN-USART2_RX_STA_RP));
 			      memcpy(gps_data + (MAX_UART3_LEN-USART2_RX_STA_RP),uart3_buffer,USART2_RX_STA_WP);
                   rxlen = USART2_RX_STA_WP+MAX_UART3_LEN -USART2_RX_STA_RP;
-                   //print_usart1("len-- :%d \r\n",rxlen);
 
 			  }
 			  else
@@ -779,25 +784,27 @@ void Get_gps_info(void const * argument)
 			      gps_data = malloc((USART2_RX_STA_WP-USART2_RX_STA_RP)+1);
 			      memcpy(gps_data,uart3_buffer+USART2_RX_STA_RP,(USART2_RX_STA_WP-USART2_RX_STA_RP));
                   rxlen = (USART2_RX_STA_WP-USART2_RX_STA_RP);
-                    //print_usart1("len :%d \r\n",rxlen);
+
 			  }
-		      gps_data[rxlen] = 0;
-			  USART2_RX_STA_RP = USART2_RX_STA_WP;	 //得到数据长度
-			  //print_usart1("len :%d \r\n",rxlen);
-              //print_usart1("%s",gps_data);
+              gps_data[rxlen] = 0;
+              USART2_RX_STA_RP = USART2_RX_STA_WP;	 //得到数据长度
+
+              if(gpsx->gpssta <1)
+              {
+                  print_usart1("%s",gps_data);
+              }              
               GPS_Analysis(gpsx,gps_data);
-			  free(gps_data);
-              //print_usart1("%d ,%d ,%d  \r\n",gpsx->gpssta,gpsx->latitude,gpsx->longitude);
+              free(gps_data);
+
               if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
               {
-                  if(system_flag_table->guji_mode == RECORED_IDLE)
-                    system_flag_table->guji_mode = RECORED_START;
-                  
+                                    
                   if(system_flag_table->guji_mode == RECORED_START_DOING)
-                      save_guiji_message(gpsx,system_flag_table,'T');
+                  {
+                       save_guiji_message(gpsx,system_flag_table,'T');
+                  }
+                    
               } 	
-
-
 			  
               if (osMutexRelease(gpsMutexHandle) != osOK)
               {
@@ -825,8 +832,13 @@ void MySystem(void const * argument)
 {
   /* USER CODE BEGIN MySystem */
   RTC_DateTypeDef sdatestructureget;
-  RTC_TimeTypeDef stimestructureget;  
+  RTC_TimeTypeDef stimestructureget; 
+
   /* Infinite loop */
+
+  BSP_PB_Init(BUTTON_USER,BUTTON_MODE_EXTI);
+  BSP_LED_Init(LED2);  
+  
   for(;;)
   {
          /* Get the RTC current Time */
@@ -837,10 +849,49 @@ void MySystem(void const * argument)
       system_flag_table->RTC_DateStructure = sdatestructureget;
       system_flag_table->RTC_TimeStructure = stimestructureget;
 
-      osDelay(50);
+
+      if(system_flag_table->guji_mode == RECORED_START_DOING)
+      {
+          BSP_LED_Toggle(LED2);
+  
+      }
+
+
+      if(BSP_PB_GetState(BUTTON_USER) == 1)
+      {
+          button_flag = 0;
+
+      }
+
+      osDelay(100);
   }
   /* USER CODE END MySystem */
 }
+/* USER CODE HAL_GPIO_EXTI_Callback 0 */
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if((GPIO_Pin == USER_BUTTON_PIN)&&(button_flag == 0))
+    {
+        if(system_flag_table->guji_mode == RECORED_IDLE)
+        {
+            system_flag_table->guji_mode = RECORED_START; 
+            BSP_LED_On(LED2);
+        }
+        
+        else if(system_flag_table->guji_mode >= RECORED_START)
+        {
+            system_flag_table->guji_mode = RECORED_STOP;             
+            BSP_LED_Off(LED2);
+
+        }
+        
+        button_flag =1;
+        print_usart1("HAL_GPIO_EXTI_Callback %d \r\n",system_flag_table->guji_mode);
+    }
+}
+
+/* USER CODE HAL_GPIO_EXTI_Callback*/
 
 /**
   * @brief  Period elapsed callback in non blocking mode

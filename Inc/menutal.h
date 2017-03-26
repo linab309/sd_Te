@@ -143,8 +143,8 @@ typedef struct
 
 typedef struct  
 {		
-	  uint8_t recoed_meth;  /*自动覆盖或是记满停止*/
-	  uint8_t auto_recoed_flag;
+    uint8_t recoed_meth;  /*自动覆盖或是记满停止*/
+    uint8_t auto_recoed_flag;
     uint8_t recoed_formats;
 }GUJI_RECOCE_TABLE; 
 
@@ -154,8 +154,9 @@ typedef struct
 {
     GUJI_RECOCE_TABLE guji_record;
     uint8_t  guji_mode;
-    uint8_t* guji_buffer;
-    uint16_t guji_buffer_Index;
+    uint8_t  *guji_buffer;
+    uint16_t guji_buffer_Index_rp;
+    uint16_t guji_buffer_Index_wp;
     uint32_t Message_head_number;
     uint8_t  gujiFormats;
     uint8_t  baifenbi;
@@ -170,6 +171,7 @@ typedef struct
 
 extern uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_t guji_record_type);
 extern void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx);
+extern uint8_t RTC_Get_Week(uint16_t year,uint8_t month,uint8_t day);
 
 #endif
 

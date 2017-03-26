@@ -114,6 +114,38 @@ typedef enum
 
 /**
   * @}
+  */ 
+
+/** @defgroup STM32L1XX_NUCLEO_BUTTON BUTTON Constants
+  * @{
+  */  
+#define BUTTONn                          1  
+
+/**
+  * @brief User push-button
+ */
+#define USER_BUTTON_PIN                  GPIO_PIN_15
+#define USER_BUTTON_GPIO_PORT            GPIOA
+#define USER_BUTTON_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOC_CLK_ENABLE()
+#define USER_BUTTON_GPIO_CLK_DISABLE()   __HAL_RCC_GPIOC_CLK_DISABLE()
+#define USER_BUTTON_EXTI_IRQn            EXTI15_10_IRQn
+/* Aliases */
+#define KEY_BUTTON_PIN                   USER_BUTTON_PIN
+#define KEY_BUTTON_GPIO_PORT             USER_BUTTON_GPIO_PORT
+#define KEY_BUTTON_GPIO_CLK_ENABLE()     USER_BUTTON_GPIO_CLK_ENABLE()
+#define KEY_BUTTON_GPIO_CLK_DISABLE()    USER_BUTTON_GPIO_CLK_DISABLE()
+#define KEY_BUTTON_EXTI_IRQn             USER_BUTTON_EXTI_IRQn
+
+#define BUTTONx_GPIO_CLK_ENABLE(__INDEX__)    do { if((__INDEX__) == 0) USER_BUTTON_GPIO_CLK_ENABLE();} while(0)
+#define BUTTONx_GPIO_CLK_DISABLE(__INDEX__)   (((__INDEX__) == 0) ? USER_BUTTON_GPIO_CLK_DISABLE() : 0)
+/**
+  * @}
+  */
+
+
+
+/**
+  * @}
   */
     
 /** @addtogroup STM32L1XX_NUCLEO_BUS BUS Constants
@@ -187,6 +219,15 @@ void            BSP_LED_Toggle(Led_TypeDef Led);
 /**
   * @}
   */
+
+/** @addtogroup STM32L1XX_NUCLEO_BUTTON_Functions
+  * @{
+  */
+
+void            BSP_PB_Init(Button_TypeDef Button, ButtonMode_TypeDef ButtonMode);
+void            BSP_PB_DeInit(Button_TypeDef Button);
+uint32_t        BSP_PB_GetState(Button_TypeDef Button);
+
 
 /**
   * @}

@@ -114,36 +114,35 @@ void  My_Fs_Init(FATFS *SD_FatFs)
 {
 
 	//uint32_t counter = 0;
-	//FRESULT fr;
-	//FIL fil;	
+	FRESULT fr;
+	FIL fil;	
 
 	/* Check the mounted device */
 	if(f_mount(SD_FatFs, (TCHAR const*)"/", 0) != FR_OK)
 	{
-	   printf("BSP_SD_INIT_FAILED \r\n");
+	   print_usart1("BSP_SD_INIT_FAILED \r\n");
 	}  
 	else
 	{
-#if 0	
-	  /* Initialize the Directory Files pointers (heap) */
-	  for (counter = 0; counter < MAX_BMP_FILES; counter++)
-	  {
-		pDirectoryFiles[counter] = malloc(11); 
-	  }
-
-	  fr = open_append(&fil, "logfile.txt");
-	  if (fr != FR_OK)
-	  {
-		 printf("open_append FAILED \r\n"); 
-	  }
-
-	  /* Append a line */
-	  f_printf(&fil, "%s\n", __DATE__);
-
-	  /* Close the file */
-	  f_close(&fil);  
-#endif      
-    }  
+	
+		fr = f_mkdir("POI");
+		print_usart1("\r\n mkdir_init %d \r\n",fr);
+		
+		
+		if(fr == FR_EXIST)
+			return;
+		else 
+		{
+			fr = f_mkfs((TCHAR const*)"/", 0, 0); 
+			fr = f_mount(SD_FatFs, (TCHAR const*)"/", 0);
+			fr = f_mkdir("POI");
+			if(fr != FR_OK)
+			{
+				print_usart1("\r\n mkfs faild");
+			}
+		}
+    
+	}
 
 }
 

@@ -241,7 +241,7 @@ DRESULT USER_ioctl (
     /* Get number of sectors on the disk (DWORD) */
     case GET_SECTOR_COUNT :
       BSP_SD_GetCardInfo(&CardInfo);
-      *(DWORD*)buff = CardInfo.CardCapacity / CardInfo.CardBlockSize;
+      *(DWORD*)buff = CardInfo.CardCapacity / BLOCK_SIZE;
   	printf("GET_SECTOR_COUNT :%d \r\n",*(DWORD*)buff);
   
       res = RES_OK;
