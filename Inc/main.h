@@ -58,6 +58,9 @@
 #define  MAX_GUJI_BUFFER_MAX_LEN 0x118
 
 
+#define BUTTON_PRESS 1
+#define BUTTON_REALSE 0
+
 extern void print_usart1(char *format, ...);
 
 /* USER CODE END Private defines */

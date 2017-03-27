@@ -182,7 +182,7 @@ void BSP_LED_Init(Led_TypeDef Led)
   HAL_GPIO_Init(LED_PORT[Led], &gpioinitstruct);
 
   /* Reset PIN to switch off the LED */
-  HAL_GPIO_WritePin(LED_PORT[Led],LED_PIN[Led], GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED_PORT[Led],LED_PIN[Led], GPIO_PIN_SET);
 }
 
 /**
@@ -198,7 +198,7 @@ void BSP_LED_DeInit(Led_TypeDef Led)
   GPIO_InitTypeDef  gpio_init_structure;
 
   /* Turn off LED */
-  HAL_GPIO_WritePin(LED_PORT[Led],LED_PIN[Led], GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED_PORT[Led],LED_PIN[Led], GPIO_PIN_SET);
   /* DeInit the GPIO_LED pin */
   gpio_init_structure.Pin = LED_PIN[Led];
   HAL_GPIO_DeInit(LED_PORT[Led], gpio_init_structure.Pin);
@@ -213,7 +213,7 @@ void BSP_LED_DeInit(Led_TypeDef Led)
   */
 void BSP_LED_On(Led_TypeDef Led)
 {
-  HAL_GPIO_WritePin(LED_PORT[Led], LED_PIN[Led], GPIO_PIN_SET); 
+  HAL_GPIO_WritePin(LED_PORT[Led], LED_PIN[Led], GPIO_PIN_RESET); 
 }
 
 /**
@@ -225,7 +225,7 @@ void BSP_LED_On(Led_TypeDef Led)
   */
 void BSP_LED_Off(Led_TypeDef Led)
 {
-  HAL_GPIO_WritePin(LED_PORT[Led], LED_PIN[Led], GPIO_PIN_RESET); 
+  HAL_GPIO_WritePin(LED_PORT[Led], LED_PIN[Led], GPIO_PIN_SET); 
 }
 
 /**

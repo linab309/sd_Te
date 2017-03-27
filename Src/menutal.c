@@ -1002,7 +1002,6 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 				    }					 
                 }
 	
-				print_usart1("RTC_DateStructure.Year  :%d \r\n",RTC_DateStructure.Year );
                 if(RTC_DateStructure.Year  >= 15)
                 {
                     sprintf(track_file,"%04d-%02d",RTC_DateStructure.Year + 2000,RTC_DateStructure.Month); 
@@ -1099,29 +1098,24 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 			break;
 		case RECORED_T:
 			save_guiji_message(gpsx,system_flag_table,'C');
-			//stm_read_eerpom(GUJI_INTERST_POS ,&interst_pos_number);
-			//if(interst_pos_number>100)
-			//	interst_pos_number = 0;
 			interst_pos_number++;
-    		//sprintf((char *)dtbuf,"%02d",interst_pos_number);		    		//得到速度字符串
-    		//OLED_ShowString(18,32,dtbuf);
-			//stm_write_eerpom(GUJI_INTERST_POS,interst_pos_number);
 			system_flag_table->guji_mode = RECORED_START_DOING;
 			break;
 		case RECORED_STOP:
 
-			if(get_space() > 0)
-		    {
-              	if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
-              	    save_guiji_message(gpsx,system_flag_table,'T');              
-              	write_flash(sys_fp,system_flag_table);              
-              	//stm_write_eerpom(CUURENT_FLASH_ADDRER ,Flash_Index);
-                print_usart1("\r\n close file \r\n ");
-			}
-			
-			//system_flag_table->guji_mode = RECORED_IDLE;
-            //if(FR_OK == sys_fr)
+            if(sys_fp != NULL)
             {
+    			if(get_space() > 0)
+    		    {
+                  	if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
+                    { 
+                        save_guiji_message(gpsx,system_flag_table,'T');              
+                        write_flash(sys_fp,system_flag_table);              
+                        print_usart1("\r\n close file \r\n ");
+                     }
+    			}
+    			
+    			system_flag_table->guji_mode = RECORED_IDLE;            
                 if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)
                 {
                     f_printf(sys_fp,"</trkseg>\n");
@@ -1131,8 +1125,6 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                 }
                 f_close(sys_fp);
             }
-			system_flag_table->guji_mode = 0xff;
-
 			break;
 
 	}

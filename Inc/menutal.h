@@ -172,6 +172,7 @@ typedef struct
 extern uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_t guji_record_type);
 extern void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx);
 extern uint8_t RTC_Get_Week(uint16_t year,uint8_t month,uint8_t day);
+extern void write_flash(FIL *sys_fp,system_flag *system_flag_table);  /*write to  the file by true*/
 
 #endif
 

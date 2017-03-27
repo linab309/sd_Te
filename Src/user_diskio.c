@@ -71,7 +71,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* Disk status */
 static volatile DSTATUS Stat = STA_NOINIT;
-static  UINT my_block_size = 0;
+//static  UINT my_block_size = 0;
 /* USER CODE END DECL */
 
 /* Private function prototypes -----------------------------------------------*/

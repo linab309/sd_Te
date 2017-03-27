@@ -62,14 +62,13 @@ RTC_HandleTypeDef hrtc;
 
 SPI_HandleTypeDef hspi1;
 
-TIM_HandleTypeDef htim6;
-
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
 
 osThreadId defaultTaskHandle;
 osThreadId Get_gps_info_Handle;
 osThreadId SystemCallHandle;
+osTimerId TimerUpdateHandle;
 osMutexId gpsMutexHandle;
 osMutexId SaveGpsMessHandle;
 
@@ -96,7 +95,7 @@ uint16_t USART2_RX_STA_WP = 0;
 uint8_t USART2_RX_STA = 0; 
 
 
-uint8_t button_flag = 0; 
+uint8_t button_flag = BUTTON_REALSE; 
 
 
 /* Private function prototypes 
@@ -118,14 +117,14 @@ void SystemClock_Config(void);
 void Error_Handler(void);
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
-static void MX_SPI1_Init(void);
 static void MX_ADC_Init(void);
 static void MX_RTC_Init(void);
-static void MX_TIM6_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_SPI1_Init(void);
 void StartDefaultTask(void const * argument);
 void Get_gps_info(void const * argument);
 void MySystem(void const * argument);
+void update_info(void const * argument);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -169,23 +168,29 @@ void print_usart1(char *format, ...)
     char buf[160];
     
     if(inHandlerMode() != 0)
+    {
         taskDISABLE_INTERRUPTS();
+    }
     else
     {
-    	 while(HAL_UART_GetState(&huart3) == HAL_UART_STATE_BUSY_TX)
-    			 osThreadYield();
+    	while(HAL_UART_GetState(&huart3) == HAL_UART_STATE_BUSY_TX)
+        {   
+    	    osThreadYield();
+        }
     }
     
     va_list ap;
     va_start(ap, format);
     if(vsprintf(buf, format, ap) > 0)
     {
-    	 HAL_UART_Transmit(&huart3, (uint8_t *)buf, strlen(buf), 160);
+        HAL_UART_Transmit(&huart3, (uint8_t *)buf, strlen(buf), 160);
     }
     va_end(ap);
     
     if(inHandlerMode() != 0)
-    	 taskENABLE_INTERRUPTS();
+    {
+        taskENABLE_INTERRUPTS();
+    }
 }
 
 
@@ -209,11 +214,10 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
-  //MX_SPI1_Init();
   MX_ADC_Init();
   MX_RTC_Init();
- // MX_TIM6_Init();
   MX_USART3_UART_Init();
+  MX_SPI1_Init();
 
   /* USER CODE BEGIN 2 */
   RTC_AlarmConfig();
@@ -227,6 +231,22 @@ int main(void)
     Error_Handler();
   }
 
+  gpsx = malloc(sizeof(nmea_msg));    
+  memset(gpsx,0,sizeof(nmea_msg));
+  system_flag_table = malloc(sizeof(system_flag));    
+  memset(system_flag_table,0,sizeof(system_flag));
+
+
+  system_flag_table->guji_buffer = malloc(MAX_GUJI_BUFFER_MAX_LEN);    
+  memset( system_flag_table->guji_buffer,0,MAX_GUJI_BUFFER_MAX_LEN);
+
+  system_flag_table->time_zone = 29;
+  system_flag_table->gujiFormats = GUJI_FORMATS_GPX;
+  system_flag_table->guji_record.recoed_formats = GUJI_FORMATS_GPX;
+
+
+  BSP_PB_Init(BUTTON_USER,BUTTON_MODE_EXTI);
+  BSP_LED_Init(LED2);  
 
   /* USER CODE END 2 */
 
@@ -247,21 +267,16 @@ int main(void)
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
+  /* Create the timer(s) */
+  /* definition and creation of TimerUpdate */
+  osTimerDef(TimerUpdate, update_info);
+  TimerUpdateHandle = osTimerCreate(osTimer(TimerUpdate), osTimerPeriodic, NULL);
+
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
 
-  gpsx = malloc(sizeof(nmea_msg));    
-  memset(gpsx,0,sizeof(nmea_msg));
-  system_flag_table = malloc(sizeof(system_flag));    
-  memset(system_flag_table,0,sizeof(system_flag));
-
-
-  system_flag_table->guji_buffer = malloc(MAX_GUJI_BUFFER_MAX_LEN);    
-  memset( system_flag_table->guji_buffer,0,MAX_GUJI_BUFFER_MAX_LEN);
-
-  system_flag_table->time_zone = 29;
-  system_flag_table->gujiFormats = GUJI_FORMATS_GPX;
-  system_flag_table->guji_record.recoed_formats = GUJI_FORMATS_GPX;
+  /* Start Timer */
+  osTimerStart(TimerUpdateHandle, 100);
 
   /* USER CODE END RTOS_TIMERS */
 
@@ -275,7 +290,7 @@ int main(void)
   Get_gps_info_Handle = osThreadCreate(osThread(Get_gps_info_), NULL);
 
   /* definition and creation of SystemCall */
-  osThreadDef(SystemCall, MySystem, osPriorityNormal, 0, 128);
+  osThreadDef(SystemCall, MySystem, osPriorityLow, 0, 128);
   SystemCallHandle = osThreadCreate(osThread(SystemCall), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -432,22 +447,22 @@ static void MX_RTC_Init(void)
     /**Initialize RTC and set the Time and Date 
     */
   if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) != 0x32F2){
-  sTime.Hours = 0x0;
-  sTime.Minutes = 0x0;
-  sTime.Seconds = 0x0;
+  sTime.Hours = 0;
+  sTime.Minutes = 0;
+  sTime.Seconds = 0;
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
   {
     Error_Handler();
   }
 
   sDate.WeekDay = RTC_WEEKDAY_MONDAY;
   sDate.Month = RTC_MONTH_JANUARY;
-  sDate.Date = 0x1;
-  sDate.Year = 0x0;
+  sDate.Date = 1;
+  sDate.Year = 0;
 
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
+  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
   {
     Error_Handler();
   }
@@ -477,24 +492,6 @@ static void MX_SPI1_Init(void)
   {
     Error_Handler();
   }
-
-}
-
-/* TIM6 init function */
-static void MX_TIM6_Init(void)
-{
-
-  TIM_MasterConfigTypeDef sMasterConfig;
-
-  htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 3199;
-  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 99;
-  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
 
 }
 
@@ -561,7 +558,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
@@ -607,7 +604,7 @@ static void RTC_AlarmConfig(void)
   sdatestructure.Month = mon;
   sdatestructure.Date = date; 
   sdatestructure.WeekDay = RTC_Get_Week(year,mon,date);   
-  if(HAL_RTC_SetDate(&hrtc,&sdatestructure,RTC_FORMAT_BCD) != HAL_OK)
+  if(HAL_RTC_SetDate(&hrtc,&sdatestructure,RTC_FORMAT_BIN) != HAL_OK)
   {
     /* Initialization Error */
     Error_Handler(); 
@@ -622,7 +619,7 @@ static void RTC_AlarmConfig(void)
   stimestructure.DayLightSaving = RTC_DAYLIGHTSAVING_NONE ;
   stimestructure.StoreOperation = RTC_STOREOPERATION_RESET;
   
-  if(HAL_RTC_SetTime(&hrtc,&stimestructure,RTC_FORMAT_BCD) != HAL_OK)
+  if(HAL_RTC_SetTime(&hrtc,&stimestructure,RTC_FORMAT_BIN) != HAL_OK)
   {
     /* Initialization Error */
     Error_Handler(); 
@@ -668,11 +665,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 
     if(huart->Instance == USART1)
-    {
-       
+    {       
        /* Start another reception: provide the buffer pointer with offset and the buffer size */
       
-    	if(USART2_RX_STA_WP < (MAX_UART3_LEN-1))		//还可以接收数据
+    	if(USART2_RX_STA_WP < (MAX_UART3_LEN - 1))		//还可以接收数据
     	{
             USART2_RX_STA_WP ++ ; 
     	}
@@ -687,6 +683,22 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     }
 }
 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{    
+    if((GPIO_Pin == USER_BUTTON_PIN)&&(button_flag == BUTTON_REALSE))    
+    {        
+        if(system_flag_table->guji_mode == RECORED_IDLE)       
+        {            
+            system_flag_table->guji_mode = RECORED_START;                         
+        }                
+        else if(system_flag_table->guji_mode >= RECORED_START)        
+        {            
+             system_flag_table->guji_mode = RECORED_STOP;                              
+        }               
+        button_flag = BUTTON_PRESS;        
+        print_usart1("HAL_GPIO_EXTI_Callback %d \r\n",system_flag_table->guji_mode);    
+    }
+}/* USER CODE HAL_GPIO_EXTI_Callback*/
 
 /* USER CODE END 4 */
 
@@ -704,32 +716,7 @@ void StartDefaultTask(void const * argument)
 
   SD_FatFs = malloc(sizeof(FATFS));   
   My_Fs_Init(SD_FatFs);
-
-#if 0
-  //DWORD fattime = 0;
-	
-  /* Get the RTC current Time */
-  HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BIN);
-  /* Get the RTC current Date */
-  HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BIN);
-
-  
-  sprintf(track_file,"%04d-%02d",sdatestructureget.Year ,sdatestructureget.Month); 
-  fr = f_opendir(dp,track_file);
-  if((FR_OK  == fr) && (FR_EXIST == fr)) 
-  {
-      print_usart1("track file dir exist %d\r\n",fr);
-      //return;
-  }
-  else  
-  {
-      fr = f_mkdir(track_file);
-  }
-  sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.GPS",sdatestructureget.Year,sdatestructureget.Month,sdatestructureget.Date,
-                          stimestructureget.Hours,stimestructureget.Minutes,stimestructureget.Seconds);
-
-  fr = open_append(&gps_fp, track_file);
-#endif
+  /*保存文件*/
   /* Infinite loop */
   for(;;)
   {
@@ -737,6 +724,7 @@ void StartDefaultTask(void const * argument)
     if (osMutexWait(gpsMutexHandle, osWaitForever) == osOK)
     {          
         Recording_guji(&gps_fp,system_flag_table,gpsx);
+        //write_flash(&gps_fp,system_flag_table);
         //print_usart1("Recording_guji \r\n");
         if (osMutexRelease(gpsMutexHandle) != osOK)
         {
@@ -831,67 +819,63 @@ void Get_gps_info(void const * argument)
 void MySystem(void const * argument)
 {
   /* USER CODE BEGIN MySystem */
-  RTC_DateTypeDef sdatestructureget;
-  RTC_TimeTypeDef stimestructureget; 
 
   /* Infinite loop */
-
-  BSP_PB_Init(BUTTON_USER,BUTTON_MODE_EXTI);
-  BSP_LED_Init(LED2);  
   
   for(;;)
   {
-         /* Get the RTC current Time */
-      HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BIN);
-      /* Get the RTC current Date */
-      HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BIN);   
-
-      system_flag_table->RTC_DateStructure = sdatestructureget;
-      system_flag_table->RTC_TimeStructure = stimestructureget;
-
-
-      if(system_flag_table->guji_mode == RECORED_START_DOING)
-      {
-          BSP_LED_Toggle(LED2);
-  
-      }
-
-
-      if(BSP_PB_GetState(BUTTON_USER) == 1)
-      {
-          button_flag = 0;
-
-      }
-
+    
       osDelay(100);
   }
   /* USER CODE END MySystem */
 }
-/* USER CODE HAL_GPIO_EXTI_Callback 0 */
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+/* update_info function */
+void update_info(void const * argument)
 {
-    if((GPIO_Pin == USER_BUTTON_PIN)&&(button_flag == 0))
-    {
-        if(system_flag_table->guji_mode == RECORED_IDLE)
-        {
-            system_flag_table->guji_mode = RECORED_START; 
-            BSP_LED_On(LED2);
-        }
-        
-        else if(system_flag_table->guji_mode >= RECORED_START)
-        {
-            system_flag_table->guji_mode = RECORED_STOP;             
-            BSP_LED_Off(LED2);
+  /* USER CODE BEGIN update_info */
+  RTC_DateTypeDef sdatestructureget;
+  RTC_TimeTypeDef stimestructureget;  
 
-        }
-        
-        button_flag =1;
-        print_usart1("HAL_GPIO_EXTI_Callback %d \r\n",system_flag_table->guji_mode);
-    }
+     /* Get the RTC current Time */
+  HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BIN);
+  /* Get the RTC current Date */
+  HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BIN);   
+  
+  system_flag_table->RTC_DateStructure = sdatestructureget;
+  system_flag_table->RTC_TimeStructure = stimestructureget;
+
+  
+  //print_usart1("date: %02d:%02d:%02d \r\n",sdatestructureget.Year, sdatestructureget.Month, sdatestructureget.Date);
+  //print_usart1("time: %02d:%02d:%02d \r\n",stimestructureget.Hours, stimestructureget.Minutes, stimestructureget.Seconds);
+  
+
+  if(system_flag_table->guji_mode == RECORED_START_DOING)
+  {
+      BSP_LED_Toggle(LED2);
+
+  } 
+  else if(system_flag_table->guji_mode == RECORED_START)
+  {
+      BSP_LED_On(LED2);
+  }
+  else if(system_flag_table->guji_mode == RECORED_STOP)
+  {
+      BSP_LED_Off(LED2);
+  }
+  else
+  {
+      BSP_LED_Off(LED2);
+
+  }
+
+  if(BSP_PB_GetState(BUTTON_USER) == 1)
+  {
+      button_flag = BUTTON_REALSE;
+
+  }
+  /* USER CODE END update_info */
 }
-
-/* USER CODE HAL_GPIO_EXTI_Callback*/
 
 /**
   * @brief  Period elapsed callback in non blocking mode
