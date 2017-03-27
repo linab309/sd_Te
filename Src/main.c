@@ -452,7 +452,7 @@ static void MX_RTC_Init(void)
   sTime.Seconds = 0;
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
   {
     Error_Handler();
   }
@@ -462,7 +462,7 @@ static void MX_RTC_Init(void)
   sDate.Date = 1;
   sDate.Year = 0;
 
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
+  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
   {
     Error_Handler();
   }
@@ -604,7 +604,7 @@ static void RTC_AlarmConfig(void)
   sdatestructure.Month = mon;
   sdatestructure.Date = date; 
   sdatestructure.WeekDay = RTC_Get_Week(year,mon,date);   
-  if(HAL_RTC_SetDate(&hrtc,&sdatestructure,RTC_FORMAT_BIN) != HAL_OK)
+  if(HAL_RTC_SetDate(&hrtc,&sdatestructure,RTC_FORMAT_BCD) != HAL_OK)
   {
     /* Initialization Error */
     Error_Handler(); 
@@ -619,7 +619,7 @@ static void RTC_AlarmConfig(void)
   stimestructure.DayLightSaving = RTC_DAYLIGHTSAVING_NONE ;
   stimestructure.StoreOperation = RTC_STOREOPERATION_RESET;
   
-  if(HAL_RTC_SetTime(&hrtc,&stimestructure,RTC_FORMAT_BIN) != HAL_OK)
+  if(HAL_RTC_SetTime(&hrtc,&stimestructure,RTC_FORMAT_BCD) != HAL_OK)
   {
     /* Initialization Error */
     Error_Handler(); 
@@ -642,9 +642,9 @@ void RTC_TimeShow(DWORD* fattime)
   //DWORD fattime = 0;
 	
   /* Get the RTC current Time */
-  HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BIN);
+  HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BCD);
   /* Get the RTC current Date */
-  HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BIN);
+  HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BCD);
   /* Display time Format : hh:mm:ss */
   print_usart1("time: %02d:%02d:%02d \r\n",stimestructureget.Hours, stimestructureget.Minutes, stimestructureget.Seconds);
   print_usart1("date: %02d:%02d:%02d \r\n",sdatestructureget.Year, sdatestructureget.Month, sdatestructureget.Date);
@@ -777,7 +777,7 @@ void Get_gps_info(void const * argument)
               gps_data[rxlen] = 0;
               USART2_RX_STA_RP = USART2_RX_STA_WP;	 //得到数据长度
 
-              if(gpsx->gpssta <1)
+              if((gpsx->gpssta <1)&&(rxlen < 160))
               {
                   print_usart1("%s",gps_data);
               }              
@@ -838,9 +838,9 @@ void update_info(void const * argument)
   RTC_TimeTypeDef stimestructureget;  
 
      /* Get the RTC current Time */
-  HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BIN);
+  HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BCD);
   /* Get the RTC current Date */
-  HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BIN);   
+  HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BCD);   
   
   system_flag_table->RTC_DateStructure = sdatestructureget;
   system_flag_table->RTC_TimeStructure = stimestructureget;
