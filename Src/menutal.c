@@ -895,7 +895,6 @@ void Del_oldfile_nospace(system_flag *system_flag_table)
     char buff[64] = {0};    /* Working buffer */
     char out_buff[64] = {0};    /* Working buffer */
     int filenumber = 0;
-	  extern uint16_t  Flash_write_buffer_Index ;
     
     strcpy(buff, "/");  /* Directory to be emptied */
 

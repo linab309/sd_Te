@@ -183,7 +183,13 @@ typedef struct
   */
 #define SD_PRESENT               ((uint8_t)0x01)
 #define SD_NOT_PRESENT           ((uint8_t)0x00)
-   
+
+
+#define SD_DETECT_PIN                    GPIO_PIN_4
+#define SD_DETECT_GPIO_PORT              GPIOA
+#define __SD_DETECT_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOC_CLK_ENABLE()
+#define SD_DETECT_IRQn                   EXTI4_IRQn
+
 /**
   * @}
   */
@@ -200,17 +206,20 @@ typedef struct
   * @{
   */   
 uint8_t BSP_SD_Init(void);
-uint8_t BSP_SD_ReadBlocks(uint32_t *pData, uint32_t ReadAddr, uint16_t BlockSize, uint32_t NumberOfBlocks);
-uint8_t BSP_SD_WriteBlocks(uint32_t *pData, uint32_t WriteAddr, uint16_t BlockSize, uint32_t NumberOfBlocks);
+uint8_t BSP_SD_ReadBlocks(uint32_t *pData, uint64_t ReadAddr, uint16_t BlockSize, uint32_t NumberOfBlocks);
+uint8_t BSP_SD_WriteBlocks(uint32_t *pData, uint64_t WriteAddr, uint16_t BlockSize, uint32_t NumberOfBlocks);
 uint8_t BSP_SD_Erase(uint32_t StartAddr, uint32_t EndAddr);
 uint8_t BSP_SD_GetStatus(void);
 uint8_t BSP_SD_GetCardInfo(SD_CardInfo *pCardInfo);
-   
+uint8_t BSP_SD_IsDetected(void);   
 /* Link functions for SD Card peripheral*/
 void    SD_IO_Init(void);
 void    SD_IO_CSState(uint8_t state);
 void    SD_IO_WriteReadData(const uint8_t *DataIn, uint8_t *DataOut, uint16_t DataLength);
 uint8_t SD_IO_WriteByte(uint8_t Data);
+
+
+
 
 /* Link function for HAL delay */
 void HAL_Delay(__IO uint32_t Delay);

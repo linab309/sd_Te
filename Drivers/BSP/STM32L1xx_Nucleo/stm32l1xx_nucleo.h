@@ -57,7 +57,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l1xx_hal.h"
-   
+#include "menutal.h"   
    
 /** @defgroup STM32L1XX_NUCLEO_Exported_Types Exported Types
   * @{
@@ -71,9 +71,11 @@ typedef enum
 
 typedef enum 
 {  
-  BUTTON_USER = 0,
+  BUTTON_USER   = 0,
+  BUTTON_WAKEUP = 1,
+
   /* Alias */
-  BUTTON_KEY  = BUTTON_USER
+  BUTTON_KEY  = BUTTON_WAKEUP
 } Button_TypeDef;
 
 typedef enum 
@@ -81,6 +83,14 @@ typedef enum
   BUTTON_MODE_GPIO = 0,
   BUTTON_MODE_EXTI = 1
 } ButtonMode_TypeDef; 
+
+
+
+typedef enum
+{
+  FALSE = 0, TRUE  = !FALSE
+}
+bool;
 
 
 /**
@@ -101,12 +111,20 @@ typedef enum
 /** @defgroup STM32L1XX_NUCLEO_LED LED Constants
   * @{
   */
-#define LEDn                             1
+#define LEDn                             6
 
 #define LED2_PIN                         GPIO_PIN_8
 #define LED2_GPIO_PORT                   GPIOA
 #define LED2_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOA_CLK_ENABLE()  
 #define LED2_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOA_CLK_DISABLE()  
+
+
+#define LED2_PIN                         GPIO_PIN_8
+#define LED2_GPIO_PORT                   GPIOA
+#define LED2_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOA_CLK_ENABLE()  
+#define LED2_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOA_CLK_DISABLE()  
+
+
 
 #define LEDx_GPIO_CLK_ENABLE(__INDEX__)   do { if((__INDEX__) == 0) LED2_GPIO_CLK_ENABLE();} while(0)
 #define LEDx_GPIO_CLK_DISABLE(__INDEX__)  (((__INDEX__) == 0) ? LED2_GPIO_CLK_DISABLE() : 0)
@@ -119,15 +137,15 @@ typedef enum
 /** @defgroup STM32L1XX_NUCLEO_BUTTON BUTTON Constants
   * @{
   */  
-#define BUTTONn                          1  
+#define BUTTONn                          2  
 
 /**
   * @brief User push-button
  */
 #define USER_BUTTON_PIN                  GPIO_PIN_15
 #define USER_BUTTON_GPIO_PORT            GPIOA
-#define USER_BUTTON_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOC_CLK_ENABLE()
-#define USER_BUTTON_GPIO_CLK_DISABLE()   __HAL_RCC_GPIOC_CLK_DISABLE()
+#define USER_BUTTON_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOA_CLK_ENABLE()
+#define USER_BUTTON_GPIO_CLK_DISABLE()   __HAL_RCC_GPIOA_CLK_DISABLE()
 #define USER_BUTTON_EXTI_IRQn            EXTI15_10_IRQn
 /* Aliases */
 #define KEY_BUTTON_PIN                   USER_BUTTON_PIN
@@ -138,6 +156,26 @@ typedef enum
 
 #define BUTTONx_GPIO_CLK_ENABLE(__INDEX__)    do { if((__INDEX__) == 0) USER_BUTTON_GPIO_CLK_ENABLE();} while(0)
 #define BUTTONx_GPIO_CLK_DISABLE(__INDEX__)   (((__INDEX__) == 0) ? USER_BUTTON_GPIO_CLK_DISABLE() : 0)
+
+
+/**
+  * @brief User push-button
+ */
+#define WAKEUP_BUTTON_PIN                  GPIO_PIN_13
+#define WAKEUP_BUTTON_GPIO_PORT            GPIOC
+#define WAKEUP_BUTTON_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOC_CLK_ENABLE()
+#define WAKEUP_BUTTON_GPIO_CLK_DISABLE()   __HAL_RCC_GPIOC_CLK_DISABLE()
+#define WAKEUP_BUTTON_EXTI_IRQn            EXTI15_10_IRQn
+/* Aliases */
+#define WAKEUP_KEY_BUTTON_PIN                   WAKEUP_BUTTON_PIN
+#define WAKEUP_KEY_BUTTON_GPIO_PORT             WAKEUP_BUTTON_GPIO_PORT
+#define WAKEUP_KEY_BUTTON_GPIO_CLK_ENABLE()     WAKEUP_BUTTON_GPIO_CLK_ENABLE()
+#define WAKEUP_KEY_BUTTON_GPIO_CLK_DISABLE()    WAKEUP_BUTTON_GPIO_CLK_DISABLE()
+#define WAKEUP_KEY_BUTTON_EXTI_IRQn             WAKEUP_BUTTON_EXTI_IRQn
+
+#define WAKEUP_BUTTONx_GPIO_CLK_ENABLE(__INDEX__)    do { if((__INDEX__) == 1) WAKEUP_BUTTON_GPIO_CLK_ENABLE();} while(0)
+#define WAKEUP_BUTTONx_GPIO_CLK_DISABLE(__INDEX__)   (((__INDEX__) == 1) ? WAKEUP_BUTTON_GPIO_CLK_DISABLE() : 0)
+
 /**
   * @}
   */
@@ -192,6 +230,19 @@ typedef enum
 #define SD_CS_LOW()       HAL_GPIO_WritePin(SD_CS_GPIO_PORT, SD_CS_PIN, GPIO_PIN_RESET)
 #define SD_CS_HIGH()      HAL_GPIO_WritePin(SD_CS_GPIO_PORT, SD_CS_PIN, GPIO_PIN_SET)     
 
+
+
+#define BATT_CHARG_OK 0x05
+#define BATT_EMPTY 0x00
+#define BATT_HIGH 0x03
+#define BATT_LOW 0x01
+#define BATT_MID 0x02
+
+#define BATT_CHARGING 0x04
+
+
+
+
 /**
   * @}
   */
@@ -232,6 +283,10 @@ uint32_t        BSP_PB_GetState(Button_TypeDef Button);
 /**
   * @}
   */
+
+void vddmv_adc_proess(system_flag *system_flag_table);
+
+
 
 /**
   * @}

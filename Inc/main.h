@@ -61,6 +61,39 @@
 #define BUTTON_PRESS 1
 #define BUTTON_REALSE 0
 
+
+#define TIM2_FREQUENCY 12000
+
+
+#define STATUS_LED_GREEN 0   /*LOW*/
+#define STATUS_LED_RED   1   /*LOW*/
+#define STATUS_LED_BULE  2   /*LOW*/
+#define SD_LED           3   /*HIGH*/
+#define SPRORT_LED       4   /*HIGH*/
+#define GPS_LED          5   /*HIGH*/
+
+
+#define POWER_RUN         0
+#define POWER_LRUN        1  
+#define POWER_STOP        2
+#define POWER_STANBY      3  
+
+/*button release flag*/
+#define USER_KEY_MARK     0x01
+#define WAKEUP_KEY_MARK   0x02
+
+
+#define USER_KEY          0x01
+#define POWER_KEY         0x02
+
+#define USER_KEY_LONG     0x03
+#define POWER_KEY_LONG    0x04
+#define POWER_USER_KEY_LONG    0x05
+
+
+
+#define USER_KEY_NO_LONG
+
 extern void print_usart1(char *format, ...);
 
 /* USER CODE END Private defines */

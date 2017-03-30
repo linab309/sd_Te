@@ -90,9 +90,9 @@ GPIO_TypeDef* LED_PORT[LEDn] = {LED2_GPIO_PORT};
 const uint16_t LED_PIN[LEDn] = {LED2_PIN};
 
 
-GPIO_TypeDef* BUTTON_PORT[BUTTONn]  = {USER_BUTTON_GPIO_PORT}; 
-const uint16_t BUTTON_PIN[BUTTONn]  = {USER_BUTTON_PIN}; 
-const uint8_t  BUTTON_IRQn[BUTTONn] = {USER_BUTTON_EXTI_IRQn };
+GPIO_TypeDef* BUTTON_PORT[BUTTONn]  = {USER_BUTTON_GPIO_PORT,WAKEUP_BUTTON_GPIO_PORT}; 
+const uint16_t BUTTON_PIN[BUTTONn]  = {USER_BUTTON_PIN,WAKEUP_BUTTON_PIN}; 
+const uint8_t  BUTTON_IRQn[BUTTONn] = {USER_BUTTON_EXTI_IRQn,WAKEUP_BUTTON_EXTI_IRQn };
 
 
 
@@ -141,6 +141,10 @@ void                      LCD_Delay(uint32_t delay);
 /**
   * @}
   */ 
+
+
+extern ADC_HandleTypeDef hadc;
+
 
 /** @defgroup STM32L1XX_NUCLEO_Exported_Functions Exported Functions
   * @{
@@ -268,7 +272,7 @@ void BSP_PB_Init(Button_TypeDef Button, ButtonMode_TypeDef ButtonMode)
   BUTTONx_GPIO_CLK_ENABLE(Button);
 
   gpioinitstruct.Pin = BUTTON_PIN[Button];
-  gpioinitstruct.Pull = GPIO_PULLUP;
+  gpioinitstruct.Pull = GPIO_PULLDOWN;
   gpioinitstruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
 
   if (ButtonMode == BUTTON_MODE_GPIO)
@@ -282,7 +286,7 @@ void BSP_PB_Init(Button_TypeDef Button, ButtonMode_TypeDef ButtonMode)
   if (ButtonMode == BUTTON_MODE_EXTI)
   {
     /* Configure Button pin as input with External interrupt */
-    gpioinitstruct.Mode   = GPIO_MODE_IT_FALLING; 
+    gpioinitstruct.Mode   = GPIO_MODE_IT_RISING; 
     HAL_GPIO_Init(BUTTON_PORT[Button], &gpioinitstruct);
 
     /* Enable and set Button EXTI Interrupt to the lowest priority */
@@ -593,6 +597,149 @@ void SD_IO_WriteData(const uint8_t *Data, uint16_t DataLength)
 /**
   * @}
   */
+  
+static bool IsBatteryPoweroff(uint16_t mv) 
+{
+    return (mv<=3200)? TRUE:FALSE;
+}
+
+static bool IsBatteryLow(uint16_t mv) {return mv>3630 ? TRUE:FALSE;}
+/* Check INTERNAL value for shut off battery level  - around 3.00V */
+static bool IsBatteryDead(uint16_t mv) {return mv>3200 ? TRUE:FALSE;}
+/* battery full is indicated in firmware for this chip*/
+static bool IsBatteryMid(uint16_t mv) {return mv>3720 ? TRUE:FALSE;}
+static bool IsBatteryHIGH(uint16_t mv) {return mv>3850 ? TRUE:FALSE;}
+static bool IsBatteryFull(uint16_t mv) {return mv>=4100 ? TRUE:FALSE;}
+    
+/**
+  * @brief  Display the IDD measured Value On the LCD Glass.
+  * @param  IDD measure
+  * @retval None
+  */
+
+void DisplayIDDrunmV(system_flag *system_flag_table,uint32_t IDDmeas)
+{ 
+    static int ddrunmv = 0;
+    /* x  current value*/
+    static uint8_t ddrunmv_cnt = 0;
+    
+
+    ddrunmv += IDDmeas;
+    if(ddrunmv_cnt<10)
+    {
+        ddrunmv_cnt++;         
+        return;
+    }
+    else
+    {
+        ddrunmv = ddrunmv/11;
+        ddrunmv_cnt = 0;
+
+    }
+    //v1000_debug("IDDRUNMV: %d  \r\n",ddrunmv);
+    if(IsBatteryPoweroff(ddrunmv))
+    {
+        //  headsetPowerOff(getApp());system_flag_table->batt_Status
+        system_flag_table->batt_Status = 0xFF;
+    }             
+
+    else
+    {
+
+        if (IsBatteryFull(ddrunmv))
+        {
+            if(system_flag_table->charger_connected == 1)
+            {
+                if(system_flag_table->batt_change_ok_cnt == 0)
+                {
+                    system_flag_table->batt_change_ok_cnt = 30*60*5;//ms
+                    //system_flag_table->batt_Status  =  BATT_CHARG_OK;
+                }
+            }
+            else
+            {
+                system_flag_table->batt_Status  = BATT_HIGH;
+            }
+
+        }                    
+
+        else if (IsBatteryHIGH(ddrunmv))
+        {
+            if((system_flag_table->charger_connected == 1)&&(system_flag_table->batt_Status  ==  BATT_CHARG_OK))
+                ;
+            else    
+                system_flag_table->batt_Status  =  BATT_HIGH;
+
+        }       
+        else if (IsBatteryMid(ddrunmv))
+        {                        
+            system_flag_table->batt_Status  =  BATT_MID;
+        }
+        else  if (IsBatteryLow(ddrunmv))
+        {                                              
+            system_flag_table->batt_Status  =  BATT_LOW;
+        }
+        else if (IsBatteryDead(ddrunmv))
+        {                        
+            system_flag_table->batt_Status  = BATT_EMPTY;
+        }
+
+    }  
+
+    ddrunmv = 0;
+    if(system_flag_table->batt_change_ok_cnt)
+    {
+        if(system_flag_table->charger_connected == 1)
+        {
+            system_flag_table->batt_change_ok_cnt--;
+            if(system_flag_table->batt_change_ok_cnt == 0)
+            {
+                system_flag_table->batt_Status  =  BATT_CHARG_OK ;
+            }
+        }
+        else
+        {
+            system_flag_table->batt_change_ok_cnt = 0;    
+        }
+    }
+}
+
+
+/**
+  * @brief   Main program
+  * @param  None
+  * @retval None
+  */
+void vddmv_adc_proess(system_flag *system_flag_table)
+{
+  /*!< At this stage the microcontroller clock setting is already configured, 
+       this is done through SystemInit() function which is called from startup
+       file (startup_stm32l1xx_xx.s) before to branch to application main.
+       To reconfigure the default setting of SystemInit() function, refer to
+       system_stm32l1xx.c file
+     */
+    /* Read ADC conversion result */
+    __IO uint16_t ADCdata = 0;
+    __IO uint32_t VDDmV = 0;
+
+    /* Start the conversion process */
+     HAL_ADC_Start(&hadc);
+       
+     /* Wait for the end of conversion */
+     if (HAL_ADC_PollForConversion(&hadc, 10) != HAL_TIMEOUT)
+     {
+         /* Get the converted value of regular channel */
+         ADCdata = HAL_ADC_GetValue(&hadc);
+     }
+
+    /* Calculate voltage value*/
+    VDDmV = (uint32_t)((uint32_t)ADCdata *6000/4095);
+   
+
+    /* Display the IDD measured Value On the LCD Glass (mA) */
+    DisplayIDDrunmV(system_flag_table,VDDmV);
+
+}
   
 /**
   * @}

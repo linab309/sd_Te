@@ -62,6 +62,12 @@ RTC_HandleTypeDef hrtc;
 
 SPI_HandleTypeDef hspi1;
 
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim6;
+TIM_HandleTypeDef htim10;
+
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
 
@@ -95,7 +101,8 @@ uint16_t USART2_RX_STA_WP = 0;
 uint8_t USART2_RX_STA = 0; 
 
 
-uint8_t button_flag = BUTTON_REALSE; 
+
+
 
 
 /* Private function prototypes 
@@ -121,10 +128,20 @@ static void MX_ADC_Init(void);
 static void MX_RTC_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_TIM4_Init(void);
+static void MX_TIM3_Init(void);
+static void MX_TIM10_Init(void);
+static void MX_TIM2_Init(void);
+static void MX_TIM6_Init(void);
 void StartDefaultTask(void const * argument);
 void Get_gps_info(void const * argument);
 void MySystem(void const * argument);
 void update_info(void const * argument);
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+                                
+                                
+                                
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -151,8 +168,8 @@ PUTCHAR_PROTOTYPE
 {
   /* Place your implementation of fputc here */
   /* e.g. write a character to the EVAL_COM1 and Loop until the end of transmission */
-  while(HAL_UART_GetState(&huart3) == HAL_UART_STATE_BUSY_TX){}
-  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 0xFFFF);
+  while(HAL_UART_GetState(&huart1) == HAL_UART_STATE_BUSY_TX){}
+  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
 
   return ch;
 }
@@ -173,7 +190,7 @@ void print_usart1(char *format, ...)
     }
     else
     {
-    	while(HAL_UART_GetState(&huart3) == HAL_UART_STATE_BUSY_TX)
+    	while(HAL_UART_GetState(&huart1) == HAL_UART_STATE_BUSY_TX)
         {   
     	    osThreadYield();
         }
@@ -183,7 +200,7 @@ void print_usart1(char *format, ...)
     va_start(ap, format);
     if(vsprintf(buf, format, ap) > 0)
     {
-        HAL_UART_Transmit(&huart3, (uint8_t *)buf, strlen(buf), 160);
+        HAL_UART_Transmit(&huart1, (uint8_t *)buf, strlen(buf), 160);
     }
     va_end(ap);
     
@@ -218,6 +235,11 @@ int main(void)
   MX_RTC_Init();
   MX_USART3_UART_Init();
   MX_SPI1_Init();
+  MX_TIM4_Init();
+  MX_TIM3_Init();
+  MX_TIM10_Init();
+  MX_TIM2_Init();
+  MX_TIM6_Init();
 
   /* USER CODE BEGIN 2 */
   RTC_AlarmConfig();
@@ -226,7 +248,7 @@ int main(void)
 
 
   /*##-4- Put UART peripheral in reception process ###########################*/  
-  if(HAL_UART_Receive_IT(&huart1, (uint8_t *)uart3_buffer, 1) != HAL_OK)
+  if(HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -245,8 +267,9 @@ int main(void)
   system_flag_table->guji_record.recoed_formats = GUJI_FORMATS_GPX;
 
 
-  BSP_PB_Init(BUTTON_USER,BUTTON_MODE_EXTI);
-  BSP_LED_Init(LED2);  
+  BSP_PB_Init(BUTTON_USER,BUTTON_MODE_EXTI);  
+  BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_EXTI);
+  //BSP_LED_Init(LED2);  
 
   /* USER CODE END 2 */
 
@@ -336,7 +359,7 @@ void SystemClock_Config(void)
     /**Initializes the CPU, AHB and APB busses clocks 
     */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE;
+                              |RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -355,11 +378,11 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
     Error_Handler();
   }
@@ -452,7 +475,7 @@ static void MX_RTC_Init(void)
   sTime.Seconds = 0;
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
   {
     Error_Handler();
   }
@@ -462,7 +485,7 @@ static void MX_RTC_Init(void)
   sDate.Date = 1;
   sDate.Year = 0;
 
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
+  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
   {
     Error_Handler();
   }
@@ -495,6 +518,185 @@ static void MX_SPI1_Init(void)
 
 }
 
+/* TIM2 init function */
+static void MX_TIM2_Init(void)
+{
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+  TIM_OC_InitTypeDef sConfigOC;
+
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 1599;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 500;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 250;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  HAL_TIM_MspPostInit(&htim2);
+
+}
+
+/* TIM3 init function */
+static void MX_TIM3_Init(void)
+{
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+  TIM_OC_InitTypeDef sConfigOC;
+
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 1599;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 500;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  HAL_TIM_MspPostInit(&htim3);
+
+}
+
+/* TIM4 init function */
+static void MX_TIM4_Init(void)
+{
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+  TIM_OC_InitTypeDef sConfigOC;
+
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 1599;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 500;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  HAL_TIM_MspPostInit(&htim4);
+
+}
+
+/* TIM6 init function */
+static void MX_TIM6_Init(void)
+{
+
+  TIM_MasterConfigTypeDef sMasterConfig;
+
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 1599;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 99;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+}
+
+/* TIM10 init function */
+static void MX_TIM10_Init(void)
+{
+
+  TIM_OC_InitTypeDef sConfigOC;
+
+  htim10.Instance = TIM10;
+  htim10.Init.Prescaler = 1599;
+  htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim10.Init.Period = 500;
+  htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  if (HAL_TIM_PWM_Init(&htim10) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim10, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  HAL_TIM_MspPostInit(&htim10);
+
+}
+
 /* USART1 init function */
 static void MX_USART1_UART_Init(void)
 {
@@ -523,7 +725,7 @@ static void MX_USART3_UART_Init(void)
   huart3.Init.WordLength = UART_WORDLENGTH_8B;
   huart3.Init.StopBits = UART_STOPBITS_1;
   huart3.Init.Parity = UART_PARITY_NONE;
-  huart3.Init.Mode = UART_MODE_TX;
+  huart3.Init.Mode = UART_MODE_TX_RX;
   huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart3) != HAL_OK)
@@ -554,6 +756,12 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin : PA1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /*Configure GPIO pin : PA3 */
   GPIO_InitStruct.Pin = GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -561,10 +769,83 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PA4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
 }
 
 /* USER CODE BEGIN 4 */
 
+
+
+
+
+/*呼一次2.5S  2500/100 = 25*/
+static void Pwm_Breathing(uint8_t Led_pwm,uint8_t mode)
+{
+
+    TIM_OC_InitTypeDef sConfigOC;
+    static uint16_t Pulse_vaule = 0 ;
+    TIM_HandleTypeDef* htim;
+    uint32_t Channel;
+
+    switch(Led_pwm )
+
+    {
+        case STATUS_LED_GREEN:
+            htim = &htim3;
+            Channel = TIM_CHANNEL_3;
+            break;
+        case STATUS_LED_RED:
+            htim = &htim3;
+            Channel = TIM_CHANNEL_4;
+            break;
+        case STATUS_LED_BULE:
+            htim = &htim3;
+            Channel = TIM_CHANNEL_2;
+            break;
+        case SD_LED:
+            htim = &htim2;
+            Channel = TIM_CHANNEL_2;
+            break;
+        case GPS_LED:
+            htim = &htim3;
+            Channel = TIM_CHANNEL_1;
+            break;
+        case SPRORT_LED:
+            htim = &htim4;
+            Channel = TIM_CHANNEL_1;
+            break;
+            
+
+    }
+    if(mode == 1)
+    {
+        Pulse_vaule += 5 ;
+        sConfigOC.OCMode = TIM_OCMODE_PWM1;
+        sConfigOC.Pulse = Pulse_vaule;
+        sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+        sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+        
+        if (HAL_TIM_PWM_ConfigChannel(htim, &sConfigOC, Channel) != HAL_OK)
+        {
+          Error_Handler();
+        }
+
+        if(Pulse_vaule >= 500)
+        {
+            Pulse_vaule = 0;
+        }
+    }
+    else
+    {
+    
+    }
+
+}
 
 /**
   * @brief  Configure the current time and date.
@@ -664,7 +945,7 @@ void RTC_TimeShow(DWORD* fattime)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 
-    if(huart->Instance == USART1)
+    if(huart->Instance == USART3)
     {       
        /* Start another reception: provide the buffer pointer with offset and the buffer size */
       
@@ -679,26 +960,157 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		
 		gps_data_time = HAL_GetTick(); 
 
-	    HAL_UART_Receive_IT(&huart1, (uint8_t *)(uart3_buffer + USART2_RX_STA_WP), 1); 		
+	    HAL_UART_Receive_IT(&huart3, (uint8_t *)(uart3_buffer + USART2_RX_STA_WP), 1); 		
     }
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {    
-    if((GPIO_Pin == USER_BUTTON_PIN)&&(button_flag == BUTTON_REALSE))    
+    if((GPIO_Pin == USER_BUTTON_PIN))    
     {        
-        if(system_flag_table->guji_mode == RECORED_IDLE)       
-        {            
-            system_flag_table->guji_mode = RECORED_START;                         
-        }                
-        else if(system_flag_table->guji_mode >= RECORED_START)        
-        {            
-             system_flag_table->guji_mode = RECORED_STOP;                              
-        }               
-        button_flag = BUTTON_PRESS;        
-        print_usart1("HAL_GPIO_EXTI_Callback %d \r\n",system_flag_table->guji_mode);    
+    }
+    else if ((GPIO_Pin == WAKEUP_BUTTON_PIN))
+    {                
     }
 }/* USER CODE HAL_GPIO_EXTI_Callback*/
+
+
+/**
+  * @brief  Prepare the system to enter STOP mode.
+  * @param  None
+  * @retval None
+  */
+static void StopSequence_Config(void)
+{
+  GPIO_InitTypeDef      GPIO_InitStruct;
+  
+  /* PWR Peripheral clock enable */
+  __HAL_RCC_PWR_CLK_ENABLE();
+  
+  /* Enable GPIOs clock */
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+
+  /* Configure all GPIO port pins in Analog mode */
+  GPIO_InitStruct.Pin = GPIO_PIN_All;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /* Request to enter STOP mode with regulator in low power */
+  /* Disable all used wakeup sources: WKUP pin */
+  HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN1);
+  HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN2);  
+  /* Clear all related wakeup flags */
+  /* Clear PWR wake up Flag */
+  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+  
+  /* Enable WKUP pin */
+  HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
+  HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
+  /* Request to enter STANDBY mode */
+  HAL_PWR_EnterSTANDBYMode();
+
+}
+
+
+static uint8_t get_key(void)
+{
+    static uint8_t button_flag = BUTTON_REALSE; 
+    static uint8_t button_press_cnt = 0xff; 
+    uint8_t button_key = 0; 
+
+    if((BSP_PB_GetState(BUTTON_USER) == 1)&&(BSP_PB_GetState(BUTTON_WAKEUP) == 1))
+    {
+        if(button_press_cnt == USER_KEY_MARK|WAKEUP_KEY_MARK)
+        {
+            button_press_cnt++;
+            if(button_press_cnt >= 60)
+            {
+                button_key = POWER_USER_KEY_LONG;
+                
+            }
+        }
+        else
+        {
+            button_press_cnt = 0;
+        }
+        
+        if(button_flag == 0)
+            button_flag = USER_KEY_MARK|WAKEUP_KEY_MARK;
+    }
+    else if(BSP_PB_GetState(BUTTON_WAKEUP) == 1)
+    {
+        if(button_flag == WAKEUP_KEY_MARK)
+        {
+
+            button_press_cnt++;
+            if(button_press_cnt >= 60)
+            {
+                button_key = POWER_KEY_LONG;
+                
+            }
+
+        }
+        else
+        {
+            button_press_cnt = 0;
+        }
+        
+        if(button_flag == 0)
+            button_flag = WAKEUP_KEY_MARK;
+    
+    
+    }
+    else if(BSP_PB_GetState(BUTTON_USER) == 1)
+    {
+        if(button_flag == USER_KEY_MARK)
+        {
+#ifdef USER_KEY_NO_LONG        
+
+            button_press_cnt++;
+            if(button_press_cnt >= 60)
+            {
+                button_key = USER_KEY_LONG;
+                
+            }
+#else
+            button_key = USER_KEY;
+            button_flag = 0xff;
+
+#endif
+        }
+        else
+        {
+            button_press_cnt = 0;
+        }
+        
+        if(button_flag == 0)        
+           button_flag = USER_KEY_MARK;
+    
+    }
+    else
+    {
+        switch(button_flag)
+        {
+            case WAKEUP_KEY_MARK:  button_key = POWER_KEY;
+                break;
+            case USER_KEY_MARK:    button_key = USER_KEY;
+                 break;
+            default :break;
+        }
+        button_flag = 0;
+        button_press_cnt = 0;
+    }
+    
+
+    return button_key;
+}
 
 /* USER CODE END 4 */
 
@@ -733,7 +1145,14 @@ void StartDefaultTask(void const * argument)
 
         //ThreadResume(Get_gps_info_Handle);
     }
-    //print_usart1("StartDefaultTask go\r\n");
+    if(system_flag_table->power_status == POWER_STANBY)
+    {
+        if(system_flag_table->guji_mode  == RECORED_START_DOING)
+        system_flag_table->guji_mode = RECORED_STOP;
+        Recording_guji(&gps_fp,system_flag_table,gpsx);
+        osThreadSuspend(NULL);
+    }
+
     osDelay(1);
 
   }
@@ -803,7 +1222,8 @@ void Get_gps_info(void const * argument)
 
       }
      
-      
+      if(system_flag_table->power_status == POWER_STANBY)
+        osThreadSuspend(NULL);
 	  //print_usart1("Get_gps_info go\r\n");
       osDelay(1);
 
@@ -819,13 +1239,61 @@ void Get_gps_info(void const * argument)
 void MySystem(void const * argument)
 {
   /* USER CODE BEGIN MySystem */
-
+  uint8_t _user_key_ = 0;
   /* Infinite loop */
-  
   for(;;)
   {
-    
-      osDelay(100);
+      _user_key_ = get_key();
+      switch(_user_key_)
+      {
+          case USER_KEY:
+                if(system_flag_table->power_status == POWER_RUN)
+                {
+                    if(system_flag_table->guji_mode == RECORED_START_DOING)
+                    {
+                        if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
+                        {
+                            save_guiji_message(gpsx,system_flag_table,'C');
+                        }
+                    }    
+                }
+              break;
+          case POWER_KEY:
+
+              break;
+          case USER_KEY_LONG:
+              if(system_flag_table->guji_mode >= RECORED_START)
+              {
+                  system_flag_table->guji_mode = RECORED_STOP;
+              }
+              else if(system_flag_table->guji_mode == RECORED_IDLE)
+              {
+                  system_flag_table->guji_mode = RECORED_START;
+
+              }
+              break;
+          case POWER_KEY_LONG:
+                if(system_flag_table->power_status == POWER_STANBY)
+                {
+                    system_flag_table->power_status = POWER_RUN;  
+                    osThreadResume(defaultTaskHandle);
+                    osThreadResume(Get_gps_info_Handle);
+                    
+                }
+                else if(system_flag_table->power_status == POWER_RUN)
+                {
+                    system_flag_table->power_status = POWER_STANBY;    
+                    if ((osThreadGetState(Get_gps_info_Handle) == osThreadSuspended) 
+                        || (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
+                    StopSequence_Config();
+                }            
+              break;
+          case POWER_USER_KEY_LONG:
+              break;
+          default:break;
+      }
+      
+      osDelay(50);
   }
   /* USER CODE END MySystem */
 }
@@ -869,11 +1337,8 @@ void update_info(void const * argument)
 
   }
 
-  if(BSP_PB_GetState(BUTTON_USER) == 1)
-  {
-      button_flag = BUTTON_REALSE;
 
-  }
+  vddmv_adc_proess(system_flag_table); /*更新电池状态*/
   /* USER CODE END update_info */
 }
 
@@ -905,6 +1370,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     }
 //    __HAL_TIM_DISABLE(&htim6);
   }
+  /* USER CODE BEGIN Callback 1 */
+  if (htim->Instance == TIM6) {
+    Pwm_Breathing(system_flag_table->Led_pwm_type,1);
+    }
 
 /* USER CODE END Callback 1 */
 }

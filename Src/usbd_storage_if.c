@@ -185,7 +185,10 @@ USBD_StorageTypeDef USBD_Storage_Interface_fops_FS =
 int8_t STORAGE_Init_FS (uint8_t lun)
 {
   /* USER CODE BEGIN 2 */ 
-  BSP_SD_Init();
+  
+  {
+      BSP_SD_Init();
+  }
   //printf("STORAGE_Init_FS \r\n");
   return (USBD_OK);
   /* USER CODE END 2 */ 
@@ -206,17 +209,19 @@ int8_t STORAGE_GetCapacity_FS (uint8_t lun, uint32_t *block_num, uint16_t *block
 
   //printf("STORAGE_GetCapacity_FS \r\n");
   
-  //if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
+  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
   {
     BSP_SD_GetCardInfo(&info);
     
     *block_num = (info.CardCapacity)/STORAGE_BLK_SIZ  - 1;
     *block_size = STORAGE_BLK_SIZ;
     ret = 0;
+
+     sd_block_size = *block_size;
+     sd_block_num  = *block_num ;
   }
 
-  sd_block_size = *block_size;
-  sd_block_num  = *block_num ;
+
   //printf("*block_num :%d \r\n",*block_num);
   //printf("*block_size :%d \r\n",*block_size);
 
@@ -234,9 +239,28 @@ int8_t STORAGE_GetCapacity_FS (uint8_t lun, uint32_t *block_num, uint16_t *block
 int8_t  STORAGE_IsReady_FS (uint8_t lun)
 {
   /* USER CODE BEGIN 4 */ 
-  //printf("*STORAGE_IsReady_FS :%d \r\n",lun);
+  static int8_t prev_status = 0;
+  int8_t ret = -1;
+  
+  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
+  {
+    if(prev_status < 0)
+    {
+      BSP_SD_Init();
+      prev_status = 0;
+      
+    }
+    if(BSP_SD_GetStatus() == BSP_SD_OK)
+    {
+      ret = 0;
+    }
+  }
+  else if(prev_status == 0)
+  {
+    prev_status = -1;
+  }
 
-  return (USBD_OK);
+  return (ret);
   /* USER CODE END 4 */ 
 }
 
@@ -271,9 +295,9 @@ int8_t STORAGE_Read_FS (uint8_t lun,
 
     int8_t ret = -1;  
 
-    //if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
+    if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
     {  
-        BSP_SD_ReadBlocks((uint32_t *)buf, blk_addr * STORAGE_BLK_SIZ, 
+        BSP_SD_ReadBlocks((uint32_t *)buf, (uint64_t)(blk_addr * STORAGE_BLK_SIZ), 
         STORAGE_BLK_SIZ, blk_len);
         ret = 0;
     }
@@ -300,9 +324,9 @@ int8_t STORAGE_Write_FS (uint8_t lun,
 
   int8_t ret = -1;  
   
-  //if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
+  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
   { 
-      BSP_SD_WriteBlocks((uint32_t *)buf, blk_addr * STORAGE_BLK_SIZ, 
+      BSP_SD_WriteBlocks((uint32_t *)buf, (uint64_t)(blk_addr * STORAGE_BLK_SIZ), 
       STORAGE_BLK_SIZ, blk_len);
       ret = 0;
   }

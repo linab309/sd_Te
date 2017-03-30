@@ -154,18 +154,22 @@ typedef struct
 {
     GUJI_RECOCE_TABLE guji_record;
     uint8_t  guji_mode;
+    uint8_t  power_status ;
     uint8_t  *guji_buffer;
     uint16_t guji_buffer_Index_rp;
     uint16_t guji_buffer_Index_wp;
     uint32_t Message_head_number;
     uint8_t  gujiFormats;
     uint8_t  baifenbi;
-    uint32_t Flash_write_buffer_Index;
     uint8_t  time_zone;
     float    index_timerzone;
     tm       sys_tm;    
+    uint8_t batt_Status;
+	uint8_t charger_connected;
+    uint32_t batt_change_ok_cnt;
     RTC_DateTypeDef RTC_DateStructure;
     RTC_TimeTypeDef RTC_TimeStructure;
+    uint8_t Led_pwm_type;
 }system_flag;
 
 

@@ -133,12 +133,14 @@ void  My_Fs_Init(FATFS *SD_FatFs)
 			return;
 		else 
 		{
-			fr = f_mkfs((TCHAR const*)"/", 0, 0); 
-			fr = f_mount(SD_FatFs, (TCHAR const*)"/", 0);
 			fr = f_mkdir("POI");
 			if(fr != FR_OK)
 			{
 				print_usart1("\r\n mkfs faild");
+                fr = f_mkfs((TCHAR const*)"/", 0, 0); 
+                fr = f_mount(SD_FatFs, (TCHAR const*)"/", 0);
+                fr = f_mkdir("POI");
+
 			}
 		}
     

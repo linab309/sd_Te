@@ -166,7 +166,7 @@ DRESULT USER_read (
     DRESULT res = RES_OK;
     
     if(BSP_SD_ReadBlocks((uint32_t*)buff, 
-                          (sector * BLOCK_SIZE), 
+                         (uint64_t)(sector * BLOCK_SIZE), 
                          BLOCK_SIZE, 
                          count) != MSD_OK)
     {
@@ -199,7 +199,7 @@ DRESULT USER_write (
     DRESULT res = RES_OK;
     
     if(BSP_SD_WriteBlocks((uint32_t*)buff, 
-                          (sector * BLOCK_SIZE), 
+                          (uint64_t)(sector * BLOCK_SIZE), 
                           BLOCK_SIZE, count) != MSD_OK)
     {
       res = RES_ERROR;

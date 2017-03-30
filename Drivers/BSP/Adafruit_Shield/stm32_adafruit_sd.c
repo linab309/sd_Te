@@ -91,6 +91,8 @@
 #include "stdlib.h"
 #include "string.h"
 #include "stdio.h"
+#include "stm32l1xx_hal.h"
+
 
 /** @addtogroup BSP
   * @{
@@ -277,7 +279,51 @@ static uint8_t SD_ReadData(void);
 /** @defgroup STM32_ADAFRUIT_SD_Private_Functions
   * @{
   */ 
+
+
+/**
+  * @brief  Configures Interrupt mode for SD detection pin.
+  * @retval Returns 0
+  */
+uint8_t BSP_SD_ITConfig(void)
+{ 
+  GPIO_InitTypeDef gpioinitstruct = {0};
   
+  /* Configure Interrupt mode for SD detection pin */ 
+  gpioinitstruct.Mode      = GPIO_MODE_IT_RISING_FALLING;
+  gpioinitstruct.Pull      = GPIO_PULLUP;
+  gpioinitstruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
+  gpioinitstruct.Pin       = SD_DETECT_PIN;
+  HAL_GPIO_Init(SD_DETECT_GPIO_PORT, &gpioinitstruct);
+    
+  /* NVIC configuration for SDIO interrupts */
+  HAL_NVIC_SetPriority(SD_DETECT_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(SD_DETECT_IRQn);
+  
+  return 0;
+}
+
+/**
+ * @brief  Detects if SD card is correctly plugged in the memory slot or not.
+ * @retval Returns if SD is detected or not
+ */
+uint8_t BSP_SD_IsDetected(void)
+{
+  __IO uint8_t status = SD_PRESENT;
+
+  /* Check SD card detect pin */
+  if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET) 
+  {
+    status = SD_NOT_PRESENT;
+  }
+  
+  return status;
+}
+
+
+
+
+
 /**
   * @brief  Initializes the SD/SD communication.
   * @param  None
@@ -292,9 +338,12 @@ uint8_t BSP_SD_Init(void)
 
   /* SD detection pin is not physically mapped on the Adafruit shield */
   SdStatus = SD_PRESENT;
-  
+  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
+      return BSP_SD_ERROR;
+
+  else  
   /* SD initialized and set to SPI mode properly */
-  return SD_GoIdleState();
+      return SD_GoIdleState();
 }
 
 /**
@@ -336,7 +385,7 @@ uint8_t BSP_SD_GetCardInfo(SD_CardInfo *pCardInfo)
   * @param  NumOfBlocks: Number of SD blocks to read 
   * @retval SD status
   */
-uint8_t BSP_SD_ReadBlocks(uint32_t* pData, uint32_t ReadAddr, uint16_t BlockSize, uint32_t NumberOfBlocks)
+uint8_t BSP_SD_ReadBlocks(uint32_t* pData, uint64_t ReadAddr, uint16_t BlockSize, uint32_t NumberOfBlocks)
 {
   uint32_t offset = 0;
   uint8_t retr = BSP_SD_ERROR;
@@ -366,7 +415,7 @@ uint8_t BSP_SD_ReadBlocks(uint32_t* pData, uint32_t ReadAddr, uint16_t BlockSize
   {
     /* Send CMD17 (SD_CMD_READ_SINGLE_BLOCK) to read one block */
     /* Check if the SD acknowledged the read block command: R1 response (0x00: no errors) */
-    response = SD_SendCmd(SD_CMD_READ_SINGLE_BLOCK, (ReadAddr + offset)/(flag_SDHC == 1 ?BlockSize: 1), 0xFF, SD_ANSWER_R1_EXPECTED);
+    response = SD_SendCmd(SD_CMD_READ_SINGLE_BLOCK, (uint32_t)((ReadAddr + offset)/(flag_SDHC == 1 ?BlockSize: 1)), 0xFF, SD_ANSWER_R1_EXPECTED);
     if ( response.r1 != SD_R1_NO_ERROR)
     {
       goto error;
@@ -414,7 +463,7 @@ error :
   * @param  NumOfBlocks: Number of SD blocks to write
   * @retval SD status
   */
-uint8_t BSP_SD_WriteBlocks(uint32_t* pData, uint32_t WriteAddr, uint16_t BlockSize, uint32_t NumberOfBlocks)
+uint8_t BSP_SD_WriteBlocks(uint32_t* pData, uint64_t WriteAddr, uint16_t BlockSize, uint32_t NumberOfBlocks)
 {
   uint32_t offset = 0;
   uint8_t retr = BSP_SD_ERROR;
@@ -442,7 +491,7 @@ uint8_t BSP_SD_WriteBlocks(uint32_t* pData, uint32_t WriteAddr, uint16_t BlockSi
   {
     /* Send CMD24 (SD_CMD_WRITE_SINGLE_BLOCK) to write blocks  and
        Check if the SD acknowledged the write block command: R1 response (0x00: no errors) */
-    response = SD_SendCmd(SD_CMD_WRITE_SINGLE_BLOCK, (WriteAddr + offset)/(flag_SDHC == 1 ? BlockSize: 1), 0xFF, SD_ANSWER_R1_EXPECTED);
+    response = SD_SendCmd(SD_CMD_WRITE_SINGLE_BLOCK, (uint32_t)((WriteAddr + offset)/(flag_SDHC == 1 ? BlockSize: 1)), 0xFF, SD_ANSWER_R1_EXPECTED);
     if (response.r1 != SD_R1_NO_ERROR)
     {
       goto error;
