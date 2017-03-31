@@ -143,11 +143,14 @@ typedef struct
 
 typedef struct  
 {		
-    uint8_t recoed_meth;  /*自动覆盖或是记满停止*/
-    uint8_t auto_recoed_flag;
-    uint8_t recoed_formats;
+	uint8_t    by_distance_time_flag;
+	uint16_t   by_distance_vaule;
+	uint16_t    by_time_vaule;  /*ms*/
+	uint16_t   by_speed_vaule;
+    uint8_t    recoed_formats;
+	uint8_t    recoed_meth;  /*自动覆盖或是记满停止*/
+	uint8_t    auto_recoed_flag;
 }GUJI_RECOCE_TABLE; 
-
 
 
 typedef struct  
@@ -170,6 +173,9 @@ typedef struct
     RTC_DateTypeDef RTC_DateStructure;
     RTC_TimeTypeDef RTC_TimeStructure;
     uint8_t Led_pwm_type;
+    uint32_t tp_long;
+    uint32_t tp_lati;
+    uint32_t grecord_timer_cnt;
 }system_flag;
 
 

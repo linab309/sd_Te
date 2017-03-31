@@ -73,10 +73,12 @@
 #define GPS_LED          5   /*HIGH*/
 
 
-#define POWER_RUN         0
-#define POWER_LRUN        1  
-#define POWER_STOP        2
-#define POWER_STANBY      3  
+#define POWER_RUN                0
+#define POWER_SURPORT_RUN        1  
+#define POWER_LRUN               2  
+#define POWER_STOP               3
+#define POWER_STANBY             4  
+
 
 /*button release flag*/
 #define USER_KEY_MARK     0x01
@@ -93,6 +95,12 @@
 
 
 #define USER_KEY_NO_LONG
+
+
+#define NORMAL_SURPORT_MODE 0
+#define SENCSE_SURPORT_MODE 1
+#define LOW_POWER_SURPORT_MODE 2
+
 
 extern void print_usart1(char *format, ...);
 

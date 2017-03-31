@@ -1058,7 +1058,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         //todo: add gpx file head.
                         gpx_filehead_write(sys_fp,track_file);
                     }
-                    
+                    system_flag_table->grecord_timer_cnt = HAL_GetTick();
         			save_guiji_message(gpsx,system_flag_table,'T');
         		
         			system_flag_table->guji_mode = RECORED_START_DOING;

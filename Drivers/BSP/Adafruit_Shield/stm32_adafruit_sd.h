@@ -190,6 +190,20 @@ typedef struct
 #define __SD_DETECT_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOC_CLK_ENABLE()
 #define SD_DETECT_IRQn                   EXTI4_IRQn
 
+
+
+
+#define USB_DETECT_PIN                    GPIO_PIN_0
+#define USB_DETECT_GPIO_PORT              GPIOA
+#define __USB_DETECT_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOC_CLK_ENABLE()
+#define USB_DETECT_IRQn                   EXTI0_IRQn
+
+
+#define SUPORT_DETECT_PIN                    GPIO_PIN_8
+#define SUPORT_DETECT_GPIO_PORT              GPIOA
+#define __SUPORT_DETECT_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOC_CLK_ENABLE()
+#define SUPORT_DETECT_IRQn                   EXTI9_5_IRQn
+
 /**
   * @}
   */

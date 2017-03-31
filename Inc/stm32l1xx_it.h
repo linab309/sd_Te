@@ -57,6 +57,7 @@ void EXTI4_IRQHandler(void);
 void USB_LP_IRQHandler(void);
 void USART1_IRQHandler(void);
 void USART3_IRQHandler(void);
+void RTC_Alarm_IRQHandler(void);
 void TIM6_IRQHandler(void);
 void TIM7_IRQHandler(void);
 

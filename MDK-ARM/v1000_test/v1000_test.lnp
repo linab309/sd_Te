@@ -11,6 +11,7 @@
 "v1000_test\usb_device.o"
 "v1000_test\stm32l1xx_hal_timebase_tim.o"
 "v1000_test\menutal.o"
+"v1000_test\gongshi.o"
 "v1000_test\port.o"
 "v1000_test\tasks.o"
 "v1000_test\list.o"
