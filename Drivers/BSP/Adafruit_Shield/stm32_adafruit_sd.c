@@ -334,6 +334,7 @@ uint8_t BSP_SD_IsDetected(void)
 uint8_t BSP_SD_Init(void)
 { 
   /* Configure IO functionalities for SD pin */
+  BSP_SD_ITConfig();
   SD_IO_Init();
 
   /* SD detection pin is not physically mapped on the Adafruit shield */

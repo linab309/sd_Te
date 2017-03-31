@@ -131,12 +131,12 @@ static void MX_USART1_UART_Init(void);
 static void MX_ADC_Init(void);
 static void MX_RTC_Init(void);
 static void MX_USART3_UART_Init(void);
-static void MX_SPI1_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM10_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM6_Init(void);
+static void MX_SPI1_Init(void);
 void StartDefaultTask(void const * argument);
 void Get_gps_info(void const * argument);
 void MySystem(void const * argument);
@@ -238,12 +238,12 @@ int main(void)
   MX_ADC_Init();
   MX_RTC_Init();
   MX_USART3_UART_Init();
-  MX_SPI1_Init();
   MX_TIM4_Init();
   MX_TIM3_Init();
   MX_TIM10_Init();
   MX_TIM2_Init();
   MX_TIM6_Init();
+  MX_SPI1_Init();
 
   /* USER CODE BEGIN 2 */
   RTC_AlarmConfig();
@@ -307,11 +307,11 @@ int main(void)
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of Get_gps_info_ */
-  osThreadDef(Get_gps_info_, Get_gps_info, osPriorityHigh, 0, 256);
+  osThreadDef(Get_gps_info_, Get_gps_info, osPriorityAboveNormal, 0, 256);
   Get_gps_info_Handle = osThreadCreate(osThread(Get_gps_info_), NULL);
 
   /* definition and creation of SystemCall */
-  osThreadDef(SystemCall, MySystem, osPriorityLow, 0, 128);
+  osThreadDef(SystemCall, MySystem, osPriorityHigh, 0, 128);
   SystemCallHandle = osThreadCreate(osThread(SystemCall), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -360,7 +360,7 @@ void SystemClock_Config(void)
     /**Initializes the CPU, AHB and APB busses clocks 
     */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
+                              |RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -580,7 +580,7 @@ static void MX_TIM3_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 1599;
+  htim3.Init.Prescaler = 159;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 500;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -682,6 +682,15 @@ static void MX_TIM6_Init(void)
   {
     Error_Handler();
   }
+  
+#if 0
+  /* Start the TIM time Base generation in interrupt mode */
+  if(HAL_TIM_Base_Start_IT(&htim6) != HAL_OK)
+  {
+    /* Starting Error */
+    Error_Handler();
+  }
+#endif  
 
 }
 
@@ -771,34 +780,46 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
 
-  /*Configure GPIO pins : PA1 PA4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_4;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  /*Configure GPIO pin : PA0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3;
+  /*Configure GPIO pin : PA8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
 }
 
 /* USER CODE BEGIN 4 */
 
-
-
+void gps_power_mode(uint8_t mode)
+{
+    if(mode == 1)
+    {
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); 
+        BSP_LED_Init(GPS_LED);
+        BSP_LED_On(LED_GPS);
+    }            
+    else
+    {
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);    
+        BSP_LED_Init(GPS_LED);
+        BSP_LED_Off(LED_GPS);
+    }
+}
 
 
 /*ºôÒ»´Î2.5S  2500/100 = 25*/
@@ -809,6 +830,7 @@ static void Pwm_Breathing(uint8_t Led_pwm,uint8_t mode)
     static uint16_t Pulse_vaule = 0 ;
     TIM_HandleTypeDef* htim;
     uint32_t Channel;
+    static uint8_t led_flag = 0;
 
     switch(Led_pwm )
 
@@ -842,22 +864,39 @@ static void Pwm_Breathing(uint8_t Led_pwm,uint8_t mode)
     }
     if(mode == 1)
     {
-        Pulse_vaule += 5 ;
+        if(led_flag == 0)
+        {
+            Pulse_vaule += 6;
+        }
+        else         
+        {
+            Pulse_vaule -= 6;
+        }
+
         sConfigOC.OCMode = TIM_OCMODE_PWM1;
         sConfigOC.Pulse = Pulse_vaule;
         sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
         sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
         
+
+        if(Pulse_vaule == 450)
+        {
+            led_flag = 1;
+        }
+
+        if(Pulse_vaule == 0)
+        {
+            led_flag = 0;
+        }
+
+
         if (HAL_TIM_PWM_ConfigChannel(htim, &sConfigOC, Channel) != HAL_OK)
         {
           Error_Handler();
         }
         HAL_TIM_PWM_Start(htim, Channel);
 
-        if(Pulse_vaule >= 500)
-        {
-            Pulse_vaule = 0;
-        }
+
     }
     else
     {
@@ -1013,6 +1052,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
         }
     }
+
+    print_usart1("exit :%d \r\n",GPIO_Pin);
+    
 }/* USER CODE HAL_GPIO_EXTI_Callback*/
 
 
@@ -1163,19 +1205,20 @@ void surport_mode_config(uint8_t mode)
 
 static uint8_t get_key(void)
 {
-    static uint8_t button_flag = BUTTON_REALSE; 
+    static uint8_t button_flag = 0; 
     static uint8_t button_press_cnt = 0xff; 
     uint8_t button_key = 0; 
 
     if((BSP_PB_GetState(BUTTON_USER) == 0)&&(BSP_PB_GetState(BUTTON_WAKEUP) == 0))
     {
-        if(button_press_cnt == USER_KEY_MARK|WAKEUP_KEY_MARK)
+        if(button_flag == USER_KEY_MARK|WAKEUP_KEY_MARK)
         {
             button_press_cnt++;
-            if(button_press_cnt >= 60)
+            if((button_press_cnt >= 50))
             {
-                button_key = POWER_USER_KEY_LONG;
-                
+                //button_key = POWER_USER_KEY_LONG;
+                button_press_cnt = 51;  
+                button_flag = 0xff;     
             }
         }
         else
@@ -1192,9 +1235,11 @@ static uint8_t get_key(void)
         {
 
             button_press_cnt++;
-            if(button_press_cnt >= 60)
+            if((button_press_cnt >= 50))
             {
                 button_key = POWER_KEY_LONG;
+                button_press_cnt = 51;
+                button_flag = 0xff;     
                 
             }
 
@@ -1211,14 +1256,18 @@ static uint8_t get_key(void)
     }
     else if(BSP_PB_GetState(BUTTON_USER) == 0)
     {
+
         if(button_flag == USER_KEY_MARK)
         {
 #ifdef USER_KEY_NO_LONG        
 
             button_press_cnt++;
-            if(button_press_cnt >= 60)
+            if(button_press_cnt >= 50)
             {
                 button_key = USER_KEY_LONG;
+                
+                button_press_cnt = 51;  
+                button_flag = 0xff;
                 
             }
 #else
@@ -1238,14 +1287,21 @@ static uint8_t get_key(void)
     }
     else
     {
-        switch(button_flag)
+       if(button_key == 0)
         {
-            case WAKEUP_KEY_MARK:  button_key = POWER_KEY;
-                break;
-            case USER_KEY_MARK:    button_key = USER_KEY;
-                 break;
-            default :break;
+            //print_usart1("button_flag :%d \r\n",button_flag);
+            switch(button_flag)
+            {
+                case WAKEUP_KEY_MARK:  button_key = POWER_KEY;
+                    break;
+                case USER_KEY_MARK:    button_key = USER_KEY;
+                     break;
+                default :break;
+            }
         }
+        else
+            button_key = 0;
+        
         button_flag = 0;
         button_press_cnt = 0;
     }
@@ -1349,7 +1405,12 @@ void Get_gps_info(void const * argument)
               if((gpsx->gpssta <1)&&(rxlen < 160))
               {
                   print_usart1("%s",gps_data);
-              }              
+              } 
+              else if(gpsx->gpssta >= 1)
+              {
+
+              }
+              
               GPS_Analysis(gpsx,gps_data);
               free(gps_data);
 /*recored mode config*/
@@ -1382,10 +1443,17 @@ void MySystem(void const * argument)
 {
   /* USER CODE BEGIN MySystem */
   uint8_t _user_key_ = 0;
+  uint8_t _breath_flag_ = 0;
   
   BSP_PB_Init(BUTTON_USER,BUTTON_MODE_GPIO);  
   BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_GPIO);
 
+  BSP_LED_Init(LED_GREEN);
+  BSP_LED_Init(LED_RED);
+  BSP_LED_Init(LED_BULE);
+  //BSP_LED_Init(LED_GPS);  
+  BSP_LED_Init(LED_SD);  
+  BSP_LED_Init(LED_SURPORT);  
 
   /* Infinite loop */
   for(;;)
@@ -1429,18 +1497,24 @@ void MySystem(void const * argument)
           case POWER_KEY_LONG:
               if(system_flag_table->power_status == POWER_STANBY)
               {
-                  
-                  if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_SET)
+                  //print_usart1("SD_DETECT:%d \r\n",HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN));
+                  if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET)
                   {                    
+                      print_usart1("POWER ON \r\n");
                       system_flag_table->power_status = POWER_RUN;  
+                      gps_power_mode(1);
                       osThreadResume(defaultTaskHandle);
                       osThreadResume(Get_gps_info_Handle);
+                      
                   }
                   
               }
               else if(system_flag_table->power_status == POWER_RUN)
               {
                   system_flag_table->power_status = POWER_STANBY;    
+                  print_usart1("POWER OFF \r\n");
+                  gps_power_mode(0);
+
                   if ((osThreadGetState(Get_gps_info_Handle) == osThreadSuspended) 
                       || (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
                   StopSequence_Config();
@@ -1453,10 +1527,24 @@ void MySystem(void const * argument)
           default:break;
       }
 
+      _user_key_  = 0;
+
 
       
+      if(gpsx->gpssta >= 1)
+      {
+          system_flag_table->Led_pwm_type = GPS_LED;
+          Pwm_Breathing(system_flag_table->Led_pwm_type,1);    
+      }
+      else
+      {
+          //BSP_LED_Init(GPS_LED);
+          //if()
+          
+      }
+
       
-      osDelay(50);
+      osDelay(20);
   }
   /* USER CODE END MySystem */
 }
@@ -1481,7 +1569,7 @@ void update_info(void const * argument)
   //print_usart1("date: %02d:%02d:%02d \r\n",sdatestructureget.Year, sdatestructureget.Month, sdatestructureget.Date);
   //print_usart1("time: %02d:%02d:%02d \r\n",stimestructureget.Hours, stimestructureget.Minutes, stimestructureget.Seconds);
   
-
+#if 0
   if(system_flag_table->guji_mode == RECORED_START_DOING)
   {
       BSP_LED_Toggle(LED2);
@@ -1499,6 +1587,7 @@ void update_info(void const * argument)
       BSP_LED_Off(LED2);
 
   }
+#endif
 
   if(sound_working == 1)
   {
@@ -1530,6 +1619,11 @@ void update_info(void const * argument)
   {
       timer_cnt = 0;
   }
+
+  //if(gpsx->gpssta >= 1)
+  {
+ 
+  }  
   /* USER CODE END update_info */
 }
 
@@ -1563,6 +1657,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   }
   /* USER CODE BEGIN Callback 1 */
   if (htim->Instance == TIM6) {
+    system_flag_table->Led_pwm_type = GPS_LED;
     Pwm_Breathing(system_flag_table->Led_pwm_type,1);
     }
 

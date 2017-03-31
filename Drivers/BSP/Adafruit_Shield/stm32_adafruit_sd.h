@@ -199,10 +199,10 @@ typedef struct
 #define USB_DETECT_IRQn                   EXTI0_IRQn
 
 
-#define SUPORT_DETECT_PIN                    GPIO_PIN_8
+#define SUPORT_DETECT_PIN                    GPIO_PIN_1
 #define SUPORT_DETECT_GPIO_PORT              GPIOA
 #define __SUPORT_DETECT_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOC_CLK_ENABLE()
-#define SUPORT_DETECT_IRQn                   EXTI9_5_IRQn
+#define SUPORT_DETECT_IRQn                   EXTI1_IRQn
 
 /**
   * @}

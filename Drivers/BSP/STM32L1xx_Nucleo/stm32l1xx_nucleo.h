@@ -64,9 +64,14 @@
   */
 typedef enum 
 {
-  LED2 = 0,
+  LED_GREEN = 0,
+  LED_RED ,
+  LED_SD ,
+  LED_GPS ,
+  LED_BULE,
+  LED_SURPORT,
 
-  LED_GREEN = LED2
+  LED_MORE = LED_SURPORT
 } Led_TypeDef;
 
 typedef enum 
@@ -113,16 +118,47 @@ bool;
   */
 #define LEDn                             6
 
-#define LED2_PIN                         GPIO_PIN_8
-#define LED2_GPIO_PORT                   GPIOA
-#define LED2_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOA_CLK_ENABLE()  
-#define LED2_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOA_CLK_DISABLE()  
+#define LED_GREEN_PIN                         GPIO_PIN_0
+#define LED_GREEN_GPIO_PORT                   GPIOB
+#define LED_GREEN_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()  
+#define LED_GREEN_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()  
+
+
+#define LED_RED_PIN                         GPIO_PIN_1
+#define LED_RED_GPIO_PORT                   GPIOB
+#define LED_RED_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()  
+#define LED_RED_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()  
+
+#define LED_SD_PIN                         GPIO_PIN_3
+#define LED_SD_GPIO_PORT                   GPIOB
+#define LED_SD_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()  
+#define LED_SD_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()  
+
+#define LED_GPS_PIN                         GPIO_PIN_4
+#define LED_GPS_GPIO_PORT                   GPIOB
+#define LED_GPS_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()  
+#define LED_GPS_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()  
+
+
+#define LED_BULE_PIN                         GPIO_PIN_5
+#define LED_BULE_GPIO_PORT                   GPIOB
+#define LED_BULE_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()  
+#define LED_BULE_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()  
+
+#define LED_SURPORT_PIN                         GPIO_PIN_6
+#define LED_SURPORT_GPIO_PORT                   GPIOB
+#define LED_SURPORT_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()  
+#define LED_SURPORT_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()  
 
 
 
 
-#define LEDx_GPIO_CLK_ENABLE(__INDEX__)   do { if((__INDEX__) == 0) LED2_GPIO_CLK_ENABLE();} while(0)
-#define LEDx_GPIO_CLK_DISABLE(__INDEX__)  (((__INDEX__) == 0) ? LED2_GPIO_CLK_DISABLE() : 0)
+
+
+
+
+#define LEDx_GPIO_CLK_ENABLE(__INDEX__)   do { if((__INDEX__) == 0) LED_GREEN_GPIO_CLK_ENABLE();} while(0)
+#define LEDx_GPIO_CLK_DISABLE(__INDEX__)  (((__INDEX__) == 0) ? LED_GREEN_GPIO_CLK_DISABLE() : 0)
 
 
 /**
