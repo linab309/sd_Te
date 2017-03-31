@@ -272,7 +272,7 @@ void BSP_PB_Init(Button_TypeDef Button, ButtonMode_TypeDef ButtonMode)
   BUTTONx_GPIO_CLK_ENABLE(Button);
 
   gpioinitstruct.Pin = BUTTON_PIN[Button];
-  gpioinitstruct.Pull = GPIO_PULLDOWN;
+  gpioinitstruct.Pull = GPIO_PULLUP;
   gpioinitstruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
 
   if (ButtonMode == BUTTON_MODE_GPIO)
@@ -286,7 +286,7 @@ void BSP_PB_Init(Button_TypeDef Button, ButtonMode_TypeDef ButtonMode)
   if (ButtonMode == BUTTON_MODE_EXTI)
   {
     /* Configure Button pin as input with External interrupt */
-    gpioinitstruct.Mode   = GPIO_MODE_IT_RISING; 
+    gpioinitstruct.Mode   = GPIO_MODE_IT_FALLING; 
     HAL_GPIO_Init(BUTTON_PORT[Button], &gpioinitstruct);
 
     /* Enable and set Button EXTI Interrupt to the lowest priority */

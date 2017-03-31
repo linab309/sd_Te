@@ -265,10 +265,11 @@ int main(void)
   system_flag_table->time_zone = 29;
   system_flag_table->gujiFormats = GUJI_FORMATS_GPX;
   system_flag_table->guji_record.recoed_formats = GUJI_FORMATS_GPX;
+  system_flag_table->power_status = POWER_STANBY;
 
 
-  BSP_PB_Init(BUTTON_USER,BUTTON_MODE_EXTI);  
-  BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_EXTI);
+  BSP_PB_Init(BUTTON_USER,BUTTON_MODE_GPIO);  
+  BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_GPIO);
   //BSP_LED_Init(LED2);  
 
   /* USER CODE END 2 */
@@ -318,6 +319,9 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+  osThreadSuspend(Get_gps_info_Handle);
+  osThreadSuspend(defaultTaskHandle);
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
@@ -756,10 +760,10 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PA1 */
-  GPIO_InitStruct.Pin = GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  /*Configure GPIO pins : PA1 PA4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PA3 */
@@ -769,11 +773,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
 }
 
@@ -972,6 +977,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     else if ((GPIO_Pin == WAKEUP_BUTTON_PIN))
     {                
     }
+    else if(GPIO_Pin == GPIO_PIN_1)
+    {
+        
+    }
 }/* USER CODE HAL_GPIO_EXTI_Callback*/
 
 
@@ -1025,7 +1034,7 @@ static uint8_t get_key(void)
     static uint8_t button_press_cnt = 0xff; 
     uint8_t button_key = 0; 
 
-    if((BSP_PB_GetState(BUTTON_USER) == 1)&&(BSP_PB_GetState(BUTTON_WAKEUP) == 1))
+    if((BSP_PB_GetState(BUTTON_USER) == 0)&&(BSP_PB_GetState(BUTTON_WAKEUP) == 0))
     {
         if(button_press_cnt == USER_KEY_MARK|WAKEUP_KEY_MARK)
         {
@@ -1044,7 +1053,7 @@ static uint8_t get_key(void)
         if(button_flag == 0)
             button_flag = USER_KEY_MARK|WAKEUP_KEY_MARK;
     }
-    else if(BSP_PB_GetState(BUTTON_WAKEUP) == 1)
+    else if(BSP_PB_GetState(BUTTON_WAKEUP) == 0)
     {
         if(button_flag == WAKEUP_KEY_MARK)
         {
@@ -1067,7 +1076,7 @@ static uint8_t get_key(void)
     
     
     }
-    else if(BSP_PB_GetState(BUTTON_USER) == 1)
+    else if(BSP_PB_GetState(BUTTON_USER) == 0)
     {
         if(button_flag == USER_KEY_MARK)
         {
