@@ -53,6 +53,9 @@
 #include "menutal.h"
 #include "stm32l1xx_nucleo.h"
 #include "stm32_adafruit_sd.h"
+#include "Gongshi.h"
+#include "usb_device.h"
+#include "usbd_core.h"
 
 /* USER CODE END Includes */
 
@@ -66,7 +69,6 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
-TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim10;
 
 UART_HandleTypeDef huart1;
@@ -131,18 +133,18 @@ static void MX_USART1_UART_Init(void);
 static void MX_ADC_Init(void);
 static void MX_RTC_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_SPI1_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM10_Init(void);
 static void MX_TIM2_Init(void);
-static void MX_TIM6_Init(void);
-static void MX_SPI1_Init(void);
 void StartDefaultTask(void const * argument);
 void Get_gps_info(void const * argument);
 void MySystem(void const * argument);
 void update_info(void const * argument);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+                                
                                 
                                 
                                 
@@ -238,12 +240,11 @@ int main(void)
   MX_ADC_Init();
   MX_RTC_Init();
   MX_USART3_UART_Init();
+  MX_SPI1_Init();
   MX_TIM4_Init();
   MX_TIM3_Init();
   MX_TIM10_Init();
   MX_TIM2_Init();
-  MX_TIM6_Init();
-  MX_SPI1_Init();
 
   /* USER CODE BEGIN 2 */
   RTC_AlarmConfig();
@@ -307,11 +308,11 @@ int main(void)
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of Get_gps_info_ */
-  osThreadDef(Get_gps_info_, Get_gps_info, osPriorityAboveNormal, 0, 256);
+  osThreadDef(Get_gps_info_, Get_gps_info, osPriorityHigh, 0, 256);
   Get_gps_info_Handle = osThreadCreate(osThread(Get_gps_info_), NULL);
 
   /* definition and creation of SystemCall */
-  osThreadDef(SystemCall, MySystem, osPriorityHigh, 0, 128);
+  osThreadDef(SystemCall, MySystem, osPriorityLow, 0, 128);
   SystemCallHandle = osThreadCreate(osThread(SystemCall), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -360,7 +361,7 @@ void SystemClock_Config(void)
     /**Initializes the CPU, AHB and APB busses clocks 
     */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE;
+                              |RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -501,7 +502,7 @@ static void MX_RTC_Init(void)
   sAlarm.AlarmTime.Seconds = 0;
   sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+  sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY;
   sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
   sAlarm.AlarmDateWeekDay = 1;
   sAlarm.Alarm = RTC_ALARM_A;
@@ -580,7 +581,7 @@ static void MX_TIM3_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 159;
+  htim3.Init.Prescaler = 1599;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 500;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -658,39 +659,6 @@ static void MX_TIM4_Init(void)
   }
 
   HAL_TIM_MspPostInit(&htim4);
-
-}
-
-/* TIM6 init function */
-static void MX_TIM6_Init(void)
-{
-
-  TIM_MasterConfigTypeDef sMasterConfig;
-
-  htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 1599;
-  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 99;
-  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  
-#if 0
-  /* Start the TIM time Base generation in interrupt mode */
-  if(HAL_TIM_Base_Start_IT(&htim6) != HAL_OK)
-  {
-    /* Starting Error */
-    Error_Handler();
-  }
-#endif  
 
 }
 
@@ -779,27 +747,24 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-
-  /*Configure GPIO pin : PA0 */
+  /*Configure GPIO pin : PA0   USB DETECT*/
   GPIO_InitStruct.Pin = GPIO_PIN_0;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA1 */
+  /*Configure GPIO pin : PA1  SURPORT LINE*/
   GPIO_InitStruct.Pin = GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_8;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
 }
 
@@ -810,14 +775,14 @@ void gps_power_mode(uint8_t mode)
     if(mode == 1)
     {
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); 
-        BSP_LED_Init(GPS_LED);
-        BSP_LED_On(LED_GPS);
+        //BSP_LED_Init(LED_GPS);
+        //BSP_LED_On(LED_GPS);
     }            
     else
     {
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);    
-        BSP_LED_Init(GPS_LED);
-        BSP_LED_Off(LED_GPS);
+        //BSP_LED_Init(LED_GPS);
+        //BSP_LED_Off(LED_GPS);
     }
 }
 
@@ -1020,17 +985,17 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		
 		gps_data_time = HAL_GetTick(); 
 
-	    HAL_UART_Receive_IT(&huart3, (uint8_t *)(uart3_buffer + USART2_RX_STA_WP), 1); 		
+        if((system_flag_table->guji_mode != RECORED_IDLE)&&(system_flag_table->guji_mode != RECORED_STOP))
+        {
+	        HAL_UART_Receive_IT(&huart3, (uint8_t *)(uart3_buffer + USART2_RX_STA_WP), 1); 		
+        }
     }
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {    
 
-    if((GPIO_Pin == USER_BUTTON_PIN))    
-    {        
-    }
-    else if ((GPIO_Pin == WAKEUP_BUTTON_PIN))
+    if ((GPIO_Pin == WAKEUP_BUTTON_PIN))
     {                
     }
     else if(GPIO_Pin == GPIO_PIN_1)
@@ -1039,18 +1004,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
     else if(GPIO_Pin == GPIO_PIN_0)
     {
-        if(system_flag_table->power_status == POWER_STANBY)
-        {
-            if(usb_init_flag == 0)
-            {
-               if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT,USB_DETECT_PIN) == GPIO_PIN_SET)
-                {                   
-                    osThreadResume(defaultTaskHandle);
-                    usb_init_flag = 1;
-                }
-            }
-
-        }
     }
 
     print_usart1("exit :%d \r\n",GPIO_Pin);
@@ -1317,11 +1270,12 @@ void StartDefaultTask(void const * argument)
 {
   /* init code for FATFS */
   MX_FATFS_Init();
+  /* USER CODE BEGIN 5 */
 
+#if 1
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
-
-  /* USER CODE BEGIN 5 */
+#endif
   print_usart1("StartDefaultTask \r\n");
 
   SD_FatFs = malloc(sizeof(FATFS));   
@@ -1443,7 +1397,7 @@ void MySystem(void const * argument)
 {
   /* USER CODE BEGIN MySystem */
   uint8_t _user_key_ = 0;
-  uint8_t _breath_flag_ = 0;
+//  uint8_t _breath_flag_ = 0;
   
   BSP_PB_Init(BUTTON_USER,BUTTON_MODE_GPIO);  
   BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_GPIO);
@@ -1503,6 +1457,8 @@ void MySystem(void const * argument)
                       print_usart1("POWER ON \r\n");
                       system_flag_table->power_status = POWER_RUN;  
                       gps_power_mode(1);
+                      /* init code for USB_DEVICE */
+                      USBD_Stop(&hUsbDeviceFS);
                       osThreadResume(defaultTaskHandle);
                       osThreadResume(Get_gps_info_Handle);
                       
@@ -1514,7 +1470,7 @@ void MySystem(void const * argument)
                   system_flag_table->power_status = POWER_STANBY;    
                   print_usart1("POWER OFF \r\n");
                   gps_power_mode(0);
-
+                  USBD_Start(&hUsbDeviceFS);
                   if ((osThreadGetState(Get_gps_info_Handle) == osThreadSuspended) 
                       || (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
                   StopSequence_Config();
@@ -1604,6 +1560,8 @@ void update_info(void const * argument)
       {
           timer_cnt = 0;
           StopSequence_Config();
+          print_usart1("when usb detect hotplug, goto stanby angin. \r\n");
+
       }
   } 
   else if((HAL_GPIO_ReadPin(SUPORT_DETECT_GPIO_PORT, SUPORT_DETECT_PIN) == GPIO_PIN_RESET)&&(system_flag_table->power_status == POWER_SURPORT_RUN))
@@ -1612,7 +1570,8 @@ void update_info(void const * argument)
       if(timer_cnt == 10)
       {
           timer_cnt = 0;
-          StopSequence_Config();
+          //StopSequence_Config();
+          print_usart1("entry low run mode \r\n");
       }
   }
   else 

@@ -115,7 +115,7 @@ void  My_Fs_Init(FATFS *SD_FatFs)
 
 	//uint32_t counter = 0;
 	FRESULT fr;
-	FIL fil;	
+//	FIL fil;	
 
 	/* Check the mounted device */
 	if(f_mount(SD_FatFs, (TCHAR const*)"/", 0) != FR_OK)
@@ -140,12 +140,11 @@ void  My_Fs_Init(FATFS *SD_FatFs)
                 fr = f_mkfs((TCHAR const*)"/", 0, 0); 
                 fr = f_mount(SD_FatFs, (TCHAR const*)"/", 0);
                 fr = f_mkdir("POI");
-
 			}
 		}
     
 	}
-
+  
 }
 
      

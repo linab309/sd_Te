@@ -14,8 +14,6 @@
         <TargetCommonOption>
           <Device>STM32L151RB</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32L1xx_DFP.1.2.0</PackID>
-          <PackURL>http://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000-0x20003FFF) IROM(0x8000000-0x801FFFF) CLOCK(8000000) CPUTYPE("Cortex-M3")</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
@@ -145,6 +143,7 @@
             <RestoreToolbox>1</RestoreToolbox>
             <RestoreTracepoints>1</RestoreTracepoints>
             <RestoreSysVw>1</RestoreSysVw>
+            <UsePdscDebugDescription>1</UsePdscDebugDescription>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
           <TargetSelection>11</TargetSelection>
@@ -365,7 +364,7 @@
               <MiscControls>--C99</MiscControls>
               <Define>USE_HAL_DRIVER,STM32L151xB</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;               ../Drivers/STM32L1xx_HAL_Driver/Inc;               ../Drivers/STM32L1xx_HAL_Driver/Inc/Legacy;               ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3;               ../Drivers/CMSIS/Device/ST/STM32L1xx/Include;               ../Middlewares/Third_Party/FatFs/src;               ../Middlewares/Third_Party/FreeRTOS/Source/include;               ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;               ../Drivers/CMSIS/Include;               ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;               ../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Inc;               ../Drivers/BSP;               ..\Drivers\BSP\Adafruit_Shield;               ..\Drivers\BSP\GPS;               ..\Drivers\BSP\STM32L1xx_Nucleo</IncludePath>
+              <IncludePath>../Inc;                 ../Drivers/STM32L1xx_HAL_Driver/Inc;                 ../Drivers/STM32L1xx_HAL_Driver/Inc/Legacy;                 ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3;                 ../Drivers/CMSIS/Device/ST/STM32L1xx/Include;                 ../Middlewares/Third_Party/FatFs/src;                 ../Middlewares/Third_Party/FreeRTOS/Source/include;                 ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;                 ../Drivers/CMSIS/Include;                 ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;                 ../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Inc;                 ../Drivers/BSP;                 ..\Drivers\BSP\Adafruit_Shield;                 ..\Drivers\BSP\GPS;                 ..\Drivers\BSP\STM32L1xx_Nucleo</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -475,6 +474,16 @@
               <FileName>gongshi.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\gongshi.c</FilePath>
+            </File>
+            <File>
+              <FileName>config_init.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\config_init.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm_eeprom.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\stm_eeprom.c</FilePath>
             </File>
           </Files>
         </Group>

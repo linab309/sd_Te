@@ -52,11 +52,12 @@ void BusFault_Handler(void);
 void UsageFault_Handler(void);
 void DebugMon_Handler(void);
 void SysTick_Handler(void);
+void EXTI0_IRQHandler(void);
+void EXTI1_IRQHandler(void);
 void USB_LP_IRQHandler(void);
 void USART1_IRQHandler(void);
 void USART3_IRQHandler(void);
 void RTC_Alarm_IRQHandler(void);
-void TIM6_IRQHandler(void);
 void TIM7_IRQHandler(void);
 
 #ifdef __cplusplus
