@@ -264,7 +264,7 @@ int main(void)
   system_flag_table->gujiFormats                 = GUJI_FORMATS_GPX;
   system_flag_table->guji_record.recoed_formats  = GUJI_FORMATS_GPX;
   system_flag_table->power_status                = POWER_STANBY;
-  system_flag_table->guji_record.by_time_vaule   = 1000; /*ms*/
+  system_flag_table->guji_record.by_time_vaule   = 100; /*ms*/
   system_flag_table->guji_record.recoed_formats  = BY_TIMES;
 
 
@@ -361,7 +361,7 @@ void SystemClock_Config(void)
     /**Initializes the CPU, AHB and APB busses clocks 
     */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
+                              |RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -1048,8 +1048,8 @@ static void StopSequence_Config(void)
   HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
   HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
   /* Request to enter STANDBY mode */
-  //HAL_PWR_EnterSTANDBYMode();
-  HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+  HAL_PWR_EnterSTANDBYMode();
+  //HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
 
 }
 
@@ -1079,7 +1079,11 @@ void surport_mode_config(uint8_t mode)
                      }
                      else if(system_flag_table->guji_record.recoed_formats == BY_TIMES)
                      {
-                         if(system_flag_table->guji_record.by_time_vaule <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
+                         if(system_flag_table->guji_record.by_time_vaule <= 100)
+                         {
+                             ret = 1;
+                         }
+                         else if(system_flag_table->guji_record.by_time_vaule <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
                          {
                              system_flag_table->grecord_timer_cnt = HAL_GetTick();
                              ret = 1;
@@ -1099,11 +1103,13 @@ void surport_mode_config(uint8_t mode)
 
             if(ret == 1)
             {
+            #if 0
                 if((system_flag_table->power_status == POWER_SURPORT_RUN)
                     &&(HAL_GPIO_ReadPin(SUPORT_DETECT_GPIO_PORT,SUPORT_DETECT_PIN) != GPIO_PIN_RESET))
                 {
                     return;
                 }
+            #endif
                 
                 save_guiji_message(gpsx,system_flag_table,'T');
                 system_flag_table->tp_long = gpsx->longitude;
@@ -1121,7 +1127,8 @@ void surport_mode_config(uint8_t mode)
                 }
             } 
             
-            if(system_flag_table->guji_buffer_Index_rp == system_flag_table->guji_buffer_Index_wp)
+            while(system_flag_table->guji_buffer_Index_rp != system_flag_table->guji_buffer_Index_wp) {;}
+            
             {
                 /* Disable Wakeup Counter */
                 HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
@@ -1138,15 +1145,19 @@ void surport_mode_config(uint8_t mode)
                         Wakeup Time Base = 16 /(~39.000KHz) = ~0,410 ms
                         Wakeup Time = ~4s = 0,410ms  * WakeUpCounter
                         ==> WakeUpCounter = ~4s/0,410ms = 9750 = 0x2616 */
-                rtc_vaule = (system_flag_table->guji_record.by_time_vaule*1000)/410;        
+                rtc_vaule = (system_flag_table->guji_record.by_time_vaule*1000)/427;        
                 HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, rtc_vaule, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
-                
+                print_usart1("****************************** \r\n");
+                print_usart1("low run status go to stop mode \r\n");
+                print_usart1("****************************** \r\n");
+
                 /* Enter Stop Mode */
-                HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+                HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
                 
                 /* Configures system clock after wake-up from STOP: enable HSI, PLL and select
-                        PLL as system clock source (HSI and PLL are disabled automatically in STOP mode) */
+                        PLL as system clock source (HSI and PLL are disabled automatically in STOP mode) */                      
                 SystemClock_Config();   
+                HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
             }
             break;
         default :break;
@@ -1559,19 +1570,30 @@ void update_info(void const * argument)
       if(timer_cnt == 10)
       {
           timer_cnt = 0;
-          StopSequence_Config();
+          //StopSequence_Config();
+
+          print_usart1("****************************** \r\n");
           print_usart1("when usb detect hotplug, goto stanby angin. \r\n");
+          print_usart1("****************************** \r\n");
 
       }
   } 
-  else if((HAL_GPIO_ReadPin(SUPORT_DETECT_GPIO_PORT, SUPORT_DETECT_PIN) == GPIO_PIN_RESET)&&(system_flag_table->power_status == POWER_SURPORT_RUN))
+  else if((system_flag_table->power_status == POWER_SURPORT_RUN)&&(gpsx->speed <= 10))
   {
       timer_cnt ++;
-      if(timer_cnt == 10)
+      if(timer_cnt == 3000)
       {
           timer_cnt = 0;
           //StopSequence_Config();
-          print_usart1("entry low run mode \r\n");
+          
+          print_usart1("****************************** \r\n");
+          print_usart1("entry surport mode  go to stop \r\n");       
+          print_usart1("****************************** \r\n");
+          /* Enter Stop Mode */
+          HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
+          SystemClock_Config();
+                
+
       }
   }
   else 
@@ -1579,10 +1601,6 @@ void update_info(void const * argument)
       timer_cnt = 0;
   }
 
-  //if(gpsx->gpssta >= 1)
-  {
- 
-  }  
   /* USER CODE END update_info */
 }
 
