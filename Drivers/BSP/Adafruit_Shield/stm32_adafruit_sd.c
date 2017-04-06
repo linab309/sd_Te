@@ -290,15 +290,15 @@ uint8_t BSP_SD_ITConfig(void)
   GPIO_InitTypeDef gpioinitstruct = {0};
   
   /* Configure Interrupt mode for SD detection pin */ 
-  gpioinitstruct.Mode      = GPIO_MODE_IT_RISING_FALLING;
-  gpioinitstruct.Pull      = GPIO_PULLUP;
-  gpioinitstruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
+  gpioinitstruct.Mode      = GPIO_MODE_INPUT;
+  gpioinitstruct.Pull      = GPIO_PULLDOWN;
+  gpioinitstruct.Speed     = GPIO_SPEED_FREQ_MEDIUM;
   gpioinitstruct.Pin       = SD_DETECT_PIN;
   HAL_GPIO_Init(SD_DETECT_GPIO_PORT, &gpioinitstruct);
     
   /* NVIC configuration for SDIO interrupts */
-  HAL_NVIC_SetPriority(SD_DETECT_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(SD_DETECT_IRQn);
+  //HAL_NVIC_SetPriority(SD_DETECT_IRQn, 5, 0);
+  //HAL_NVIC_EnableIRQ(SD_DETECT_IRQn);
   
   return 0;
 }
@@ -312,7 +312,7 @@ uint8_t BSP_SD_IsDetected(void)
   __IO uint8_t status = SD_PRESENT;
 
   /* Check SD card detect pin */
-  if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET) 
+  if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_SET) 
   {
     status = SD_NOT_PRESENT;
   }
@@ -339,7 +339,7 @@ uint8_t BSP_SD_Init(void)
 
   /* SD detection pin is not physically mapped on the Adafruit shield */
   SdStatus = SD_PRESENT;
-  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
+  if(BSP_SD_IsDetected() != SD_PRESENT)
       return BSP_SD_ERROR;
 
   else  

@@ -266,6 +266,7 @@ int main(void)
   system_flag_table->power_status                = POWER_STANBY;
   system_flag_table->guji_record.by_time_vaule   = 100; /*ms*/
   system_flag_table->guji_record.recoed_formats  = BY_TIMES;
+  system_flag_table->power_mode                  = SENCSE_SURPORT_MODE;
 
 
   //BSP_LED_Init(LED2);  
@@ -318,7 +319,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   osThreadSuspend(Get_gps_info_Handle);
-  osThreadSuspend(defaultTaskHandle);
+  //osThreadSuspend(defaultTaskHandle);
 
   /* USER CODE END RTOS_THREADS */
 
@@ -679,7 +680,7 @@ static void MX_TIM10_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 250;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim10, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -1282,11 +1283,10 @@ void StartDefaultTask(void const * argument)
   /* init code for FATFS */
   MX_FATFS_Init();
   /* USER CODE BEGIN 5 */
-
-#if 1
+  
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
-#endif
+  usb_init_flag = 1;
   print_usart1("StartDefaultTask \r\n");
 
   SD_FatFs = malloc(sizeof(FATFS));   
@@ -1420,6 +1420,9 @@ void MySystem(void const * argument)
   BSP_LED_Init(LED_SD);  
   BSP_LED_Init(LED_SURPORT);  
 
+  HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+
+
   /* Infinite loop */
   for(;;)
   {
@@ -1465,26 +1468,41 @@ void MySystem(void const * argument)
                   //print_usart1("SD_DETECT:%d \r\n",HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN));
                   if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET)
                   {                    
-                      print_usart1("POWER ON \r\n");
-                      system_flag_table->power_status = POWER_RUN;  
+                      print_usart1("POWER ON \r\n");					 
+                      system_flag_table->power_status = system_flag_table->power_mode;  
                       gps_power_mode(1);
                       /* init code for USB_DEVICE */
-                      USBD_Stop(&hUsbDeviceFS);
-                      osThreadResume(defaultTaskHandle);
+                      //USBD_Stop(&hUsbDeviceFS);
+                      if(usb_init_flag == 1)
+                      {
+                          MX_USB_DEVICE_DeInit();
+                          usb_init_flag = 0;
+                  	  }
+                      //osThreadResume(defaultTaskHandle);
                       osThreadResume(Get_gps_info_Handle);
                       
                   }
                   
               }
-              else if(system_flag_table->power_status == POWER_RUN)
+              else if(system_flag_table->power_status != POWER_STANBY)
               {
                   system_flag_table->power_status = POWER_STANBY;    
                   print_usart1("POWER OFF \r\n");
                   gps_power_mode(0);
-                  USBD_Start(&hUsbDeviceFS);
-                  if ((osThreadGetState(Get_gps_info_Handle) == osThreadSuspended) 
-                      || (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
-                  StopSequence_Config();
+                  //USBD_Start(&hUsbDeviceFS);
+                  if(usb_init_flag == 0)
+                  {
+                      MX_USB_DEVICE_Init();
+                      usb_init_flag = 1;
+              	  }                  
+
+				  while(osThreadGetState(Get_gps_info_Handle) != osThreadSuspended) { osDelay(1);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
+				  print_usart1("************\r\n");
+				  print_usart1("goto stanby.\r\n");
+				  print_usart1("************\r\n");
+
+
+				  StopSequence_Config();
               }            
               break;
           case POWER_USER_KEY_LONG:
@@ -1522,7 +1540,7 @@ void update_info(void const * argument)
   /* USER CODE BEGIN update_info */
   RTC_DateTypeDef sdatestructureget;
   RTC_TimeTypeDef stimestructureget;  
-  uint16_t timer_cnt = 0 ;
+  static uint16_t timer_cnt = 0 ;
 
      /* Get the RTC current Time */
   HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BCD);
@@ -1536,22 +1554,17 @@ void update_info(void const * argument)
   //print_usart1("date: %02d:%02d:%02d \r\n",sdatestructureget.Year, sdatestructureget.Month, sdatestructureget.Date);
   //print_usart1("time: %02d:%02d:%02d \r\n",stimestructureget.Hours, stimestructureget.Minutes, stimestructureget.Seconds);
   
-#if 0
-  if(system_flag_table->guji_mode == RECORED_START_DOING)
+#if 1  
+  if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET)
+  
   {
-      BSP_LED_Toggle(LED2);
+      BSP_LED_On(LED_SD);
+	  //print_usart1("SD IN \r\n");
   } 
-  else if(system_flag_table->guji_mode == RECORED_START)
+  else 
   {
-      BSP_LED_On(LED2);
-  }
-  else if(system_flag_table->guji_mode == RECORED_STOP)
-  {
-      BSP_LED_Off(LED2);
-  }
-  else
-  {
-      BSP_LED_Off(LED2);
+      BSP_LED_Off(LED_SD);
+	  //print_usart1("SD OFF \r\n");
 
   }
 #endif
@@ -1589,12 +1602,18 @@ void update_info(void const * argument)
           print_usart1("****************************** \r\n");
           print_usart1("entry surport mode  go to stop \r\n");       
           print_usart1("****************************** \r\n");
+		  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
           /* Enter Stop Mode */
           HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
           SystemClock_Config();
                 
+	      HAL_NVIC_DisableIRQ(EXTI1_IRQn);
 
       }
+	  else
+	  {
+          //print_usart1("timer_cnt:%d \r\n",timer_cnt);	     
+	  }
   }
   else 
   {
@@ -1616,7 +1635,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 /* USER CODE BEGIN Callback 0 */
 
-/* USER CODE END Callback 0 */
+	/* USER CODE END Callback 0 */
   if (htim->Instance == TIM7) {
     HAL_IncTick();
   }

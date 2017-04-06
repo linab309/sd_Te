@@ -184,13 +184,15 @@ USBD_StorageTypeDef USBD_Storage_Interface_fops_FS =
 *******************************************************************************/
 int8_t STORAGE_Init_FS (uint8_t lun)
 {
-  /* USER CODE BEGIN 2 */ 
+  /* USER CODE BEGIN 2 */
+  int8_t ret = -1;
   
+  ret = BSP_SD_Init();
+  if(ret != BSP_SD_OK )
   {
-      BSP_SD_Init();
+      print_usart1("STORAGE_Init_FS :%d\r\n",ret);
   }
-  //printf("STORAGE_Init_FS \r\n");
-  return (USBD_OK);
+  return (ret);
   /* USER CODE END 2 */ 
 }
 
@@ -211,20 +213,17 @@ int8_t STORAGE_GetCapacity_FS (uint8_t lun, uint32_t *block_num, uint16_t *block
   
   if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
   {
-    BSP_SD_GetCardInfo(&info);
-    
-    *block_num = (info.CardCapacity)/STORAGE_BLK_SIZ  - 1;
-    *block_size = STORAGE_BLK_SIZ;
-    ret = 0;
-
-     sd_block_size = *block_size;
-     sd_block_num  = *block_num ;
+      BSP_SD_GetCardInfo(&info);
+      
+      *block_num = (info.CardCapacity)/STORAGE_BLK_SIZ  - 1;
+      *block_size = STORAGE_BLK_SIZ;
+      ret = 0;
+  
+      sd_block_size = *block_size;
+      sd_block_num  = *block_num ;
+      //print_usart1("*block_num :%d \r\n",*block_num);
+      //print_usart1("*block_size :%d \r\n",*block_size);	 
   }
-
-
-  //printf("*block_num :%d \r\n",*block_num);
-  //printf("*block_size :%d \r\n",*block_size);
-
   return (ret);
   /* USER CODE END 3 */ 
 }

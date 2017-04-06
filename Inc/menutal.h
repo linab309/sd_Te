@@ -158,6 +158,7 @@ typedef struct
     GUJI_RECOCE_TABLE guji_record;
     uint8_t  guji_mode;
     uint8_t  power_status ;
+    uint8_t  power_mode ;
     uint8_t  *guji_buffer;
     uint16_t guji_buffer_Index_rp;
     uint16_t guji_buffer_Index_wp;
