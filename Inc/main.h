@@ -51,6 +51,13 @@
 
 /* Private define ------------------------------------------------------------*/
 
+#define usb_hotplug_Pin GPIO_PIN_0
+#define usb_hotplug_GPIO_Port GPIOA
+#define surprot_line_Pin GPIO_PIN_1
+#define surprot_line_GPIO_Port GPIOA
+#define GPS_POWER_Pin GPIO_PIN_8
+#define GPS_POWER_GPIO_Port GPIOA
+
 /* USER CODE BEGIN Private defines */
 #define  MAX_BMP_FILES  25
 #define  MAX_BMP_FILE_NAME 11

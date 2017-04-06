@@ -69,14 +69,6 @@ void MX_USB_DEVICE_Init(void)
 /**
   * @}
   */
-void MX_USB_DEVICE_DeInit(void)
-{
-  /* Init Device Library,Add Supported Class and Start the library*/
-  USBD_DeInit(&hUsbDeviceFS);
-
-  USBD_Stop(&hUsbDeviceFS);
-
-}
 
 /**
   * @}

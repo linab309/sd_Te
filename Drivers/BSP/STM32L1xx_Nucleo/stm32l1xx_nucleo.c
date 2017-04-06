@@ -333,6 +333,7 @@ void BSP_PB_Init(Button_TypeDef Button, ButtonMode_TypeDef ButtonMode)
 
   /* Enable the BUTTON Clock */
   BUTTONx_GPIO_CLK_ENABLE(Button);
+  WAKEUP_BUTTONx_GPIO_CLK_ENABLE(Button);
 
   gpioinitstruct.Pin = BUTTON_PIN[Button];
   gpioinitstruct.Pull = GPIO_PULLUP;

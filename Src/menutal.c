@@ -981,7 +981,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                 check_time(gpsx,system_flag_table,8.0);
                 RTC_DateStructure = system_flag_table->RTC_DateStructure;
                 RTC_TimeStructure = system_flag_table->RTC_TimeStructure;                
-                //print_usart1("w_year :%d \r\n",my_timer->w_year);
+                print_usart1("w_year :%d \r\n",RTC_DateStructure.Year);
                 if(get_space() == 0)
                 {
 
@@ -1114,7 +1114,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                      }
     			}
     			
-    			system_flag_table->guji_mode = RECORED_IDLE;            
+
                 if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)
                 {
                     f_printf(sys_fp,"</trkseg>\n");
@@ -1124,6 +1124,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                 }
                 f_close(sys_fp);
             }
+            system_flag_table->guji_mode = RECORED_IDLE;            
+
 			break;
 
 	}

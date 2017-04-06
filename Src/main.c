@@ -133,11 +133,11 @@ static void MX_USART1_UART_Init(void);
 static void MX_ADC_Init(void);
 static void MX_RTC_Init(void);
 static void MX_USART3_UART_Init(void);
-static void MX_SPI1_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM10_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_SPI1_Init(void);
 void StartDefaultTask(void const * argument);
 void Get_gps_info(void const * argument);
 void MySystem(void const * argument);
@@ -240,11 +240,11 @@ int main(void)
   MX_ADC_Init();
   MX_RTC_Init();
   MX_USART3_UART_Init();
-  MX_SPI1_Init();
   MX_TIM4_Init();
   MX_TIM3_Init();
   MX_TIM10_Init();
   MX_TIM2_Init();
+  MX_SPI1_Init();
 
   /* USER CODE BEGIN 2 */
   RTC_AlarmConfig();
@@ -370,7 +370,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL12;
-  RCC_OscInitStruct.PLL.PLLDIV = RCC_PLL_DIV3;
+  RCC_OscInitStruct.PLL.PLLDIV = RCC_PLL_DIV4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -503,7 +503,7 @@ static void MX_RTC_Init(void)
   sAlarm.AlarmTime.Seconds = 0;
   sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY;
+  sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
   sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
   sAlarm.AlarmDateWeekDay = 1;
   sAlarm.Alarm = RTC_ALARM_A;
@@ -545,7 +545,7 @@ static void MX_TIM2_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 1599;
+  htim2.Init.Prescaler = 11;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 500;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -582,7 +582,7 @@ static void MX_TIM3_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 1599;
+  htim3.Init.Prescaler = 11;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 500;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -634,7 +634,7 @@ static void MX_TIM4_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 1599;
+  htim4.Init.Prescaler = 11;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 500;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -670,7 +670,7 @@ static void MX_TIM10_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim10.Instance = TIM10;
-  htim10.Init.Prescaler = 1599;
+  htim10.Init.Prescaler = 11;
   htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim10.Init.Period = 500;
   htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -680,7 +680,7 @@ static void MX_TIM10_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 250;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim10, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -748,22 +748,29 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin : PA0   USB DETECT*/
-  GPIO_InitStruct.Pin = GPIO_PIN_0;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPS_POWER_GPIO_Port, GPS_POWER_Pin, GPIO_PIN_SET);
 
-  /*Configure GPIO pin : PA1  SURPORT LINE*/
-  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  /*Configure GPIO pin : usb_hotplug_Pin */
+  GPIO_InitStruct.Pin = usb_hotplug_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(usb_hotplug_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : surprot_line_Pin */
+  GPIO_InitStruct.Pin = surprot_line_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(surprot_line_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : GPS_POWER_Pin */
+  GPIO_InitStruct.Pin = GPS_POWER_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+  HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-
   HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
@@ -1047,7 +1054,7 @@ static void StopSequence_Config(void)
   
   /* Enable WKUP pin */
   HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
-  HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
+  //HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
   /* Request to enter STANDBY mode */
   HAL_PWR_EnterSTANDBYMode();
   //HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
@@ -1282,10 +1289,11 @@ void StartDefaultTask(void const * argument)
 {
   /* init code for FATFS */
   MX_FATFS_Init();
-  /* USER CODE BEGIN 5 */
-  
+
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
+
+  /* USER CODE BEGIN 5 */
   usb_init_flag = 1;
   print_usart1("StartDefaultTask \r\n");
 
@@ -1308,6 +1316,7 @@ void StartDefaultTask(void const * argument)
 
         //ThreadResume(Get_gps_info_Handle);
     }
+    
     if(system_flag_table->power_status == POWER_STANBY)
     {
         if(system_flag_table->guji_mode  == RECORED_START_DOING)
@@ -1334,10 +1343,6 @@ void Get_gps_info(void const * argument)
   /* Infinite loop */
   print_usart1("Get_gps_info\r\n");
   /*##-4- Put UART peripheral in reception process ###########################*/  
-  if(HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1) != HAL_OK)
-  {
-    Error_Handler();
-  }
 
   for(;;)
   {
@@ -1408,6 +1413,7 @@ void MySystem(void const * argument)
 {
   /* USER CODE BEGIN MySystem */
   uint8_t _user_key_ = 0;
+  extern USBD_HandleTypeDef hUsbDeviceFS;
 //  uint8_t _breath_flag_ = 0;
   
   BSP_PB_Init(BUTTON_USER,BUTTON_MODE_GPIO);  
@@ -1430,9 +1436,14 @@ void MySystem(void const * argument)
       if(_user_key_  != 0x00)
       {
           print_usart1("_user_key_:%d \r\n",_user_key_);
-          HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
-          sound_working = 1;
           
+          if((_user_key_ == POWER_KEY  || _user_key_ == USER_KEY_LONG) &&(system_flag_table->guji_mode >= RECORED_START))
+              _user_key_ = 0x00;
+          else
+          {
+            HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+            sound_working = 2;          
+          }
       }
       switch(_user_key_)
       {
@@ -1459,8 +1470,13 @@ void MySystem(void const * argument)
               else if(system_flag_table->guji_mode == RECORED_IDLE)
               {
                   system_flag_table->guji_mode = RECORED_START;
+                  if(HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1) != HAL_OK)
+                  {
+                    Error_Handler();
+                  }
 
               }
+              print_usart1("guji_mode :%d \r\n",system_flag_table->guji_mode);
               break;
           case POWER_KEY_LONG:
               if(system_flag_table->power_status == POWER_STANBY)
@@ -1475,10 +1491,11 @@ void MySystem(void const * argument)
                       //USBD_Stop(&hUsbDeviceFS);
                       if(usb_init_flag == 1)
                       {
-                          MX_USB_DEVICE_DeInit();
+                          USBD_DeInit(&hUsbDeviceFS);
+                          USBD_Stop(&hUsbDeviceFS);
                           usb_init_flag = 0;
                   	  }
-                      //osThreadResume(defaultTaskHandle);
+                      osThreadResume(defaultTaskHandle);
                       osThreadResume(Get_gps_info_Handle);
                       
                   }
@@ -1569,10 +1586,14 @@ void update_info(void const * argument)
   }
 #endif
 
-  if(sound_working == 1)
+  if(sound_working)
   {
-      HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
-      sound_working = 0;
+      sound_working --;
+      if(sound_working == 0)
+      {
+          HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
+      }
+      
   }
   
   vddmv_adc_proess(system_flag_table); /*¸üÐÂµç³Ø×´Ì¬*/
@@ -1635,7 +1656,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 /* USER CODE BEGIN Callback 0 */
 
-	/* USER CODE END Callback 0 */
+/* USER CODE END Callback 0 */
   if (htim->Instance == TIM7) {
     HAL_IncTick();
   }
