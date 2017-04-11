@@ -673,7 +673,7 @@ static void MX_TIM10_Init(void)
   htim10.Instance = TIM10;
   htim10.Init.Prescaler = 11;
   htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim10.Init.Period = 500;
+  htim10.Init.Period = 525;
   htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   if (HAL_TIM_PWM_Init(&htim10) != HAL_OK)
   {
@@ -681,7 +681,7 @@ static void MX_TIM10_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 250;
+  sConfigOC.Pulse = 263;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim10, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -1437,14 +1437,10 @@ void MySystem(void const * argument)
       if(_user_key_  != 0x00)
       {
           print_usart1("_user_key_:%d \r\n",_user_key_);
-          
-          if((_user_key_ == POWER_KEY  || _user_key_ == USER_KEY_LONG) &&(system_flag_table->guji_mode >= RECORED_START))
-              _user_key_ = 0x00;
-          else
-          {
-            HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
-            sound_working = 2;          
-          }
+         
+          HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+          sound_working = 2;          
+   
       }
       switch(_user_key_)
       {
