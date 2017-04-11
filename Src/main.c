@@ -267,6 +267,7 @@ int main(void)
   system_flag_table->guji_record.by_time_vaule   = 100; /*ms*/
   system_flag_table->guji_record.recoed_formats  = BY_TIMES;
   system_flag_table->power_mode                  = SENCSE_SURPORT_MODE;
+  system_flag_table->guji_record.recoed_meth     = AUTO_STOP;
 
 
   //BSP_LED_Init(LED2);  
@@ -1061,7 +1062,7 @@ static void StopSequence_Config(void)
 
 }
 
-void surport_mode_config(uint8_t mode)
+void surport_mode_config(uint8_t mode,uint8_t *buf)
 {
     
     float tp_distance = 0;
@@ -1384,7 +1385,7 @@ void Get_gps_info(void const * argument)
               GPS_Analysis(gpsx,gps_data);
               free(gps_data);
 /*recored mode config*/
-	          surport_mode_config(system_flag_table->power_status);
+	          surport_mode_config(system_flag_table->power_status,gps_data);
 /*endi*/			  
               if (osMutexRelease(gpsMutexHandle) != osOK)
               {

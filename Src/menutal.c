@@ -445,7 +445,7 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
         RTC_DateStructure = system_flag_table->RTC_DateStructure;
         RTC_TimeStructure = system_flag_table->RTC_TimeStructure;
     
-        //	one_shot_buffer[index++] = (uint8_t)(Message_head_number>>24)&0xff;  // 1mb
+        one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>24)&0xff;  // 1mb
         one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>16)&0xff;  // 1mb
         one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>8)&0xff;  // 2mb
         one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1))&0xff;  // 3 mb
@@ -560,7 +560,7 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
     
         memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],one_shot_buffer,28);
     
-        system_flag_table->guji_buffer_Index_wp  += 28;        
+        system_flag_table->guji_buffer_Index_wp  += MESSAGE_LEN;        
 
         if(system_flag_table->guji_buffer_Index_wp >= MAX_GUJI_BUFFER_MAX_LEN)
         {
@@ -599,30 +599,34 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
 
     do
     {
-        message_number_index = (buffer[2 + index]|(buffer[1 + index]<<8)|(buffer[0 + index]<<16));
-        flag.all = buffer[3 + index];
+        message_number_index = ((buffer[3 + index])|(buffer[2 + index])|(buffer[1 + index]<<8)|(buffer[0 + index]<<16));
+        flag.all             =  buffer[MESSAGE_NUMBER_OFFSET + index];
        // memcpy(&guji_data.all,buffer+index+4,4);
-        guji_data.all = (buffer[7 + index]|(buffer[6 + index]<<8)|(buffer[5 + index]<<16)|(buffer[4 + index]<<24));
-        tp_lat= (buffer[11 + index]|(buffer[10 + index]<<8)|(buffer[9 + index]<<16)|(buffer[8 + index]<<24));	    	
+        guji_data.all        = (buffer[FLAG_OFFSET+3 + index]|(buffer[FLAG_OFFSET+2 + index]<<8)\
+                                |(buffer[FLAG_OFFSET+1 + index]<<16)|(buffer[FLAG_OFFSET + index]<<24));
+        tp_lat	             = (buffer[TP_LAT_OFFSET+3 + index]|(buffer[TP_LAT_OFFSET+2 + index]<<8)\
+			                    |(buffer[TP_LAT_OFFSET+1 + index]<<16)|(buffer[TP_LAT_OFFSET + index]<<24));	    	
 
-        tp_lon = (buffer[15 + index]|(buffer[14 + index]<<8)|(buffer[13 + index]<<16)|(buffer[12 + index]<<24));	    	
+        tp_lon               = (buffer[TP_LON_OFFSET+3 + index]|(buffer[TP_LON_OFFSET+2 + index]<<8)\
+			                    |(buffer[TP_LON_OFFSET+1 + index]<<16)|(buffer[TP_LON_OFFSET + index]<<24));	    	
 
-        attiautl = (buffer[19 + index]|(buffer[18 + index]<<8)|(buffer[17+index]<<16)|(buffer[16+index]<<24));
+        attiautl             = (buffer[ATTIAUTL_OFFSET+3 + index]|(buffer[ATTIAUTL_OFFSET+2 + index]<<8)\
+			                    |(buffer[ATTIAUTL_OFFSET+1+index]<<16)|(buffer[ATTIAUTL_OFFSET+index]<<24));
 
-        speed = (buffer[21 + index]|(buffer[20 + index]<<8));
+        speed                = (buffer[SPEED_OFFSET+1 + index]|(buffer[SPEED_OFFSET + index]<<8));
 
-        angle=  (buffer[23 + index]|(buffer[22 + index]<<8));
+        angle                = (buffer[ANGLE_OFFSET+1 + index]|(buffer[ANGLE_OFFSET + index]<<8));
 
-        per =  (buffer[25 + index]|(buffer[24 + index]<<8));		
+        per                  = (buffer[PER_OFFSET+1 + index]|(buffer[PER_OFFSET + index]<<8));		
 
-        temp =   (buffer[27 + index]|(buffer[26+ index]<<8));
+        temp                 = (buffer[TEM_OFFSET+1 + index]|(buffer[TEM_OFFSET+ index]<<8));
 
-        index = index+28;
+        index                =  index+28;
 
 
         record_type = flag.bitc.tag ? 'C':'T';
-        lat_flag = flag.bitc.ns ? 'S':'N';
-        lon_flag = flag.bitc.ew ? 'W':'E';
+        lat_flag    = flag.bitc.ns ? 'S':'N';
+        lon_flag    = flag.bitc.ew ? 'W':'E';
 
         if(angle >360)
              angle = 0;
@@ -631,9 +635,9 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
         {
 
             /*
-            <trkpt lat="26.098903" lon="119.269088"><ele>149</ele>
-            <time>2014-07-22T01:49:28Z</time></trkpt>
-            */  
+          	       	  <trkpt lat="26.098903" lon="119.269088"><ele>149</ele>
+	      	               <time>2014-07-22T01:49:28Z</time></trkpt>
+                     */  
 			if(lat_flag == 'S')
 		    {
 				sprintf((char *)dtbuf,"<trkpt lat=\"-%.6f\"",tp_lat/1000000);	
