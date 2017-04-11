@@ -51,7 +51,8 @@
 #include "ff.h"
 #include "ff_gen_drv.h"
 #include "user_diskio.h" /* defines USER_Driver as external */
-
+#include "menutal.h"
+	 
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -59,7 +60,7 @@
 extern uint8_t retUSER; /* Return value for USER */
 extern char USER_Path[4]; /* USER logical drive path */
 
-void MX_FATFS_Init(void);
+extern void MX_FATFS_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 extern FRESULT open_append (
@@ -67,7 +68,7 @@ extern FRESULT open_append (
     const char* path    /* [IN]  File name to be opened */
 );
 extern uint8_t  My_Fs_Init(FATFS *SD_FatFs);
-extern void entry_config_mode(void);
+extern void entry_config_mode(system_flag *system_flag_table);
 
 /* USER CODE END Prototypes */
 #ifdef __cplusplus

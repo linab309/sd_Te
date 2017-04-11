@@ -156,6 +156,8 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* Private function prototypes -----------------------------------------------*/
 
 static void RTC_AlarmConfig(void);
+uint8_t sound_toggle_simple(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound_off_timer);
+uint8_t breathing_toggle(uint16_t breath_on_timer, uint16_t breath_off_timer);
 
 /* USER CODE END PFP */
 
@@ -251,6 +253,17 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   RTC_AlarmConfig();
+  BSP_PB_Init(BUTTON_USER,BUTTON_MODE_GPIO);  
+  BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_GPIO);
+
+  BSP_LED_Init(LED_GREEN);
+  BSP_LED_Init(LED_RED);
+  BSP_LED_Init(LED_BULE);
+  //BSP_LED_Init(LED_GPS);  
+  BSP_LED_Init(LED_SD);  
+  BSP_LED_Init(LED_SURPORT);  
+
+  HAL_NVIC_DisableIRQ(EXTI1_IRQn);
 
   print_usart1("USER CODE BEGIN 2 \r\n");
 
@@ -309,7 +322,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 512);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 640);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of Get_gps_info_ */
@@ -776,7 +789,7 @@ static void MX_GPIO_Init(void)
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+  //HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
 }
 
@@ -1274,7 +1287,7 @@ static uint8_t get_key(void)
     }
     else
     {
-       if(button_key == 0)
+       if((button_key == 0)&&(button_press_cnt<50))
         {
             //print_usart1("button_flag :%d \r\n",button_flag);
             switch(button_flag)
@@ -1392,7 +1405,7 @@ void Get_gps_info(void const * argument)
 
               if((gpsx->gpssta <1)&&(rxlen < 160))
               {
-                  print_usart1("%s",gps_data);
+                  //printf("%s",gps_data);
               } 
               else if(gpsx->gpssta >= 1)
               {
@@ -1434,17 +1447,7 @@ void MySystem(void const * argument)
   extern USBD_HandleTypeDef hUsbDeviceFS;
 //  uint8_t _breath_flag_ = 0;
   
-  BSP_PB_Init(BUTTON_USER,BUTTON_MODE_GPIO);  
-  BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_GPIO);
 
-  BSP_LED_Init(LED_GREEN);
-  BSP_LED_Init(LED_RED);
-  BSP_LED_Init(LED_BULE);
-  //BSP_LED_Init(LED_GPS);  
-  BSP_LED_Init(LED_SD);  
-  BSP_LED_Init(LED_SURPORT);  
-
-  HAL_NVIC_DisableIRQ(EXTI1_IRQn);
 
 
   /* Infinite loop */
@@ -1533,8 +1536,8 @@ void MySystem(void const * argument)
               break;
           case POWER_KEY_LONG:
 
-              sound_mode = 2; 
-              sound_cnt  = 2;
+              //sound_mode = 2; 
+              //sound_cnt  = 2;
 
               if(system_flag_table->power_status == POWER_STANBY)
               {
@@ -1589,7 +1592,7 @@ void MySystem(void const * argument)
               break;
           case POWER_USER_KEY_LONG:
               sound_toggle_simple(3,50,50);
-              entry_config_mode();
+              entry_config_mode(system_flag_table);
               break;
           default:break;
       }
@@ -1608,8 +1611,8 @@ uint8_t sound_toggle(void)
 {
     static uint8_t sound_flag = 0;
     static uint32_t sound_toggle_cnt = 0;
-    uint8_t sound_on_timer = 0;
-    uint8_t sound_off_timer = 0;
+    uint16_t sound_on_timer = 0;
+    uint16_t sound_off_timer = 0;
 
     switch(sound_mode)
     {
@@ -1655,6 +1658,8 @@ uint8_t sound_toggle_simple(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound
        HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
        osDelay(sound_off_timer);
     }
+	 
+		return 0;
 }
 
 uint8_t breathing_toggle(uint16_t breath_on_timer, uint16_t breath_off_timer)
@@ -1677,6 +1682,8 @@ uint8_t breathing_toggle(uint16_t breath_on_timer, uint16_t breath_off_timer)
         Pwm_Breathing(system_flag_table->Led_pwm_type,0);
         breath_flag = 0;
     } 
+		
+		return 0 ;
 
 }
 
@@ -1688,7 +1695,7 @@ void update_info(void const * argument)
   RTC_DateTypeDef sdatestructureget;
   RTC_TimeTypeDef stimestructureget;  
   static uint16_t timer_cnt = 0 ;
-  static uint32_t Breath_cnt = 0;
+  //static uint32_t Breath_cnt = 0;
 
 
      /* Get the RTC current Time */
@@ -1718,7 +1725,7 @@ void update_info(void const * argument)
              //if(Breath_cnt <= (HAL_GetTick() - 4000))
              {
                  system_flag_table->Led_pwm_type = SD_LED;
-                 breathing_toggle(4000)
+                 breathing_toggle(4000,2000);
              }
          }
       }
@@ -1812,6 +1819,17 @@ void update_info(void const * argument)
       timer_cnt = 0;
   }
 
+  if(system_flag_table->power_status != POWER_STANBY)
+  {
+      if(gpsx->gpssta >= 1)
+      {
+         BSP_LED_Toggle(LED_GPS); 
+      }
+      else
+      {
+         BSP_LED_On(LED_GPS); 
+      }
+  }
 
 
   /* USER CODE END update_info */

@@ -64,7 +64,7 @@ const uint8_t format_Aarry[][7]=
     "NEMA",
     "KML",
 
-}
+};
 
 const uint8_t timer_zone_Aarry[][7]=
 {
@@ -251,7 +251,7 @@ void  rtc_set(system_flag *system_flag_table,uint16_t syear,uint8_t smon,uint8_t
 
     
 
-	print_usart1("rtc_set %d-%d-%d  %d:%d:%d %d\n",syear ,smon,sday,hour,min,sec,week);
+	print_usart1("rtc_set %d-%d-%d  %d:%d:%d %d \r\n",syear ,smon,sday,hour,min,sec,week);
 	RTC_TimeStructure.Hours =hour;
 	RTC_TimeStructure.Minutes = min;
 	RTC_TimeStructure.Seconds = sec;
@@ -989,6 +989,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 			{
 				system_flag_table->guji_buffer_Index_rp = 0;
 				system_flag_table->guji_buffer_Index_wp = 0;
+                system_flag_table->guji_mode = 2;
 
                 check_time(gpsx,system_flag_table,8.0);
                 RTC_DateStructure = system_flag_table->RTC_DateStructure;
@@ -1072,8 +1073,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     }
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
         			save_guiji_message(gpsx,system_flag_table,'T');
-        		
-        			system_flag_table->guji_mode = RECORED_START_DOING;
+                     print_usart1("system_flag_table->guji_mode :%d \r\n",system_flag_table->guji_mode);
         			interst_pos_number = 0;
         			//	sprintf((char *)dtbuf,"%d",interst_pos_number);		    		
                     //得到速度字符串

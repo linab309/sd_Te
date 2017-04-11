@@ -195,9 +195,14 @@ typedef struct
     uint8_t Led_pwm_type;
     uint32_t tp_long;
     uint32_t tp_lati;
-    uint32_t grecord_timer_cnt
+    uint32_t grecord_timer_cnt;
     uint8_t sd_stats;
 }system_flag;
+
+
+
+extern const uint8_t format_Aarry[][7];
+extern const uint8_t timer_zone_Aarry[][7];
 
 
 extern uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_t guji_record_type);

@@ -42,6 +42,8 @@
   */
 
 #include "fatfs.h"
+#include "stm32l1xx_nucleo.h"
+#include "menutal.h"
 
 uint8_t retUSER;    /* Return value for USER */
 char USER_Path[4];  /* USER logical drive path */
@@ -50,7 +52,8 @@ char USER_Path[4];  /* USER logical drive path */
 
 
 extern void RTC_TimeShow(DWORD* fattime);
-
+extern char *GetIniKeyString(char *title,char *key,char *filename);
+extern int GetIniKeyInt(char *title,char *key,char *filename);
 
 //char* pDirectoryFiles[MAX_BMP_FILES];
 
@@ -154,7 +157,7 @@ uint8_t  My_Fs_Init(FATFS *SD_FatFs)
   
 }
 
-void entry_config_mode(void)
+void entry_config_mode(system_flag *system_flag_table)
 {
     FIL update_config_fp;
     uint8_t flash_cnt = 0;
