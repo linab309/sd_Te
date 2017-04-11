@@ -110,10 +110,10 @@ FRESULT open_append (
 
 /* USER CODE END 4 */
 
-void  My_Fs_Init(FATFS *SD_FatFs)
+uint8_t  My_Fs_Init(FATFS *SD_FatFs)
 {
 
-	//uint32_t counter = 0;
+	uint8_t ret = 0;
 	FRESULT fr;
 //	FIL fil;	
 
@@ -130,7 +130,7 @@ void  My_Fs_Init(FATFS *SD_FatFs)
 		
 		
 		if(fr == FR_EXIST)
-			return;
+			return ret;
 		else 
 		{
 			fr = f_mkdir("POI");
@@ -140,14 +140,90 @@ void  My_Fs_Init(FATFS *SD_FatFs)
                 fr = f_mkfs((TCHAR const*)"/", 0, 0); 
                 fr = f_mount(SD_FatFs, (TCHAR const*)"/", 0);
                 fr = f_mkdir("POI");
+                if(fr != FR_OK)
+                {
+                    print_usart1("\r\n BAD SD CARD \r\n");
+                    ret  = 1;
+                }
 			}
 		}
     
 	}
+
+    return ret;
   
 }
 
-     
+void entry_config_mode(void)
+{
+    FIL update_config_fp;
+    uint8_t flash_cnt = 0;
+    FRESULT fr;
+
+    if(f_open(&update_config_fp,(TCHAR const*)"P-1.BIN",FA_READ) == FR_OK)
+    {
+        f_close(&update_config_fp);
+        __set_FAULTMASK(1);      // 关闭所有中端
+        HAL_NVIC_SystemReset();
+    }
+    else if(f_open(&update_config_fp,(TCHAR const*)"config.ini",FA_READ) == FR_OK)
+    {
+    
+        BSP_LED_Init(LED_GPS);  
+        BSP_LED_Init(LED_SD);  
+        BSP_LED_Init(LED_SURPORT); 
+        print_usart1("%s\n", GetIniKeyString("DOG", "name", "config.ini"));
+        print_usart1("%d\n", GetIniKeyInt("DOG", "age", "config.ini")); 
+
+        while(1)
+        {
+            if(flash_cnt != 5 )
+            {
+               
+                BSP_LED_On(LED_GPS);
+                BSP_LED_On(LED_SD);
+                BSP_LED_On(LED_SURPORT); 
+                osDelay(300);
+                BSP_LED_Off(LED_GPS);
+                BSP_LED_Off(LED_SD);
+                BSP_LED_Off(LED_SURPORT); 
+                osDelay(2700);
+
+                flash_cnt++;
+            }
+            else
+            {
+               break;
+            }
+                
+        }
+        f_close(&update_config_fp);
+
+    }
+    else
+    {
+        fr = f_open(&update_config_fp, "INFO.TXT",FA_WRITE | FA_OPEN_ALWAYS);
+        f_printf(&update_config_fp,"%s\r\n",timer_zone_Aarry[system_flag_table->time_zone]);
+        f_printf(&update_config_fp,"%s\r\n",format_Aarry[system_flag_table->gujiFormats]);
+        f_printf(&update_config_fp,"%dHz\r\n",system_flag_table->guji_record.by_time_vaule);
+        f_printf(&update_config_fp,"%d\r\n",system_flag_table->guji_record.by_speed_vaule);
+        f_printf(&update_config_fp,"%d\r\n",system_flag_table->wanng_speed_vaule);
+        f_printf(&update_config_fp,"%d\r\n",system_flag_table->lowpower_timer);
+        f_printf(&update_config_fp,"%s\r\n", system_flag_table->auto_new_guji ? "ON" : "OFF");
+        f_printf(&update_config_fp,"%s\r\n",system_flag_table->auto_power ? "ON" : "OFF");
+        f_printf(&update_config_fp,"%s\r\n",system_flag_table->sound_onoff ? "ON" : "OFF");
+        f_printf(&update_config_fp,"Firmware: V0.01 \r\n");
+        f_printf(&update_config_fp,"PowerOn: 1\r\n");
+        f_printf(&update_config_fp,"First Use: 17-03-31\r\n");
+
+        f_close(&update_config_fp);
+
+    }
+
+    
+
+
+}
 /* USER CODE END Application */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

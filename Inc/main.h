@@ -98,6 +98,7 @@
 #define USER_KEY_LONG     0x03
 #define POWER_KEY_LONG    0x04
 #define POWER_USER_KEY_LONG    0x05
+#define POWER_KEY_LONG_5S    0x06
 
 
 
@@ -108,6 +109,10 @@
 #define SENCSE_SURPORT_MODE 1
 #define LOW_POWER_SURPORT_MODE 2
 
+
+#define SD_STATS_OK         0
+#define SD_STATS_ERROR_CARD 1
+#define SD_STATS_NO_CARD    2
 
 extern void print_usart1(char *format, ...);
 

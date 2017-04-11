@@ -57,6 +57,14 @@ typedef union { /* FPC_Reg6964_Dat6 */
 } GUJI_DATE;
 #endif
 
+const uint8_t format_Aarry[][7]=
+{
+    "CSV",
+    "GPX",
+    "NEMA",
+    "KML",
+
+}
 
 const uint8_t timer_zone_Aarry[][7]=
 {

@@ -93,6 +93,7 @@ system_flag *system_flag_table;
 FRESULT fr;
 FIL gps_fp ;
 
+
 uint32_t gps_data_time = 0xffffffff;
 
 uint8_t uart3_buffer[MAX_UART3_LEN];
@@ -104,7 +105,9 @@ uint16_t USART2_RX_STA_WP = 0;
 uint8_t USART2_RX_STA = 0; 
 
 
-uint8_t sound_working = 0 ;
+uint8_t sound_cnt= 0 ;
+uint8_t sound_mode = 0 ;
+
 uint8_t usb_init_flag = 0 ;
 
 
@@ -842,9 +845,14 @@ static void Pwm_Breathing(uint8_t Led_pwm,uint8_t mode)
         {
             Pulse_vaule += 6;
         }
-        else         
+        else if(led_flag == 1)        
         {
             Pulse_vaule -= 6;
+        }
+        else
+        {
+            HAL_TIM_PWM_Stop(htim, Channel);
+            return ;
         }
 
         sConfigOC.OCMode = TIM_OCMODE_PWM1;
@@ -860,7 +868,7 @@ static void Pwm_Breathing(uint8_t Led_pwm,uint8_t mode)
 
         if(Pulse_vaule == 0)
         {
-            led_flag = 0;
+            led_flag = 0xff;
         }
 
 
@@ -874,7 +882,7 @@ static void Pwm_Breathing(uint8_t Led_pwm,uint8_t mode)
     }
     else
     {
-        HAL_TIM_PWM_Stop(htim, Channel);
+        led_flag = 0;
         Pulse_vaule = 0;
     
     }
@@ -1054,8 +1062,8 @@ static void StopSequence_Config(void)
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
   
   /* Enable WKUP pin */
-  HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
-  //HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
+  //HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
+  HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
   /* Request to enter STANDBY mode */
   HAL_PWR_EnterSTANDBYMode();
   //HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
@@ -1208,13 +1216,19 @@ static uint8_t get_key(void)
         {
 
             button_press_cnt++;
-            if((button_press_cnt >= 50))
+            if(button_press_cnt == 50)
             {
                 button_key = POWER_KEY_LONG;
-                button_press_cnt = 51;
-                button_flag = 0xff;     
+                //button_press_cnt = 51;
+                //button_flag = 0xff;     
                 
             }
+			else if(button_press_cnt == 125)
+		    {
+    		    button_key = POWER_KEY_LONG;
+				button_press_cnt = 126;
+                button_flag = 0xff;     
+		    }
 
         }
         else
@@ -1299,7 +1313,10 @@ void StartDefaultTask(void const * argument)
   print_usart1("StartDefaultTask \r\n");
 
   SD_FatFs = malloc(sizeof(FATFS));   
-  My_Fs_Init(SD_FatFs);
+  if(My_Fs_Init(SD_FatFs) == 1)
+  {
+      system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
+  }
   /*保存文件*/
   /* Infinite loop */
   for(;;)
@@ -1437,15 +1454,12 @@ void MySystem(void const * argument)
       if(_user_key_  != 0x00)
       {
           print_usart1("_user_key_:%d \r\n",_user_key_);
-         
-          HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
-          sound_working = 2;          
    
       }
       switch(_user_key_)
       {
           case USER_KEY:
-                if(system_flag_table->power_status == POWER_RUN)
+                //if(system_flag_table->power_status == POWER_RUN)
                 {
                     if(system_flag_table->guji_mode == RECORED_START_DOING)
                     {
@@ -1455,27 +1469,73 @@ void MySystem(void const * argument)
                         }
                     }    
                 }
+				//HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+				sound_mode = 1;	
+                sound_cnt  = 1;
+                sound_toggle_simple(1,50,50);
+
+                
               break;
-          case POWER_KEY:
+          case POWER_KEY:  /*切换记录模式，运动和普通*/
+		  	
+		  	    if(system_flag_table->power_status == POWER_RUN)
+					system_flag_table->power_status = POWER_SURPORT_RUN;
+				else if(system_flag_table->power_status == POWER_SURPORT_RUN) 
+					system_flag_table->power_status = POWER_RUN;
+				
+				//HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+				sound_mode = 1;	
+                sound_cnt  = 1;
+                sound_toggle_simple(1,50,50);
+
+                print_usart1("POWER MODE :%d \r\n",system_flag_table->power_status);
+
 
               break;
-          case USER_KEY_LONG:
+          case USER_KEY_LONG:  /*重新开启一条轨迹*/
               if(system_flag_table->guji_mode >= RECORED_START)
               {
                   system_flag_table->guji_mode = RECORED_STOP;
-              }
-              else if(system_flag_table->guji_mode == RECORED_IDLE)
-              {
+				  //HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+				  
+                  sound_mode = 1; 
+                  sound_cnt  = 3;				                      
+
+				  osThreadSuspend(Get_gps_info_Handle);
+				  
+				  while(system_flag_table->guji_mode != RECORED_IDLE)
+				  {
+				      ;
+				  }
+                  sound_toggle_simple(3,50,50);
                   system_flag_table->guji_mode = RECORED_START;
+
                   if(HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1) != HAL_OK)
                   {
                     Error_Handler();
                   }
+				  osThreadResume(Get_gps_info_Handle);
 
+				  
               }
+
               print_usart1("guji_mode :%d \r\n",system_flag_table->guji_mode);
+			  
+              break;
+          case POWER_KEY_LONG_5S:
+              if(system_flag_table->power_status != POWER_STANBY)
+              {
+                 system_flag_table->power_status = POWER_LRUN ;
+                 print_usart1("L - POWER ON \r\n");
+                 sound_toggle_simple(2,500,150); 
+              }
+              
               break;
           case POWER_KEY_LONG:
+
+              sound_mode = 2; 
+              sound_cnt  = 2;
+
               if(system_flag_table->power_status == POWER_STANBY)
               {
                   //print_usart1("SD_DETECT:%d \r\n",HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN));
@@ -1485,7 +1545,12 @@ void MySystem(void const * argument)
                       system_flag_table->power_status = system_flag_table->power_mode;  
                       gps_power_mode(1);
                       /* init code for USB_DEVICE */
-                      //USBD_Stop(&hUsbDeviceFS);
+					  system_flag_table->guji_mode = RECORED_START;
+					  if(HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1) != HAL_OK)
+					  {
+						Error_Handler();
+					  }
+
                       if(usb_init_flag == 1)
                       {
                           USBD_DeInit(&hUsbDeviceFS);
@@ -1496,11 +1561,12 @@ void MySystem(void const * argument)
                       osThreadResume(Get_gps_info_Handle);
                       
                   }
-                  
+                  sound_toggle_simple(2,50,50);              
               }
               else if(system_flag_table->power_status != POWER_STANBY)
               {
-                  system_flag_table->power_status = POWER_STANBY;    
+                  system_flag_table->power_status = POWER_STANBY;   
+                              
                   print_usart1("POWER OFF \r\n");
                   gps_power_mode(0);
                   //USBD_Start(&hUsbDeviceFS);
@@ -1508,7 +1574,9 @@ void MySystem(void const * argument)
                   {
                       MX_USB_DEVICE_Init();
                       usb_init_flag = 1;
-              	  }                  
+              	  }  
+                  
+                  sound_toggle_simple(1,500,150);  
 
 				  while(osThreadGetState(Get_gps_info_Handle) != osThreadSuspended) { osDelay(1);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
 				  print_usart1("************\r\n");
@@ -1520,33 +1588,98 @@ void MySystem(void const * argument)
               }            
               break;
           case POWER_USER_KEY_LONG:
-              __set_FAULTMASK(1);      // 关闭所有中端
-              HAL_NVIC_SystemReset();
+              sound_toggle_simple(3,50,50);
+              entry_config_mode();
               break;
           default:break;
       }
 
       _user_key_  = 0;
-
-
-      
-      if(gpsx->gpssta >= 1)
-      {
-          system_flag_table->Led_pwm_type = GPS_LED;
-          Pwm_Breathing(system_flag_table->Led_pwm_type,1);    
-      }
-      else
-      {
-          //BSP_LED_Init(GPS_LED);
-          //if()
-          
-      }
-
       
       osDelay(20);
   }
   /* USER CODE END MySystem */
 }
+
+/*50  50 */
+/*500  150 */
+
+uint8_t sound_toggle(void)
+{
+    static uint8_t sound_flag = 0;
+    static uint32_t sound_toggle_cnt = 0;
+    uint8_t sound_on_timer = 0;
+    uint8_t sound_off_timer = 0;
+
+    switch(sound_mode)
+    {
+        case 1:
+            sound_on_timer  =  50;
+            sound_off_timer =  50;
+            break;
+        case 2:
+            sound_on_timer  =  500;
+            sound_off_timer =  150;
+            break;
+
+    }
+    
+    if((sound_flag == 0)&&(HAL_GetTick() >= (sound_toggle_cnt + sound_off_timer)))
+    {
+        sound_toggle_cnt = HAL_GetTick();
+
+        HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+        sound_flag = 1;
+    }
+    
+    if((sound_flag == 1)&&(HAL_GetTick() >= (sound_toggle_cnt + sound_on_timer)))
+    {
+        sound_toggle_cnt = HAL_GetTick();
+        HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
+        sound_flag = 0;
+    } 
+
+
+    return sound_flag;
+
+}
+
+uint8_t sound_toggle_simple(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound_off_timer)
+{
+   uint8_t i = 0;
+
+   for(i = 0;i< cnt ; i++)
+   {
+       HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+       osDelay(sound_on_timer);
+       HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
+       osDelay(sound_off_timer);
+    }
+}
+
+uint8_t breathing_toggle(uint16_t breath_on_timer, uint16_t breath_off_timer)
+{
+
+    static uint8_t breath_flag = 0;
+    static uint32_t breath_toggle_cnt = 0;
+    
+    if((breath_flag == 0)&&(HAL_GetTick() >= (breath_toggle_cnt + breath_off_timer)))
+    {
+        breath_toggle_cnt = HAL_GetTick();
+
+        Pwm_Breathing(system_flag_table->Led_pwm_type,1);
+        breath_flag = 1;
+    }
+    
+    if((breath_flag == 1)&&(HAL_GetTick() >= (breath_toggle_cnt + breath_on_timer)))
+    {
+        breath_toggle_cnt = HAL_GetTick();
+        Pwm_Breathing(system_flag_table->Led_pwm_type,0);
+        breath_flag = 0;
+    } 
+
+}
+
 
 /* update_info function */
 void update_info(void const * argument)
@@ -1555,6 +1688,8 @@ void update_info(void const * argument)
   RTC_DateTypeDef sdatestructureget;
   RTC_TimeTypeDef stimestructureget;  
   static uint16_t timer_cnt = 0 ;
+  static uint32_t Breath_cnt = 0;
+
 
      /* Get the RTC current Time */
   HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BCD);
@@ -1570,29 +1705,42 @@ void update_info(void const * argument)
   
 #if 1  
   if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET)
-  
   {
-      BSP_LED_On(LED_SD);
-	  //print_usart1("SD IN \r\n");
-  } 
-  else 
-  {
-      BSP_LED_Off(LED_SD);
-	  //print_usart1("SD OFF \r\n");
 
-  }
+      if(system_flag_table->guji_mode != RECORED_START_DOING)
+      {
+          BSP_LED_On(LED_SD);
+      }
+      else
+      {
+         if(gpsx->gpssta >= 1)
+         {
+             //if(Breath_cnt <= (HAL_GetTick() - 4000))
+             {
+                 system_flag_table->Led_pwm_type = SD_LED;
+                 breathing_toggle(4000)
+             }
+         }
+      }
+  } 
 #endif
 
-  if(sound_working)
+
+#if 0
+  if((sound_mode != 0)&&(sound_cnt != 0 ))
   {
-      sound_working --;
-      if(sound_working == 0)
+      if(sound_toggle() == 0)
       {
-          HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
+          sound_cnt --;
       }
-      
   }
+
+  if(sound_cnt == 0 ) sound_mode = 0;
+#endif
   
+
+
+
   vddmv_adc_proess(system_flag_table); /*更新电池状态*/
 
   if((HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_RESET)&&(system_flag_table->power_status == POWER_STANBY))
@@ -1601,7 +1749,7 @@ void update_info(void const * argument)
       if(timer_cnt == 10)
       {
           timer_cnt = 0;
-          //StopSequence_Config();
+          StopSequence_Config();
 
           print_usart1("****************************** \r\n");
           print_usart1("when usb detect hotplug, goto stanby angin. \r\n");
@@ -1633,10 +1781,38 @@ void update_info(void const * argument)
           //print_usart1("timer_cnt:%d \r\n",timer_cnt);	     
 	  }
   }
+  else if(((HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) == GPIO_PIN_RESET)\
+    ||(system_flag_table->sd_stats == SD_STATS_ERROR_CARD))\
+    &&(system_flag_table->power_status != POWER_STANBY))
+  {
+      BSP_LED_Toggle(LED_SD);
+      if(system_flag_table->sd_stats == SD_STATS_ERROR_CARD)
+      {
+          sound_mode = 1;
+          sound_toggle();
+      }
+      timer_cnt ++;
+      if(timer_cnt == 100)
+      {
+          timer_cnt = 0;
+          sound_mode = 0;
+          system_flag_table->power_status  = POWER_STANBY;
+          print_usart1("****************************** \r\n");
+          print_usart1("when usb detect hotplug, goto stanby angin. \r\n");
+          print_usart1("****************************** \r\n");
+
+          StopSequence_Config();
+          
+
+      }
+
+  }  
   else 
   {
       timer_cnt = 0;
   }
+
+
 
   /* USER CODE END update_info */
 }

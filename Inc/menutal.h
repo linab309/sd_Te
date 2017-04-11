@@ -159,7 +159,7 @@ typedef struct
 {		
 	uint8_t    by_distance_time_flag;
 	uint16_t   by_distance_vaule;
-	uint16_t    by_time_vaule;  /*ms*/
+	uint16_t   by_time_vaule;  /*ms*/
 	uint16_t   by_speed_vaule;
     uint8_t    recoed_formats;
 	uint8_t    recoed_meth;  /*自动覆盖或是记满停止*/
@@ -170,7 +170,12 @@ typedef struct
 typedef struct  
 {
     GUJI_RECOCE_TABLE guji_record;
+    uint16_t lowpower_timer;
+    uint16_t wanng_speed_vaule;
     uint8_t  guji_mode;
+    uint8_t  auto_new_guji;
+    uint8_t  auto_power;
+    uint8_t  sound_onoff;
     uint8_t  power_status ;
     uint8_t  power_mode ;
     uint8_t  *guji_buffer;
@@ -190,7 +195,8 @@ typedef struct
     uint8_t Led_pwm_type;
     uint32_t tp_long;
     uint32_t tp_lati;
-    uint32_t grecord_timer_cnt;
+    uint32_t grecord_timer_cnt
+    uint8_t sd_stats;
 }system_flag;
 
 
