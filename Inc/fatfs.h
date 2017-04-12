@@ -51,16 +51,17 @@
 #include "ff.h"
 #include "ff_gen_drv.h"
 #include "user_diskio.h" /* defines USER_Driver as external */
-#include "menutal.h"
-	 
+
 /* USER CODE BEGIN Includes */
+#include "menutal.h"
+#include "stm32l1xx_nucleo.h"
 
 /* USER CODE END Includes */
 
 extern uint8_t retUSER; /* Return value for USER */
 extern char USER_Path[4]; /* USER logical drive path */
 
-extern void MX_FATFS_Init(void);
+void MX_FATFS_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 extern FRESULT open_append (

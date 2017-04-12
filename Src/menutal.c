@@ -577,7 +577,7 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
          
         
         system_flag_table->Message_head_number++;
-        print_usart1("save\r\n");
+        //print_usart1("save\r\n");
         //if (osMutexRelease(SaveGpsMessHandle) != osOK)
         {
             //Error_Handler();
@@ -741,7 +741,7 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
     UINT wb = 0;
     uint8_t *guji_buffer_ = NULL;
     uint16_t rxlen = 0;
-    FRESULT fr = 0;
+    FRESULT fr ;
 
     if(system_flag_table->guji_buffer_Index_wp != system_flag_table->guji_buffer_Index_rp)
     {
@@ -795,7 +795,7 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
         else if(system_flag_table->gujiFormats == GUJI_FORMATS_GPS)
         {    
             fr = f_write(sys_fp,guji_buffer_,rxlen,&wb);
-            print_usart1("save -:%d :%d \r\n",fr,rxlen);
+            print_usart1("-");
                
         }
         else if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)
@@ -977,10 +977,12 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
     UINT wb;
     RTC_DateTypeDef RTC_DateStructure;
     RTC_TimeTypeDef RTC_TimeStructure;
+    
+    uint8_t mode = system_flag_table->guji_mode;
 
+  
 
-
-	switch(system_flag_table->guji_mode )
+	switch(mode )
     {
 		case RECORED_IDLE:
 
@@ -1062,6 +1064,9 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         print_usart1("open append faild \n");
                         return; 
                     }
+
+                    system_flag_table->guji_mode = 2;
+                    
                     if(system_flag_table->guji_record.recoed_formats == GUJI_FORMATS_GPS) 
                     {
                         track_file[0] = 0x07;
@@ -1075,7 +1080,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     }
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
         			save_guiji_message(gpsx,system_flag_table,'T');
-                    system_flag_table->guji_mode = 2;
+                    
                     //print_usart1("system_flag_table->guji_mode :%d \r\n",system_flag_table->guji_mode);
         			interst_pos_number = 0;
         			//	sprintf((char *)dtbuf,"%d",interst_pos_number);		    		

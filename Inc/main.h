@@ -82,9 +82,11 @@
 
 #define POWER_RUN                0
 #define POWER_SURPORT_RUN        1  
-#define POWER_LRUN               2  
-#define POWER_STOP               3
-#define POWER_STANBY             4  
+#define POWER_SURPORT_SLEEP         2  
+#define POWER_LRUN               3  
+#define POWER_LRUN_SLEEP         4  
+#define POWER_STOP               5
+#define POWER_STANBY             6  
 
 
 /*button release flag*/
@@ -107,7 +109,7 @@
 
 #define NORMAL_SURPORT_MODE 0
 #define SENCSE_SURPORT_MODE 1
-#define LOW_POWER_SURPORT_MODE 2
+#define LOW_POWER_SURPORT_MODE 3
 
 
 #define SD_STATS_OK         0
@@ -116,7 +118,7 @@
 
 extern void print_usart1(char *format, ...);
 
-#define TEST_WRITE_SD
+//#define TEST_WRITE_SD
 
 /* USER CODE END Private defines */
 
