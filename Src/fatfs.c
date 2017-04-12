@@ -49,8 +49,8 @@ uint8_t retUSER;    /* Return value for USER */
 char USER_Path[4];  /* USER logical drive path */
 
 /* USER CODE BEGIN Variables */
-
-
+FATFS SD_FatFs;
+extern system_flag *system_flag_table;
 extern void RTC_TimeShow(DWORD* fattime);
 extern char *GetIniKeyString(char *title,char *key,char *filename);
 extern int GetIniKeyInt(char *title,char *key,char *filename);
@@ -65,6 +65,11 @@ void MX_FATFS_Init(void)
   retUSER = FATFS_LinkDriver(&USER_Driver, USER_Path);
 
   /* USER CODE BEGIN Init */
+  //SD_FatFs = malloc(sizeof(FATFS));   
+  if(My_Fs_Init(&SD_FatFs) == 1)
+  {
+      system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
+  }
 
   /* USER CODE END Init */
 }
@@ -121,37 +126,44 @@ uint8_t  My_Fs_Init(FATFS *SD_FatFs)
 //	FIL fil;	
 
 	/* Check the mounted device */
-	if(f_mount(SD_FatFs, (TCHAR const*)"/", 0) != FR_OK)
-	{
-	   print_usart1("BSP_SD_INIT_FAILED \r\n");
-	}  
-	else
-	{
-	
-		fr = f_mkdir("POI");
-		print_usart1("\r\n mkdir_init %d \r\n",fr);
-		
-		
-		if(fr == FR_EXIST)
-			return ret;
-		else 
-		{
-			fr = f_mkdir("POI");
-			if(fr != FR_OK)
-			{
-				print_usart1("\r\n mkfs faild");
-                fr = f_mkfs((TCHAR const*)"/", 0, 0); 
-                fr = f_mount(SD_FatFs, (TCHAR const*)"/", 0);
-                fr = f_mkdir("POI");
-                if(fr != FR_OK)
-                {
-                    print_usart1("\r\n BAD SD CARD \r\n");
-                    ret  = 1;
-                }
-			}
-		}
-    
-	}
+    if(retUSER == 0)
+    {
+    	if(f_mount(SD_FatFs, (TCHAR const*)USER_Path, 0) != FR_OK)
+    	{
+    	   print_usart1("BSP_SD_INIT_FAILED \r\n");
+    	}  
+    	else
+    	{
+    	
+    		fr = f_mkdir("POI");
+    		print_usart1("\r\n mkdir_init %d \r\n",fr);
+    		
+    		
+    		if(fr == FR_EXIST)
+    			return ret;
+    		else if(fr != FR_OK)
+    		{
+    			fr = f_mkdir("POI");
+    			if((fr != FR_OK)&&(fr != FR_EXIST))
+    			{
+    				print_usart1("\r\n f_mkdir faild :%d \r\n",fr);
+                    fr = f_mkfs((TCHAR const*)USER_Path, 0, 0); 
+                    fr = f_mkdir("POI");
+                    print_usart1("\r\n mkf :%d \r\n",fr);
+                    if((fr != FR_OK)&&(fr != FR_EXIST))
+                    {
+                        print_usart1("\r\n BAD SD CARD \r\n");
+                        ret  = 1;
+                    }
+    			 }
+    		 }
+        
+    	}
+    }
+    else
+    {
+        FATFS_UnLinkDriver(USER_Path);
+    }
 
     return ret;
   

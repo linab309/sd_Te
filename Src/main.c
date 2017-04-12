@@ -87,7 +87,6 @@ osMutexId SaveGpsMessHandle;
 //FATFS SD_FatFs;  /* File system object for SD card logical drive */
 
 nmea_msg *gpsx; 
-FATFS *SD_FatFs;
 system_flag *system_flag_table;
 
 FRESULT fr;
@@ -260,7 +259,7 @@ int main(void)
   BSP_LED_Init(LED_RED);
   BSP_LED_Init(LED_BULE);
   //BSP_LED_Init(LED_GPS);  
-  BSP_LED_Init(LED_SD);  
+  //BSP_LED_Init(LED_SD);  
   BSP_LED_Init(LED_SURPORT);  
 
   HAL_NVIC_DisableIRQ(EXTI1_IRQn);
@@ -277,12 +276,11 @@ int main(void)
   memset( system_flag_table->guji_buffer,0,MAX_GUJI_BUFFER_MAX_LEN);
 
   system_flag_table->time_zone                   = 29;
-  system_flag_table->gujiFormats                 = GUJI_FORMATS_GPX;
-  system_flag_table->guji_record.recoed_formats  = GUJI_FORMATS_GPX;
+  system_flag_table->gujiFormats                 = GUJI_FORMATS_GPS;
   system_flag_table->power_status                = POWER_STANBY;
   system_flag_table->guji_record.by_time_vaule   = 100; /*ms*/
   system_flag_table->guji_record.recoed_formats  = BY_TIMES;
-  system_flag_table->power_mode                  = SENCSE_SURPORT_MODE;
+  system_flag_table->power_mode                  = NORMAL_SURPORT_MODE;
   system_flag_table->guji_record.recoed_meth     = AUTO_STOP;
 
 
@@ -387,7 +385,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL12;
-  RCC_OscInitStruct.PLL.PLLDIV = RCC_PLL_DIV4;
+  RCC_OscInitStruct.PLL.PLLDIV = RCC_PLL_DIV3;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -687,7 +685,7 @@ static void MX_TIM10_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim10.Instance = TIM10;
-  htim10.Init.Prescaler = 11;
+  htim10.Init.Prescaler = 15;
   htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim10.Init.Period = 525;
   htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -856,11 +854,11 @@ static void Pwm_Breathing(uint8_t Led_pwm,uint8_t mode)
     {
         if(led_flag == 0)
         {
-            Pulse_vaule += 6;
+            Pulse_vaule += 25;
         }
         else if(led_flag == 1)        
         {
-            Pulse_vaule -= 6;
+            Pulse_vaule -= 25;
         }
         else
         {
@@ -874,7 +872,7 @@ static void Pwm_Breathing(uint8_t Led_pwm,uint8_t mode)
         sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
         
 
-        if(Pulse_vaule == 450)
+        if(Pulse_vaule == 500)
         {
             led_flag = 1;
         }
@@ -982,8 +980,8 @@ void RTC_TimeShow(DWORD* fattime)
   /* Get the RTC current Date */
   HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BCD);
   /* Display time Format : hh:mm:ss */
-  print_usart1("time: %02d:%02d:%02d \r\n",stimestructureget.Hours, stimestructureget.Minutes, stimestructureget.Seconds);
-  print_usart1("date: %02d:%02d:%02d \r\n",sdatestructureget.Year, sdatestructureget.Month, sdatestructureget.Date);
+  //print_usart1("time: %02d:%02d:%02d \r\n",stimestructureget.Hours, stimestructureget.Minutes, stimestructureget.Seconds);
+  //print_usart1("date: %02d:%02d:%02d \r\n",sdatestructureget.Year, sdatestructureget.Month, sdatestructureget.Date);
 
   *fattime =  ((DWORD)((sdatestructureget.Year + 20) << 25) | (DWORD)(sdatestructureget.Month<< 21) | (DWORD)(sdatestructureget.Date<< 16));
   *fattime |= ((DWORD)(stimestructureget.Hours << 11) | (DWORD)(stimestructureget.Minutes<< 5)|((DWORD)(stimestructureget.Seconds)/2));  
@@ -1076,7 +1074,7 @@ static void StopSequence_Config(void)
   
   /* Enable WKUP pin */
   //HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
-  HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
+  //HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
   /* Request to enter STANDBY mode */
   HAL_PWR_EnterSTANDBYMode();
   //HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
@@ -1144,6 +1142,12 @@ void surport_mode_config(uint8_t mode,uint8_t *buf)
                 save_guiji_message(gpsx,system_flag_table,'T');
                 system_flag_table->tp_long = gpsx->longitude;
                 system_flag_table->tp_lati = gpsx->latitude;  
+            }
+            else
+            {
+                  #ifdef TEST_WRITE_SD
+                      //memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],buf,rxlen);
+                  #endif
             }
             break;
         case POWER_LRUN:
@@ -1325,11 +1329,7 @@ void StartDefaultTask(void const * argument)
   usb_init_flag = 1;
   print_usart1("StartDefaultTask \r\n");
 
-  SD_FatFs = malloc(sizeof(FATFS));   
-  if(My_Fs_Init(SD_FatFs) == 1)
-  {
-      system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
-  }
+
   /*保存文件*/
   /* Infinite loop */
   for(;;)
@@ -1381,7 +1381,7 @@ void Get_gps_info(void const * argument)
       if(USART2_RX_STA == 1)
       {
 		  
-          if (osMutexWait(gpsMutexHandle, 0) == osOK)
+          if(osMutexWait(gpsMutexHandle, 0) == osOK)
           {
 			  USART2_RX_STA = 0;		   //启动下一次接收
 
@@ -1395,9 +1395,9 @@ void Get_gps_info(void const * argument)
 			  }
 			  else
 			  {
-			      gps_data = malloc((USART2_RX_STA_WP-USART2_RX_STA_RP)+1);
-			      memcpy(gps_data,uart3_buffer+USART2_RX_STA_RP,(USART2_RX_STA_WP-USART2_RX_STA_RP));
-                  rxlen = (USART2_RX_STA_WP-USART2_RX_STA_RP);
+			      gps_data = malloc((USART2_RX_STA_WP - USART2_RX_STA_RP)+1);
+			      memcpy(gps_data,uart3_buffer + USART2_RX_STA_RP,(USART2_RX_STA_WP - USART2_RX_STA_RP));
+                  rxlen = (USART2_RX_STA_WP - USART2_RX_STA_RP);
 
 			  }
               gps_data[rxlen] = 0;
@@ -1406,9 +1406,18 @@ void Get_gps_info(void const * argument)
               if((gpsx->gpssta <1)&&(rxlen < 160))
               {
                   //printf("%s",gps_data);
+                  #ifdef TEST_WRITE_SD
+                  memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],gps_data,rxlen);
+                  system_flag_table->guji_buffer_Index_wp  += rxlen;        
+                  if(system_flag_table->guji_buffer_Index_wp >= MAX_GUJI_BUFFER_MAX_LEN)
+                  {
+                      system_flag_table->guji_buffer_Index_wp = 0;
+                  }
+                  #endif              
               } 
               else if(gpsx->gpssta >= 1)
               {
+
 
               }
               
@@ -1501,16 +1510,18 @@ void MySystem(void const * argument)
                   system_flag_table->guji_mode = RECORED_STOP;
 				  //HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
 				  
-                  sound_mode = 1; 
-                  sound_cnt  = 3;				                      
+                  //sound_mode = 1; 
+                  //sound_cnt  = 3;				                      
 
 				  osThreadSuspend(Get_gps_info_Handle);
-				  
+				  sound_toggle_simple(3,50,50);
 				  while(system_flag_table->guji_mode != RECORED_IDLE)
 				  {
 				      ;
 				  }
-                  sound_toggle_simple(3,50,50);
+                  
+                  while(system_flag_table->guji_buffer_Index_rp != system_flag_table->guji_buffer_Index_wp) {;}
+                  osThreadSuspend(defaultTaskHandle);
                   system_flag_table->guji_mode = RECORED_START;
 
                   if(HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1) != HAL_OK)
@@ -1518,11 +1529,12 @@ void MySystem(void const * argument)
                     Error_Handler();
                   }
 				  osThreadResume(Get_gps_info_Handle);
+                  osThreadResume(defaultTaskHandle);
 
 				  
               }
 
-              print_usart1("guji_mode :%d \r\n",system_flag_table->guji_mode);
+              //print_usart1("guji_mode :%d \r\n",system_flag_table->guji_mode);
 			  
               break;
           case POWER_KEY_LONG_5S:
@@ -1570,7 +1582,7 @@ void MySystem(void const * argument)
               {
                   system_flag_table->power_status = POWER_STANBY;   
                               
-                  print_usart1("POWER OFF \r\n");
+                  //print_usart1("POWER OFF \r\n");
                   gps_power_mode(0);
                   //USBD_Start(&hUsbDeviceFS);
                   if(usb_init_flag == 0)
@@ -1653,9 +1665,9 @@ uint8_t sound_toggle_simple(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound
 
    for(i = 0;i< cnt ; i++)
    {
-       HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+       //HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
        osDelay(sound_on_timer);
-       HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
+       //HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
        osDelay(sound_off_timer);
     }
 	 
@@ -1672,7 +1684,8 @@ uint8_t breathing_toggle(uint16_t breath_on_timer, uint16_t breath_off_timer)
     {
         breath_toggle_cnt = HAL_GetTick();
 
-        Pwm_Breathing(system_flag_table->Led_pwm_type,1);
+        //print_usart1("breath on \r\n");
+
         breath_flag = 1;
     }
     
@@ -1681,9 +1694,13 @@ uint8_t breathing_toggle(uint16_t breath_on_timer, uint16_t breath_off_timer)
         breath_toggle_cnt = HAL_GetTick();
         Pwm_Breathing(system_flag_table->Led_pwm_type,0);
         breath_flag = 0;
+        //print_usart1("breath off \r\n");
     } 
-		
-		return 0 ;
+
+    if(breath_flag == 1)
+        Pwm_Breathing(system_flag_table->Led_pwm_type,1);
+    
+    return 0 ;
 
 }
 
@@ -1720,14 +1737,15 @@ void update_info(void const * argument)
       }
       else
       {
-         if(gpsx->gpssta >= 1)
+//         if(gpsx->gpssta >= 1)
          {
              //if(Breath_cnt <= (HAL_GetTick() - 4000))
              {
                  system_flag_table->Led_pwm_type = SD_LED;
-                 breathing_toggle(4000,2000);
+                 breathing_toggle(4000,4000);
              }
          }
+
       }
   } 
 #endif

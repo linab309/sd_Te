@@ -116,6 +116,8 @@
 
 extern void print_usart1(char *format, ...);
 
+#define TEST_WRITE_SD
+
 /* USER CODE END Private defines */
 
 /**
