@@ -1081,12 +1081,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
         			save_guiji_message(gpsx,system_flag_table,'T');
                     
-                    //print_usart1("system_flag_table->guji_mode :%d \r\n",system_flag_table->guji_mode);
         			interst_pos_number = 0;
-        			//	sprintf((char *)dtbuf,"%d",interst_pos_number);		    		
-                    //得到速度字符串
-        			//	OLED_ShowString(17,32,dtbuf);
-        			//stm_write_eerpom(GUJI_INTERST_POS,interst_pos_number);
+
                }
 
 			}
@@ -1124,7 +1120,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         system_flag_table->guji_mode = RECORED_IDLE;
                         return; 
                     }
-                    //print_usart1("system_flag_table->guji_mode :%d \r\n",system_flag_table->guji_mode);
+   
                     system_flag_table->guji_mode = 2;
 
                 #endif
@@ -1133,26 +1129,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 
 			break;
 		case RECORED_START_DOING:
-#if 0            
-			if((gpsx->gpssta >= 2)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
-			{
-				save_guiji_message(system_flag_table,gpsx,'T');
-			}
-			else
-			{
-			}
-#endif            
             write_flash(sys_fp,system_flag_table);   
-#if 0
-            print_usart1("write_cnt :%d \r\n ",write_cnt);
-            if(write_cnt >1000)
-            {
-                write_cnt =0;
-                system_flag_table->guji_mode = RECORED_STOP;
-            }
-            else
-                write_cnt ++;
-#endif            
 			break;
 		case RECORED_T:
 			save_guiji_message(gpsx,system_flag_table,'C');

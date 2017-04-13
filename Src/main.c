@@ -85,8 +85,8 @@ osMutexId SaveGpsMessHandle;
 
 //FATFS SD_FatFs;  /* File system object for SD card logical drive */
 
-nmea_msg *gpsx; 
-system_flag *system_flag_table;
+nmea_msg *gpsx = NULL; 
+system_flag *system_flag_table = NULL;
 
 nmea_msg gpsx_1; 
 system_flag system_flag_table_1;
@@ -253,6 +253,16 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   RTC_AlarmConfig();
+
+  gpsx = &gpsx_1;    
+  print_usart1("USER CODE BEGIN 2 %d \r\n",sizeof(nmea_msg));
+  memset(gpsx,0,sizeof(nmea_msg));
+  system_flag_table = &system_flag_table_1;    
+  print_usart1("USER CODE BEGIN 2 %d \r\n",sizeof(system_flag));
+  memset(&system_flag_table_1,0,sizeof(system_flag));
+  system_flag_table->guji_buffer = self_guiji_buffer;    
+  memset( self_guiji_buffer,0,MAX_GUJI_BUFFER_MAX_LEN);
+
   BSP_PB_Init(BUTTON_USER,BUTTON_MODE_GPIO);  
   BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_GPIO);
 
@@ -269,19 +279,6 @@ int main(void)
 
 
 
-  gpsx = &gpsx_1;    
-  //print_usart1("USER CODE BEGIN 2 %d \r\n",sizeof(nmea_msg));
-
-  memset(gpsx,0,sizeof(nmea_msg));
-  system_flag_table = &system_flag_table_1;    
-  //print_usart1("USER CODE BEGIN 2 %d \r\n",sizeof(system_flag));
-
-  memset(system_flag_table,0,sizeof(system_flag));
-
-
-  system_flag_table->guji_buffer = self_guiji_buffer;    
-  memset( system_flag_table->guji_buffer,0,MAX_GUJI_BUFFER_MAX_LEN);
-
   system_flag_table->time_zone                   = 29;
   system_flag_table->gujiFormats                 = GUJI_FORMATS_GPS;
   system_flag_table->power_status                = POWER_STANBY;
@@ -289,10 +286,7 @@ int main(void)
   system_flag_table->guji_record.recoed_formats  = BY_TIMES;
   system_flag_table->power_mode                  = SENCSE_SURPORT_MODE;
   system_flag_table->guji_record.recoed_meth     = AUTO_STOP;
-
   system_flag_table->lowpower_timer              = 300;
-
-  //BSP_LED_Init(LED2);  
 
   /* USER CODE END 2 */
 
@@ -743,7 +737,7 @@ static void MX_GPIO_Init(void)
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
-  //HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
 }
 
@@ -1051,7 +1045,7 @@ void lowpower_record_config(uint16_t ms)
     uint16_t rtc_vaule = 0;
 
     /* Disable Wakeup Counter */
-    system_flag_table->power_status = POWER_LRUN_SLEEP;
+    //system_flag_table->power_status = POWER_LRUN_SLEEP;
     HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
     
     /* ## Setting the Wake up time ############################################*/
@@ -1079,6 +1073,9 @@ void lowpower_record_config(uint16_t ms)
             PLL as system clock source (HSI and PLL are disabled automatically in STOP mode) */                      
     SystemClock_Config();   
     HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+    print_usart1("****************************** \r\n");
+    print_usart1("low run status levef from stop mode \r\n");
+    print_usart1("****************************** \r\n");
 
 }
 void surport_mode_config(uint8_t mode,uint8_t *buf)
@@ -1306,14 +1303,14 @@ uint8_t sound_toggle_config(uint16_t sound_on_timer, uint16_t sound_off_timer)
     {
         sound_toggle_cnt = HAL_GetTick();
 
-        HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+        //HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
         sound_flag = 1;
     }
     
     if((sound_flag == 1)&&(HAL_GetTick() >= (sound_toggle_cnt + sound_on_timer)))
     {
         sound_toggle_cnt = HAL_GetTick();
-        HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
+        //HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
         sound_flag = 0;
     } 
 
@@ -1328,9 +1325,9 @@ uint8_t sound_toggle_simple(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound
 
    for(i = 0;i< cnt ; i++)
    {
-       HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+       //HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
        osDelay(sound_on_timer);
-       HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
+       //HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
        osDelay(sound_off_timer);
     }
 	 
@@ -1424,47 +1421,47 @@ void status_led_config(void)
     {
         if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
         {
-            if((green_led_flag == 0)&&(HAL_GetTick() >= (green_timer_cnt + 300)))
+            if((green_led_flag == 0)&&(HAL_GetTick() >= (green_timer_cnt + 2700)))
             {
                 green_timer_cnt = HAL_GetTick();
                 green_led_flag = 1;
                 BSP_LED_On(LED_GREEN);
             }
             
-            if((green_led_flag == 1)&&(HAL_GetTick() >= (green_timer_cnt + 2700)))
+            if((green_led_flag == 1)&&(HAL_GetTick() >= (green_timer_cnt + 300)))
             {
                 green_timer_cnt = HAL_GetTick();
                 BSP_LED_Off(LED_GREEN);
                 green_led_flag = 0;
             } 
         }
-       else if(system_flag_table->power_status == POWER_LRUN_SLEEP)
-       {
+        else if(system_flag_table->power_status == POWER_LRUN_SLEEP)
+        {
    
-           if((system_flag_table->lowpower_timer*1000) <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
-           {
-               if((green_led_flag == 0)&&(HAL_GetTick() >= (green_timer_cnt + 300)))
-               {
-                   green_timer_cnt = HAL_GetTick();
-                   green_led_flag = 1;
-                   BSP_LED_On(LED_BULE);
-               }
-               
-               if((green_led_flag == 1)&&(HAL_GetTick() >= (green_timer_cnt + 2700)))
-               {
-                   green_timer_cnt = HAL_GetTick();
-                   BSP_LED_Off(LED_BULE);
-                   green_led_flag = 0;
-               } 
-   
-           }
-           else
-           {
-                BSP_LED_On(LED_BULE);     
-                system_flag_table->power_status = POWER_LRUN;
-           }
-   
-       }
+            if((system_flag_table->lowpower_timer*1000) <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
+            {
+                if((green_led_flag == 0)&&(HAL_GetTick() >= (green_timer_cnt + 2700)))
+                {
+                    green_timer_cnt = HAL_GetTick();
+                    green_led_flag = 1;
+                    BSP_LED_On(LED_BULE);
+                }
+                
+                if((green_led_flag == 1)&&(HAL_GetTick() >= (green_timer_cnt + 300)))
+                {
+                    green_timer_cnt = HAL_GetTick();
+                    BSP_LED_Off(LED_BULE);
+                    green_led_flag = 0;
+                } 
+    
+            }
+            else
+            {
+                 BSP_LED_On(LED_BULE);     
+                 system_flag_table->power_status = POWER_LRUN;
+            }
+    
+        }
                    
     }
 
@@ -1475,6 +1472,8 @@ void status_led_config(void)
             BSP_LED_On(LED_GREEN);
         else
             BSP_LED_On(LED_RED);        
+
+        system_flag_table->charger_connected = 1;
     }
     else
     {
@@ -1494,6 +1493,7 @@ void status_led_config(void)
                 read_led_flag = 0;
             } 
         }
+        system_flag_table->charger_connected = 0;
     }    
 
 }
@@ -1523,8 +1523,7 @@ void StartDefaultTask(void const * argument)
     if (osMutexWait(gpsMutexHandle, osWaitForever) == osOK)
     {          
         Recording_guji(&gps_fp,system_flag_table,gpsx);
-        //write_flash(&gps_fp,system_flag_table);
-        //print_usart1("Recording_guji \r\n");
+        
         if (osMutexRelease(gpsMutexHandle) != osOK)
         {
             Error_Handler();
@@ -1641,13 +1640,12 @@ void MySystem(void const * argument)
   uint8_t _user_key_ = 0;
   extern USBD_HandleTypeDef hUsbDeviceFS;
 //  uint8_t _breath_flag_ = 0;
-  
-
-
-
+  //HAL_NVIC_DisableIRQ(EXTI1_IRQn);
   /* Infinite loop */
   for(;;)
-  {
+  {  
+      BSP_PB_Init(BUTTON_USER,BUTTON_MODE_GPIO);  
+      BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_GPIO);
       _user_key_ = get_key();
       if(_user_key_  != 0x00)
       {
@@ -1657,32 +1655,32 @@ void MySystem(void const * argument)
       switch(_user_key_)
       {
           case USER_KEY:
-                //if(system_flag_table->power_status == POWER_RUN)
+ 
+                if(system_flag_table->guji_mode == RECORED_START_DOING)
                 {
-                    if(system_flag_table->guji_mode == RECORED_START_DOING)
+                    if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
                     {
-                        if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
-                        {
-                            save_guiji_message(gpsx,system_flag_table,'C');
-                        }
-                    }    
-                }
-				//HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+                        system_flag_table->guji_mode = RECORED_T;
+                        sound_toggle_simple(1,50,50);
 
-                sound_toggle_simple(1,50,50);
-
-                
+                    }
+                }    
+                         
               break;
           case POWER_KEY:  /*切换记录模式，运动和普通*/
 		  	
 		  	    if(system_flag_table->power_status == POWER_RUN)
-					system_flag_table->power_status = POWER_SURPORT_RUN;
+                {       
+                    system_flag_table->power_status = POWER_SURPORT_RUN;
+                    system_flag_table->power_mode = POWER_SURPORT_RUN;
+                }
 				else if(system_flag_table->power_status == POWER_SURPORT_RUN) 
+                {             
 					system_flag_table->power_status = POWER_RUN;
-				
-				//HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
-                sound_toggle_simple(1,50,50);
+                    system_flag_table->power_mode = POWER_RUN;				
+                }
 
+                sound_toggle_simple(1,50,50);
                 print_usart1("POWER MODE :%d \r\n",system_flag_table->power_status);
 
 
@@ -1690,11 +1688,7 @@ void MySystem(void const * argument)
           case USER_KEY_LONG:  /*重新开启一条轨迹*/
               if(system_flag_table->guji_mode >= RECORED_START)
               {
-                  system_flag_table->guji_mode = RECORED_STOP;
-				  //HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
-				  
-                  //sound_mode = 1; 
-                  //sound_cnt  = 3;				                      
+                  system_flag_table->guji_mode = RECORED_STOP;		                      
 
 				  osThreadSuspend(Get_gps_info_Handle);
 				  sound_toggle_simple(3,50,50);
@@ -1716,8 +1710,6 @@ void MySystem(void const * argument)
 
 				  
               }
-
-              //print_usart1("guji_mode :%d \r\n",system_flag_table->guji_mode);
 			  
               break;
           case POWER_KEY_LONG_5S:
@@ -1807,11 +1799,6 @@ void update_info(void const * argument)
   static uint16_t sd_timer_cnt = 0 ;
   static uint16_t support_timer_cnt = 0 ;
 
-
-
-  //static uint32_t Breath_cnt = 0;
-
-
      /* Get the RTC current Time */
   HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BCD);
   /* Get the RTC current Date */
@@ -1819,15 +1806,11 @@ void update_info(void const * argument)
   
   system_flag_table->RTC_DateStructure = sdatestructureget;
   system_flag_table->RTC_TimeStructure = stimestructureget;
-
   
-  //print_usart1("date: %02d:%02d:%02d \r\n",sdatestructureget.Year, sdatestructureget.Month, sdatestructureget.Date);
-  //print_usart1("time: %02d:%02d:%02d \r\n",stimestructureget.Hours, stimestructureget.Minutes, stimestructureget.Seconds);
-  
-
   vddmv_adc_proess(system_flag_table); /*更新电池状态*/    
 
   status_led_config();
+  gps_led_config();
 
   if(system_flag_table->power_status == POWER_STANBY)
   {
@@ -1839,9 +1822,9 @@ void update_info(void const * argument)
              usb_timer_cnt = 0;
              StopSequence_Config();
    
-             print_usart1("****************************** \r\n");
+             print_usart1("******************************************* \r\n");
              print_usart1("when usb detect hotplug, goto stanby angin. \r\n");
-             print_usart1("****************************** \r\n");
+             print_usart1("******************************************* \r\n");
    
          }
      }
@@ -1855,28 +1838,38 @@ void update_info(void const * argument)
             if(gpsx->speed <= 10)
             {
                 support_timer_cnt ++;
-                if(support_timer_cnt == 30000)
+                if(support_timer_cnt == 300)
                 {
                     support_timer_cnt = 0;
                     //StopSequence_Config();
-                    
+      
+                    //HAL_NVIC_EnableIRQ(EXTI1_IRQn);              
                     print_usart1("****************************** \r\n");
                     print_usart1("entry surport mode  go to stop \r\n");       
                     print_usart1("****************************** \r\n");
-                       HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+                    BSP_LED_Off(LED_SURPORT);
+                    BSP_LED_Off(LED_GPS);
+                    BSP_LED_Off(LED_SD);
+                    BSP_LED_Off(LED_GREEN);
+
+                    system_flag_table->power_status = POWER_SURPORT_SLEEP;
                     /* Enter Stop Mode */
-                    HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
-                    SystemClock_Config();
+                    osDelay(1000);
+                    print_usart1("****************************** \r\n");
+                    //lowpower_record_config(10);
+
+                    //HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
+                    //SystemClock_Config();
                           
-                    HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+                    //HAL_NVIC_DisableIRQ(EXTI1_IRQn);
       
                 }
                 if(LED_SURPORT_FLAG == 1)
                 {
                     BSP_LED_Init(LED_SURPORT);
-                    BSP_LED_On(LED_SURPORT);
                     LED_SURPORT_FLAG = 0;
                 }
+                BSP_LED_On(LED_SURPORT);
             }
             else
             {
@@ -1890,6 +1883,10 @@ void update_info(void const * argument)
                 breathing_toggle(4000,4000);                  
             }
         } 
+        else if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
+        {
+            lowpower_record_config(1000);
+        }
         
         if((HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET)&&(system_flag_table->sd_stats == SD_STATS_OK))
         {
@@ -1991,7 +1988,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   }
   /* USER CODE BEGIN Callback 1 */
   if (htim->Instance == TIM7){
-    gps_led_config();
+  
   }
  
 
