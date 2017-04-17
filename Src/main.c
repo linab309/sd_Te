@@ -137,19 +137,19 @@ void Error_Handler(void);
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_ADC_Init(void);
-static void MX_RTC_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM10_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM4_Init(void);
+static void MX_RTC_Init(void);
 void StartDefaultTask(void const * argument);
 void Get_gps_info(void const * argument);
 void MySystem(void const * argument);
 void update_info(void const * argument);
-
+void lowpower_record_config(uint8_t mode);
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-                                
+void SystemClock_lprun_Config(void);                               
                                 
                                 
 
@@ -236,20 +236,20 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
   /* Configure the system clock */
-  SystemClock_Config();
+  //SystemClock_Config();
+  SystemClock_lprun_Config();
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   MX_ADC_Init();
-  MX_RTC_Init();
   MX_USART3_UART_Init();
   MX_TIM10_Init();
-  //MX_TIM2_Init();
+  MX_TIM2_Init();
   MX_SPI1_Init();
-  //MX_TIM4_Init();
+  MX_TIM4_Init();
+  MX_RTC_Init();
 
   /* USER CODE BEGIN 2 */
   RTC_AlarmConfig();
@@ -345,6 +345,8 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
  
 
+  //lowpower_record_config(0);
+
   /* Start scheduler */
   osKernelStart();
   
@@ -379,15 +381,20 @@ void SystemClock_Config(void)
     /**Initializes the CPU, AHB and APB busses clocks 
     */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE;
+                              |RCC_OSCILLATORTYPE_LSE |RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.MSIState            = RCC_MSI_ON;
+  RCC_OscInitStruct.MSIClockRange       = RCC_MSIRANGE_5; /* Set temporary MSI range */
+  RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
+
   RCC_OscInitStruct.HSICalibrationValue = 16;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL12;
-  RCC_OscInitStruct.PLL.PLLDIV = RCC_PLL_DIV3;
+  RCC_OscInitStruct.PLL.PLLDIV = RCC_PLL_DIV4;
+
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -413,6 +420,10 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+
+    /**Enables the Clock Security System 
+    */
+  HAL_RCC_EnableCSS();
 
     /**Configure the Systick interrupt time 
     */
@@ -472,7 +483,6 @@ static void MX_RTC_Init(void)
 
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
-  RTC_AlarmTypeDef sAlarm;
 
     /**Initialize RTC Only 
     */
@@ -491,42 +501,27 @@ static void MX_RTC_Init(void)
     /**Initialize RTC and set the Time and Date 
     */
   if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) != 0x32F2){
-  sTime.Hours = 0;
-  sTime.Minutes = 0;
-  sTime.Seconds = 0;
+  sTime.Hours = 0x0;
+  sTime.Minutes = 0x0;
+  sTime.Seconds = 0x0;
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
   {
     Error_Handler();
   }
 
   sDate.WeekDay = RTC_WEEKDAY_MONDAY;
   sDate.Month = RTC_MONTH_JANUARY;
-  sDate.Date = 1;
-  sDate.Year = 0;
+  sDate.Date = 0x1;
+  sDate.Year = 0x0;
 
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
+  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
   {
     Error_Handler();
   }
 
     HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR0,0x32F2);
-  }
-    /**Enable the Alarm A 
-    */
-  sAlarm.AlarmTime.Hours = 0;
-  sAlarm.AlarmTime.Minutes = 0;
-  sAlarm.AlarmTime.Seconds = 0;
-  sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
-  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-  sAlarm.AlarmDateWeekDay = 1;
-  sAlarm.Alarm = RTC_ALARM_A;
-  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
-  {
-    Error_Handler();
   }
 
 }
@@ -1039,11 +1034,108 @@ static void StopSequence_Config(void)
 
 }
 
-void lowpower_record_config(uint16_t ms)
+
+/**
+  * @brief  System Clock Configuration
+  *         The system Clock is configured as follow : 
+  *            System Clock source            = (MSI)
+  *            MSI Range                      = 2
+  *            SYSCLK(Hz)                     = 32000
+  *            HCLK(Hz)                       = 32000
+  *            AHB Prescaler                  = 2
+  *            APB1 Prescaler                 = 1
+  *            APB2 Prescaler                 = 1
+  *            Main regulator output voltage  = Scale2 mode
+  * @param  None
+  * @retval None
+  */
+void SystemClock_lprun_Config(void)
+{
+  RCC_ClkInitTypeDef RCC_ClkInitStruct;
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  
+  /* Enable Power Control clock */
+  __HAL_RCC_PWR_CLK_ENABLE();
+
+  /* The voltage scaling allows optimizing the power consumption when the device is 
+     clocked below the maximum system frequency, to update the voltage scaling value 
+     regarding system frequency refer to product datasheet.  */
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2); /* For STM32L1: Low power sleep mode can only be entered when VCORE is in range 2 */
+
+  /* Enable MSI Oscillator */
+  RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.MSIState            = RCC_MSI_ON;
+  RCC_OscInitStruct.MSIClockRange       = RCC_MSIRANGE_2; /* Set temporary MSI range */
+  RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState        = RCC_PLL_NONE;
+  if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler();
+  }
+
+  /* Select MSI as system clock source and configure the HCLK, PCLK1 and PCLK2 
+     clocks dividers */
+  RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler();
+  }
+
+  /* Set MSI range to 0 */
+ // __HAL_RCC_MSI_RANGE_CONFIG(RCC_MSIRANGE_0);
+
+}
+
+/**
+  * @brief  System Power Configuration
+  *         The system Power is configured as follow : 
+  *            + System Running at MSI (~32KHz)
+  *            + Flash 0 wait state  
+  *            + Voltage Range 2
+  *            + Code running from Internal FLASH
+  *            + Wakeup using Key Button PC.13
+  * @param  None
+  * @retval None
+  */
+static void SystemPower_Config(void)
+{
+  GPIO_InitTypeDef GPIO_InitStructure;
+
+  /* Enable GPIOs clock */
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  
+  /* Configure all GPIO port pins in Analog mode */
+  GPIO_InitStructure.Pin = GPIO_PIN_All;
+  GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStructure.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+
+  /* Disable GPIOs clock */
+  __HAL_RCC_GPIOA_CLK_DISABLE();
+  __HAL_RCC_GPIOB_CLK_DISABLE();
+  __HAL_RCC_GPIOC_CLK_DISABLE();
+  __HAL_RCC_GPIOH_CLK_DISABLE();
+
+}
+
+
+
+void lowpower_record_config(uint8_t mode)
 {
 
-    uint16_t rtc_vaule = 0;
+    //uint16_t rtc_vaule = 0;
 
+#ifdef USE_RTC_TO_WAKEUP_STOP
     /* Disable Wakeup Counter */
     //system_flag_table->power_status = POWER_LRUN_SLEEP;
     HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
@@ -1062,20 +1154,54 @@ void lowpower_record_config(uint16_t ms)
             ==> WakeUpCounter = ~4s/0,410ms = 9750 = 0x2616 */
     rtc_vaule = (ms * 1000)/427;        
     HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, rtc_vaule, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
-    print_usart1("****************************** \r\n");
-    print_usart1("low run status go to stop mode \r\n");
-    print_usart1("****************************** \r\n");
+#endif 
 
-    /* Enter Stop Mode */
-    HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
+    if(mode == 1)
+    {
+        print_usart1("****************************** \r\n");
+        print_usart1("low run status go to lp run mode \r\n");
+        print_usart1("****************************** \r\n");
     
-    /* Configures system clock after wake-up from STOP: enable HSI, PLL and select
-            PLL as system clock source (HSI and PLL are disabled automatically in STOP mode) */                      
-    SystemClock_Config();   
-    HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
-    print_usart1("****************************** \r\n");
-    print_usart1("low run status levef from stop mode \r\n");
-    print_usart1("****************************** \r\n");
+        /* Enter Stop Mode */
+          /* Enter LP RUN mode */
+        gps_power_mode(0);
+        
+        osThreadSuspend(Get_gps_info_Handle);
+        osThreadSuspend(defaultTaskHandle);
+        SystemClock_lprun_Config();
+        SystemPower_Config();
+    
+        HAL_PWREx_EnableLowPowerRunMode();
+        
+        
+          /* Wait until the system enters LP RUN and the Regulator is in LP mode */
+        while(__HAL_PWR_GET_FLAG(PWR_FLAG_REGLP) == RESET)
+        {
+        }
+        print_usart1("****************************** \r\n");
+        print_usart1("done\r\n");
+        print_usart1("****************************** \r\n");
+    }
+    else
+    {
+        print_usart1("****************************** \r\n");
+        print_usart1("left lp run mode  \r\n");
+        print_usart1("****************************** \r\n");
+
+            /* Exit LP RUN mode */
+        HAL_PWREx_DisableLowPowerRunMode();
+
+        /* Wait until the system exits LP RUN and the Regulator is in main mode */
+        while(__HAL_PWR_GET_FLAG(PWR_FLAG_REGLP) != RESET)
+        {
+        }
+
+        SystemClock_Config();
+        print_usart1("****************************** \r\n");
+        print_usart1("done \r\n");
+        print_usart1("****************************** \r\n");        
+    }
+
 
 }
 void surport_mode_config(uint8_t mode,uint8_t *buf)
@@ -1159,10 +1285,9 @@ void surport_mode_config(uint8_t mode,uint8_t *buf)
                     while(system_flag_table->guji_buffer_Index_rp != system_flag_table->guji_buffer_Index_wp) {;}
                     lp_number = 0;
                     BSP_LED_Off(LED_BULE);
+                    //gps_power_mode(0);
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
-                    
-                    osThreadSuspend(Get_gps_info_Handle);
-                    osThreadSuspend(defaultTaskHandle);
+                    system_flag_table->power_status = POWER_LRUN_SLEEP;
                     //lowpower_record_config(3000);
                     
                 }
@@ -1412,6 +1537,7 @@ void status_led_config(void)
       &&(system_flag_table->power_status != POWER_SURPORT_SLEEP))  
     {
         BSP_LED_On(LED_GREEN);
+        vddmv_adc_proess(system_flag_table); /*更新电池状态*/    
         if(system_flag_table->power_status == POWER_LRUN)
         {
             BSP_LED_On(LED_BULE);  
@@ -1806,8 +1932,8 @@ void update_info(void const * argument)
   
   system_flag_table->RTC_DateStructure = sdatestructureget;
   system_flag_table->RTC_TimeStructure = stimestructureget;
-  
-  vddmv_adc_proess(system_flag_table); /*更新电池状态*/    
+
+
 
   status_led_config();
   gps_led_config();
@@ -1856,7 +1982,8 @@ void update_info(void const * argument)
                     /* Enter Stop Mode */
                     osDelay(1000);
                     print_usart1("****************************** \r\n");
-                    //lowpower_record_config(10);
+                    lowpower_record_config(1);
+                    lowpower_record_config(0);
 
                     //HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
                     //SystemClock_Config();
@@ -1885,7 +2012,8 @@ void update_info(void const * argument)
         } 
         else if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
         {
-            lowpower_record_config(1000);
+            //lowpower_record_config(1000);
+            print_usart1("****************************** \r\n");
         }
         
         if((HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET)&&(system_flag_table->sd_stats == SD_STATS_OK))
