@@ -44,6 +44,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
 #include "task.h"
+#include "stm32l1xx_hal.h"
 
 /* USER CODE BEGIN Includes */     
 
@@ -52,6 +53,7 @@
 /* Variables -----------------------------------------------------------------*/
 
 /* USER CODE BEGIN Variables */
+extern TIM_HandleTypeDef        htim7; 
 
 /* USER CODE END Variables */
 
@@ -61,8 +63,28 @@
 
 /* USER CODE END FunctionPrototypes */
 
+/* Pre/Post sleep processing prototypes */
+void PreSleepProcessing(uint32_t *ulExpectedIdleTime);
+void PostSleepProcessing(uint32_t *ulExpectedIdleTime);
+
 /* Hook prototypes */
+void vApplicationIdleHook(void);
 void vApplicationMallocFailedHook(void);
+
+/* USER CODE BEGIN 2 */
+__weak void vApplicationIdleHook( void )
+{
+   /* vApplicationIdleHook() will only be called if configUSE_IDLE_HOOK is set
+   to 1 in FreeRTOSConfig.h. It will be called on each iteration of the idle
+   task. It is essential that code added to this hook function never attempts
+   to block in any way (for example, call xQueueReceive() with a block time
+   specified, or call vTaskDelay()). If the application makes use of the
+   vTaskDelete() API function (as this demo application does) then it is also
+   important that vApplicationIdleHook() is permitted to return to its calling
+   function, because it is the responsibility of the idle task to clean up
+   memory allocated by the kernel to any task that has since been deleted. */
+}
+/* USER CODE END 2 */
 
 /* USER CODE BEGIN 5 */
 __weak void vApplicationMallocFailedHook(void)
@@ -79,6 +101,52 @@ __weak void vApplicationMallocFailedHook(void)
    provide information on how the remaining heap might be fragmented). */
 }
 /* USER CODE END 5 */
+
+/* USER CODE BEGIN PREPOSTSLEEP */
+__weak void PreSleepProcessing(uint32_t *ulExpectedIdleTime)
+{
+/* place for user code */ 
+    /* Called by the kernel before it places the MCU into a sleep mode because
+    configPRE_SLEEP_PROCESSING() is #defined to PreSleepProcessing().
+    
+    NOTE:  Additional actions can be taken here to get the power consumption
+    even lower.  For example, peripherals can be turned off here, and then back
+    on again in the post sleep processing function.  For maximum power saving
+    ensure all unused pins are in their lowest power state. */
+    uint32_t i;
+    /* 
+      (*ulExpectedIdleTime) is set to 0 to indicate that PreSleepProcessing contains
+      its own wait for interrupt or wait for event instruction and so the kernel vPortSuppressTicksAndSleep 
+      function does not need to execute the wfi instruction  
+    */
+
+    print_usart1("stop in \r\n");   
+    HAL_SuspendTick();
+    SystemClock_Config_msi();
+    /*Enter to sleep Mode using the HAL function HAL_PWR_EnterSLEEPMode with WFI instruction*/
+    HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI); 
+    print_usart1("stop end \r\n");
+    for(i = 0;i<*ulExpectedIdleTime ;i++)
+        HAL_IncTick();
+    *ulExpectedIdleTime = 0;
+    SystemClock_Config();
+    HAL_ResumeTick();
+
+}
+
+__weak void PostSleepProcessing(uint32_t *ulExpectedIdleTime)
+{
+/* place for user code */
+    /* Called by the kernel when the MCU exits a sleep mode because
+    configPOST_SLEEP_PROCESSING is #defined to PostSleepProcessing(). */
+    
+    /* Avoid compiler warnings about the unused parameter. */
+    (void) ulExpectedIdleTime;
+    print_usart1("PostSleepProcessing \r\n");
+
+
+}
+/* USER CODE END PREPOSTSLEEP */
 
 /* USER CODE BEGIN Application */
      

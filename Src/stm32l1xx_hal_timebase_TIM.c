@@ -70,6 +70,7 @@ uint32_t                 uwIncrementState = 0;
   * @param  TickPriority: Tick interrupt priorty.
   * @retval HAL status
   */
+#if 1
 HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 {
   RCC_ClkInitTypeDef    clkconfig;
@@ -117,7 +118,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   /* Return function status */
   return HAL_ERROR;
 }
-
+#endif
 /**
   * @brief  Suspend Tick increment.
   * @note   Disable the tick increment by disabling TIM7 update interrupt.

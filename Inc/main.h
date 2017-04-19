@@ -117,6 +117,8 @@
 #define SD_STATS_NO_CARD    2
 
 extern void print_usart1(char *format, ...);
+extern void SystemClock_Config_msi(void);
+extern void SystemClock_Config(void);
 
 //#define TEST_WRITE_SD
 

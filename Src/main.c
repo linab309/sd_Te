@@ -139,17 +139,17 @@ static void MX_USART1_UART_Init(void);
 static void MX_ADC_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM10_Init(void);
-static void MX_TIM2_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_RTC_Init(void);
+static void MX_TIM2_Init(void);
 void StartDefaultTask(void const * argument);
 void Get_gps_info(void const * argument);
 void MySystem(void const * argument);
 void update_info(void const * argument);
-void lowpower_record_config(uint8_t mode);
+
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-void SystemClock_lprun_Config(void);                               
+                                
                                 
                                 
 
@@ -236,9 +236,9 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+
   /* Configure the system clock */
-  //SystemClock_Config();
-  SystemClock_lprun_Config();
+  SystemClock_Config();
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -246,10 +246,10 @@ int main(void)
   MX_ADC_Init();
   MX_USART3_UART_Init();
   MX_TIM10_Init();
-  MX_TIM2_Init();
   MX_SPI1_Init();
   MX_TIM4_Init();
   MX_RTC_Init();
+  MX_TIM2_Init();
 
   /* USER CODE BEGIN 2 */
   RTC_AlarmConfig();
@@ -316,7 +316,7 @@ int main(void)
   /* start timers, add new ones, ... */
 
   /* Start Timer */
-  osTimerStart(TimerUpdateHandle, 10);
+  osTimerStart(TimerUpdateHandle, 1000);
 
   /* USER CODE END RTOS_TIMERS */
 
@@ -336,7 +336,8 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   osThreadSuspend(Get_gps_info_Handle);
-  //osThreadSuspend(defaultTaskHandle);
+  osThreadSuspend(defaultTaskHandle);
+  osThreadSuspend(SystemCallHandle);
 
   /* USER CODE END RTOS_THREADS */
 
@@ -344,8 +345,6 @@ int main(void)
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
  
-
-  //lowpower_record_config(0);
 
   /* Start scheduler */
   osKernelStart();
@@ -380,21 +379,20 @@ void SystemClock_Config(void)
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE |RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
+  //RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+#if 0  
   RCC_OscInitStruct.MSIState            = RCC_MSI_ON;
-  RCC_OscInitStruct.MSIClockRange       = RCC_MSIRANGE_5; /* Set temporary MSI range */
-  RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
-
+  RCC_OscInitStruct.MSIClockRange       = RCC_MSIRANGE_4; /* Set temporary MSI range */
+  RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;  
+#endif  
   RCC_OscInitStruct.HSICalibrationValue = 16;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL12;
-  RCC_OscInitStruct.PLL.PLLDIV = RCC_PLL_DIV4;
-
+  RCC_OscInitStruct.PLL.PLLDIV = RCC_PLL_DIV3;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -409,22 +407,18 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
     Error_Handler();
   }
 
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
-
-    /**Enables the Clock Security System 
-    */
-  HAL_RCC_EnableCSS();
-
+#if 0
     /**Configure the Systick interrupt time 
     */
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
@@ -435,7 +429,82 @@ void SystemClock_Config(void)
 
   /* SysTick_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(SysTick_IRQn, 15, 0);
+#endif
 }
+
+
+void SystemClock_Config_msi(void)
+{
+
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+
+  /* Enable Power Control clock */
+  __HAL_RCC_PWR_CLK_ENABLE();
+
+  /* The voltage scaling allows optimizing the power consumption when the device is 
+     clocked below the maximum system frequency, to update the voltage scaling value 
+     regarding system frequency refer to product datasheet.  */
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1); 
+
+  /* Enable MSI Oscillator */
+  RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.MSIState            = RCC_MSI_ON;
+  RCC_OscInitStruct.MSIClockRange       = RCC_MSIRANGE_5; /* Set temporary MSI range */
+  RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState        = RCC_PLL_NONE;
+  if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler();
+  }
+
+  /* Select MSI as system clock source and configure the HCLK, PCLK1 and PCLK2 
+     clocks dividers */
+  RCC_ClkInitStruct.ClockType       = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+  RCC_ClkInitStruct.SYSCLKSource    = RCC_SYSCLKSOURCE_MSI;
+  RCC_ClkInitStruct.AHBCLKDivider   = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider  = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider  = RCC_HCLK_DIV1;
+  if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler();
+  }
+    /**Configure the Systick interrupt time 
+    */
+  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
+
+    /**Configure the Systick 
+    */
+  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+
+  /* SysTick_IRQn interrupt configuration */
+  //HAL_NVIC_SetPriority(SysTick_IRQn, 15, 0);  
+}
+
+
+
+
+
+/**
+  * @brief  Switch the PLL source from HSE  to HSI, and select the PLL as SYSCLK
+  *         source.
+  *         The system Clock is configured as follow :
+  *            System Clock source            = PLL (HSI)
+  *            SYSCLK(Hz)                     = 32000000
+  *            HCLK(Hz)                       = 32000000
+  *            AHB Prescaler                  = 1
+  *            APB1 Prescaler                 = 1
+  *            APB2 Prescaler                 = 1
+  *            HSI Frequency(Hz)              = 16000000
+  *            PLLMUL                         = 6
+  *            PLLDIV                         = 3
+  *            Flash Latency(WS)              = 1
+  * @param  None
+  * @retval None
+  */
+
 
 /* ADC init function */
 static void MX_ADC_Init(void)
@@ -557,9 +626,9 @@ static void MX_TIM2_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 11;
+  htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 500;
+  htim2.Init.Period = 0;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
   {
@@ -574,7 +643,7 @@ static void MX_TIM2_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 250;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
@@ -1035,6 +1104,9 @@ static void StopSequence_Config(void)
 }
 
 
+
+#if 0
+
 /**
   * @brief  System Clock Configuration
   *         The system Clock is configured as follow : 
@@ -1128,8 +1200,6 @@ static void SystemPower_Config(void)
 
 }
 
-
-
 void lowpower_record_config(uint8_t mode)
 {
 
@@ -1204,6 +1274,9 @@ void lowpower_record_config(uint8_t mode)
 
 
 }
+
+#endif
+
 void surport_mode_config(uint8_t mode,uint8_t *buf)
 {
     
@@ -1537,7 +1610,7 @@ void status_led_config(void)
       &&(system_flag_table->power_status != POWER_SURPORT_SLEEP))  
     {
         BSP_LED_On(LED_GREEN);
-        vddmv_adc_proess(system_flag_table); /*更新电池状态*/    
+         
         if(system_flag_table->power_status == POWER_LRUN)
         {
             BSP_LED_On(LED_BULE);  
@@ -1670,7 +1743,7 @@ void StartDefaultTask(void const * argument)
     }
    
 
-    osDelay(1);
+    osDelay(10);
 
   }
   /* USER CODE END 5 */ 
@@ -1937,6 +2010,7 @@ void update_info(void const * argument)
 
   status_led_config();
   gps_led_config();
+  vddmv_adc_proess(system_flag_table); /*更新电池状态*/   
 
   if(system_flag_table->power_status == POWER_STANBY)
   {
@@ -1980,10 +2054,10 @@ void update_info(void const * argument)
 
                     system_flag_table->power_status = POWER_SURPORT_SLEEP;
                     /* Enter Stop Mode */
-                    osDelay(1000);
-                    print_usart1("****************************** \r\n");
-                    lowpower_record_config(1);
-                    lowpower_record_config(0);
+                    //osDelay(1000);
+                    //print_usart1("****************************** \r\n");
+                    //lowpower_record_config(1);
+                    //lowpower_record_config(0);
 
                     //HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
                     //SystemClock_Config();
