@@ -178,7 +178,7 @@ static void prvTaskExitError( void );
  * The number of SysTick increments that make up one tick period.
  */
 #if configUSE_TICKLESS_IDLE == 1
-	static uint32_t ulTimerCountsForOneTick = 0;
+	 uint32_t ulTimerCountsForOneTick = 0;
 #endif /* configUSE_TICKLESS_IDLE */
 
 /*

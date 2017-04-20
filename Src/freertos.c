@@ -47,6 +47,10 @@
 #include "stm32l1xx_hal.h"
 
 /* USER CODE BEGIN Includes */     
+#define MY_SYSTICK_CTRL_REG			( * ( ( volatile uint32_t * ) 0xe000e010 ) )
+#define MY_SYSTICK_LOAD_REG			( * ( ( volatile uint32_t * ) 0xe000e014 ) )
+#define MY_SYSTICK_CURRENT_VALUE_REG	( * ( ( volatile uint32_t * ) 0xe000e018 ) )
+#define MY_SYSPRI2_REG				( * ( ( volatile uint32_t * ) 0xe000ed20 ) )
 
 /* USER CODE END Includes */
 
@@ -113,24 +117,18 @@ __weak void PreSleepProcessing(uint32_t *ulExpectedIdleTime)
     even lower.  For example, peripherals can be turned off here, and then back
     on again in the post sleep processing function.  For maximum power saving
     ensure all unused pins are in their lowest power state. */
-    uint32_t i;
+ 
     /* 
       (*ulExpectedIdleTime) is set to 0 to indicate that PreSleepProcessing contains
       its own wait for interrupt or wait for event instruction and so the kernel vPortSuppressTicksAndSleep 
       function does not need to execute the wfi instruction  
-    */
+    */  
 
-    print_usart1("stop in \r\n");   
-    HAL_SuspendTick();
-    SystemClock_Config_msi();
     /*Enter to sleep Mode using the HAL function HAL_PWR_EnterSLEEPMode with WFI instruction*/
     HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI); 
-    print_usart1("stop end \r\n");
-    for(i = 0;i<*ulExpectedIdleTime ;i++)
-        HAL_IncTick();
+    
     *ulExpectedIdleTime = 0;
-    SystemClock_Config();
-    HAL_ResumeTick();
+
 
 }
 
@@ -141,8 +139,18 @@ __weak void PostSleepProcessing(uint32_t *ulExpectedIdleTime)
     configPOST_SLEEP_PROCESSING is #defined to PostSleepProcessing(). */
     
     /* Avoid compiler warnings about the unused parameter. */
+    uint32_t i;
+
     (void) ulExpectedIdleTime;
-    print_usart1("PostSleepProcessing \r\n");
+
+    for(i = 0;i<*ulExpectedIdleTime ;i++)
+    {
+        HAL_IncTick();
+    }
+    
+    HAL_ResumeTick();    
+
+
 
 
 }

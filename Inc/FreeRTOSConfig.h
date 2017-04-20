@@ -175,8 +175,13 @@ standard names. */
 /* USER CODE BEGIN Defines */   	      
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
 
-#define traceTASK_SWITCHED_IN()  StartIdleMonitor()
-#define traceTASK_SWITCHED_OUT()  EndIdleMonitor()
+//#define traceTASK_SWITCHED_IN()  StartIdleMonitor()
+//#define traceTASK_SWITCHED_OUT()  EndIdleMonitor()
+
+
+#define traceLOW_POWER_IDLE_BEGIN() Begin_low_power()
+#define traceLOW_POWER_IDLE_END()   End_low_power()
+
 
 /* USER CODE END Defines */ 
 

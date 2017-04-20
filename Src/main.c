@@ -106,6 +106,8 @@ uint16_t USART2_RX_STA_RP = 0;
 uint16_t USART2_RX_STA_WP = 0; 
 uint8_t USART2_RX_STA = 0; 
 
+uint16_t support_cnt = 0; 
+
 #if 0
 uint8_t sound_cnt= 0 ;
 uint8_t sound_mode = 0 ;
@@ -232,6 +234,7 @@ int main(void)
 
   /* USER CODE END 1 */
 
+
   /* MCU Configuration----------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -251,14 +254,17 @@ int main(void)
   MX_RTC_Init();
   MX_TIM2_Init();
 
+
+  print_usart1("P-1 running !! sb_flag :%x  wu_flag:%x\r\n",__HAL_PWR_GET_FLAG(PWR_FLAG_SB),__HAL_PWR_GET_FLAG(PWR_FLAG_WU));
+
   /* USER CODE BEGIN 2 */
+
   RTC_AlarmConfig();
 
   gpsx = &gpsx_1;    
-  print_usart1("USER CODE BEGIN 2 %d \r\n",sizeof(nmea_msg));
   memset(gpsx,0,sizeof(nmea_msg));
   system_flag_table = &system_flag_table_1;    
-  print_usart1("USER CODE BEGIN 2 %d \r\n",sizeof(system_flag));
+
   memset(&system_flag_table_1,0,sizeof(system_flag));
   system_flag_table->guji_buffer = self_guiji_buffer;    
   memset( self_guiji_buffer,0,MAX_GUJI_BUFFER_MAX_LEN);
@@ -316,7 +322,7 @@ int main(void)
   /* start timers, add new ones, ... */
 
   /* Start Timer */
-  osTimerStart(TimerUpdateHandle, 1000);
+  osTimerStart(TimerUpdateHandle, 100);
 
   /* USER CODE END RTOS_TIMERS */
 
@@ -336,8 +342,8 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   osThreadSuspend(Get_gps_info_Handle);
-  osThreadSuspend(defaultTaskHandle);
-  osThreadSuspend(SystemCallHandle);
+  //osThreadSuspend(defaultTaskHandle);
+  //osThreadSuspend(SystemCallHandle);
 
   /* USER CODE END RTOS_THREADS */
 
@@ -379,13 +385,13 @@ void SystemClock_Config(void)
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   //RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-#if 0  
+#if 1  
   RCC_OscInitStruct.MSIState            = RCC_MSI_ON;
-  RCC_OscInitStruct.MSIClockRange       = RCC_MSIRANGE_4; /* Set temporary MSI range */
+  RCC_OscInitStruct.MSIClockRange       = RCC_MSIRANGE_5; /* Set temporary MSI range */
   RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;  
 #endif  
   RCC_OscInitStruct.HSICalibrationValue = 16;
@@ -407,7 +413,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
     Error_Handler();
   }
@@ -418,7 +424,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-#if 0
+
     /**Configure the Systick interrupt time 
     */
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
@@ -429,58 +435,69 @@ void SystemClock_Config(void)
 
   /* SysTick_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(SysTick_IRQn, 15, 0);
-#endif
+
 }
 
 
 void SystemClock_Config_msi(void)
 {
 
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0}; 
+    #if 1
+    
+    /* Select MSI as system clock source and configure the HCLK, PCLK1 and PCLK2 
+       clocks dividers */
+    RCC_ClkInitStruct.ClockType       = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+    RCC_ClkInitStruct.SYSCLKSource    = RCC_SYSCLKSOURCE_MSI;
+    RCC_ClkInitStruct.AHBCLKDivider   = RCC_SYSCLK_DIV2;
+    RCC_ClkInitStruct.APB1CLKDivider  = RCC_HCLK_DIV1;
+    RCC_ClkInitStruct.APB2CLKDivider  = RCC_HCLK_DIV1;
+    if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+    {
+      /* Initialization Error */
+      Error_Handler();
+    }
+    #endif
+    /**Initializes the CPU, AHB and APB busses clocks */
+    
+     /**Configure the Systick interrupt time 
+     */
 
-  /* Enable Power Control clock */
-  __HAL_RCC_PWR_CLK_ENABLE();
+    HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
+    
+     /**Configure the Systick 
+     */
+    HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+    //MX_USART1_UART_Init();
+    //print_usart1("msi clock = %d\r\n ",HAL_RCC_GetHCLKFreq());
 
-  /* The voltage scaling allows optimizing the power consumption when the device is 
-     clocked below the maximum system frequency, to update the voltage scaling value 
-     regarding system frequency refer to product datasheet.  */
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1); 
+}
 
-  /* Enable MSI Oscillator */
-  RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_MSI;
-  RCC_OscInitStruct.MSIState            = RCC_MSI_ON;
-  RCC_OscInitStruct.MSIClockRange       = RCC_MSIRANGE_5; /* Set temporary MSI range */
-  RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState        = RCC_PLL_NONE;
-  if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+
+void SystemClock_Config_resume(void)
+{
+
+  RCC_ClkInitTypeDef RCC_ClkInitStruct;
+
+  
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
-    /* Initialization Error */
     Error_Handler();
   }
-
-  /* Select MSI as system clock source and configure the HCLK, PCLK1 and PCLK2 
-     clocks dividers */
-  RCC_ClkInitStruct.ClockType       = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
-  RCC_ClkInitStruct.SYSCLKSource    = RCC_SYSCLKSOURCE_MSI;
-  RCC_ClkInitStruct.AHBCLKDivider   = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider  = RCC_HCLK_DIV1;
-  RCC_ClkInitStruct.APB2CLKDivider  = RCC_HCLK_DIV1;
-  if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
-  {
-    /* Initialization Error */
-    Error_Handler();
-  }
-    /**Configure the Systick interrupt time 
-    */
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
+  
+  /**Configure the Systick 
+  */
+  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);  
+  //print_usart1("resume clock = %d\r\n ",HAL_RCC_GetHCLKFreq());
 
-    /**Configure the Systick 
-    */
-  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
-
-  /* SysTick_IRQn interrupt configuration */
-  //HAL_NVIC_SetPriority(SysTick_IRQn, 15, 0);  
 }
 
 
@@ -858,8 +875,8 @@ static void Pwm_Breathing(uint8_t Led_pwm,uint8_t mode)
             //Channel = TIM_CHANNEL_1;
             break;
         case SPRORT_LED:
-            //htim = &htim4;
-            //Channel = TIM_CHANNEL_1;
+            htim = &htim4;
+            Channel = TIM_CHANNEL_1;
             break;
             
 
@@ -1035,6 +1052,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     }
 }
 
+
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {    
 
@@ -1043,7 +1062,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
     else if(GPIO_Pin == GPIO_PIN_1)
     {
-        
+        support_cnt ++;
     }
     else if(GPIO_Pin == GPIO_PIN_0)
     {
@@ -1569,11 +1588,6 @@ void gps_led_config(void)
 
     static uint32_t gps_timer_cnt = 0 ;
     static uint8_t gps_led_flag = 0;
-
-    if(system_flag_table->power_status == POWER_STANBY)
-    {
-        return ;
-    }
     
     if(gpsx->gpssta >= 1)
     {
@@ -1615,9 +1629,13 @@ void status_led_config(void)
         {
             BSP_LED_On(LED_BULE);  
         }        
+
+        gps_led_config();
     }
     else
     {
+
+        BSP_LED_Off(LED_GPS);
         if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
         {
             if((green_led_flag == 0)&&(HAL_GetTick() >= (green_timer_cnt + 2700)))
@@ -2009,7 +2027,6 @@ void update_info(void const * argument)
 
 
   status_led_config();
-  gps_led_config();
   vddmv_adc_proess(system_flag_table); /*¸üÐÂµç³Ø×´Ì¬*/   
 
   if(system_flag_table->power_status == POWER_STANBY)
@@ -2047,12 +2064,12 @@ void update_info(void const * argument)
                     print_usart1("****************************** \r\n");
                     print_usart1("entry surport mode  go to stop \r\n");       
                     print_usart1("****************************** \r\n");
-                    BSP_LED_Off(LED_SURPORT);
-                    BSP_LED_Off(LED_GPS);
-                    BSP_LED_Off(LED_SD);
-                    BSP_LED_Off(LED_GREEN);
 
+                    gps_power_mode(0);
                     system_flag_table->power_status = POWER_SURPORT_SLEEP;
+                    osThreadSuspend(Get_gps_info_Handle);
+                    osThreadSuspend(defaultTaskHandle);
+                    osThreadSuspend(SystemCallHandle);                    
                     /* Enter Stop Mode */
                     //osDelay(1000);
                     //print_usart1("****************************** \r\n");
@@ -2087,7 +2104,26 @@ void update_info(void const * argument)
         else if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
         {
             //lowpower_record_config(1000);
-            print_usart1("****************************** \r\n");
+            //print_usart1("****************************** \r\n");
+
+            if(support_timer_cnt >= 20)
+            {
+                system_flag_table->power_status = POWER_SURPORT_RUN;
+                support_timer_cnt = 0;
+                gps_power_mode(1);
+                osThreadResume(Get_gps_info_Handle);
+                osThreadResume(defaultTaskHandle);
+                osThreadResume(SystemCallHandle); 
+
+            }
+            else
+            {
+                if(support_cnt > 5)
+                {
+                    support_timer_cnt++;
+                    support_cnt = 0;
+                }
+            }
         }
         
         if((HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET)&&(system_flag_table->sd_stats == SD_STATS_OK))

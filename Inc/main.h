@@ -118,7 +118,7 @@
 
 extern void print_usart1(char *format, ...);
 extern void SystemClock_Config_msi(void);
-extern void SystemClock_Config(void);
+extern void SystemClock_Config_resume(void);
 
 //#define TEST_WRITE_SD
 

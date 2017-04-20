@@ -437,7 +437,7 @@ uint8_t get_space(void)
 
 uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_t guji_record_type)
 {
-    uint8_t one_shot_buffer[28];
+    uint8_t one_shot_buffer[MESSAGE_LEN];
     uint8_t index = 0;
     GUJI_TAG flag ;
     GUJI_DATE guji_data ;
