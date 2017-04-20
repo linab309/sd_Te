@@ -254,7 +254,6 @@ int main(void)
   MX_RTC_Init();
   MX_TIM2_Init();
 
-
   print_usart1("P-1 running !! sb_flag :%x  wu_flag:%x\r\n",__HAL_PWR_GET_FLAG(PWR_FLAG_SB),__HAL_PWR_GET_FLAG(PWR_FLAG_WU));
 
   /* USER CODE BEGIN 2 */
@@ -389,11 +388,10 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   //RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-#if 1  
+  
   RCC_OscInitStruct.MSIState            = RCC_MSI_ON;
   RCC_OscInitStruct.MSIClockRange       = RCC_MSIRANGE_5; /* Set temporary MSI range */
-  RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;  
-#endif  
+  RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;   
   RCC_OscInitStruct.HSICalibrationValue = 16;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
@@ -443,7 +441,6 @@ void SystemClock_Config_msi(void)
 {
 
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0}; 
-    #if 1
     
     /* Select MSI as system clock source and configure the HCLK, PCLK1 and PCLK2 
        clocks dividers */
@@ -457,7 +454,7 @@ void SystemClock_Config_msi(void)
       /* Initialization Error */
       Error_Handler();
     }
-    #endif
+
     /**Initializes the CPU, AHB and APB busses clocks */
     
      /**Configure the Systick interrupt time 
@@ -1124,178 +1121,6 @@ static void StopSequence_Config(void)
 
 
 
-#if 0
-
-/**
-  * @brief  System Clock Configuration
-  *         The system Clock is configured as follow : 
-  *            System Clock source            = (MSI)
-  *            MSI Range                      = 2
-  *            SYSCLK(Hz)                     = 32000
-  *            HCLK(Hz)                       = 32000
-  *            AHB Prescaler                  = 2
-  *            APB1 Prescaler                 = 1
-  *            APB2 Prescaler                 = 1
-  *            Main regulator output voltage  = Scale2 mode
-  * @param  None
-  * @retval None
-  */
-void SystemClock_lprun_Config(void)
-{
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  
-  /* Enable Power Control clock */
-  __HAL_RCC_PWR_CLK_ENABLE();
-
-  /* The voltage scaling allows optimizing the power consumption when the device is 
-     clocked below the maximum system frequency, to update the voltage scaling value 
-     regarding system frequency refer to product datasheet.  */
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2); /* For STM32L1: Low power sleep mode can only be entered when VCORE is in range 2 */
-
-  /* Enable MSI Oscillator */
-  RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_MSI;
-  RCC_OscInitStruct.MSIState            = RCC_MSI_ON;
-  RCC_OscInitStruct.MSIClockRange       = RCC_MSIRANGE_2; /* Set temporary MSI range */
-  RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState        = RCC_PLL_NONE;
-  if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    /* Initialization Error */
-    Error_Handler();
-  }
-
-  /* Select MSI as system clock source and configure the HCLK, PCLK1 and PCLK2 
-     clocks dividers */
-  RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-  if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
-  {
-    /* Initialization Error */
-    Error_Handler();
-  }
-
-  /* Set MSI range to 0 */
- // __HAL_RCC_MSI_RANGE_CONFIG(RCC_MSIRANGE_0);
-
-}
-
-/**
-  * @brief  System Power Configuration
-  *         The system Power is configured as follow : 
-  *            + System Running at MSI (~32KHz)
-  *            + Flash 0 wait state  
-  *            + Voltage Range 2
-  *            + Code running from Internal FLASH
-  *            + Wakeup using Key Button PC.13
-  * @param  None
-  * @retval None
-  */
-static void SystemPower_Config(void)
-{
-  GPIO_InitTypeDef GPIO_InitStructure;
-
-  /* Enable GPIOs clock */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-  
-  /* Configure all GPIO port pins in Analog mode */
-  GPIO_InitStructure.Pin = GPIO_PIN_All;
-  GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStructure.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-
-  /* Disable GPIOs clock */
-  __HAL_RCC_GPIOA_CLK_DISABLE();
-  __HAL_RCC_GPIOB_CLK_DISABLE();
-  __HAL_RCC_GPIOC_CLK_DISABLE();
-  __HAL_RCC_GPIOH_CLK_DISABLE();
-
-}
-
-void lowpower_record_config(uint8_t mode)
-{
-
-    //uint16_t rtc_vaule = 0;
-
-#ifdef USE_RTC_TO_WAKEUP_STOP
-    /* Disable Wakeup Counter */
-    //system_flag_table->power_status = POWER_LRUN_SLEEP;
-    HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
-    
-    /* ## Setting the Wake up time ############################################*/
-    /*  RTC Wakeup Interrupt Generation:
-            Wakeup Time Base = (RTC_WAKEUPCLOCK_RTCCLK_DIV /(LSE or LSI))
-            Wakeup Time = Wakeup Time Base * WakeUpCounter 
-            = (RTC_WAKEUPCLOCK_RTCCLK_DIV /(LSE or LSI)) * WakeUpCounter
-              ==> WakeUpCounter = Wakeup Time / Wakeup Time Base
-          
-            To configure the wake up timer to 4s the WakeUpCounter is set to 0x1FFF:
-            RTC_WAKEUPCLOCK_RTCCLK_DIV = RTCCLK_Div16 = 16 
-            Wakeup Time Base = 16 /(~39.000KHz) = ~0,410 ms
-            Wakeup Time = ~4s = 0,410ms  * WakeUpCounter
-            ==> WakeUpCounter = ~4s/0,410ms = 9750 = 0x2616 */
-    rtc_vaule = (ms * 1000)/427;        
-    HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, rtc_vaule, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
-#endif 
-
-    if(mode == 1)
-    {
-        print_usart1("****************************** \r\n");
-        print_usart1("low run status go to lp run mode \r\n");
-        print_usart1("****************************** \r\n");
-    
-        /* Enter Stop Mode */
-          /* Enter LP RUN mode */
-        gps_power_mode(0);
-        
-        osThreadSuspend(Get_gps_info_Handle);
-        osThreadSuspend(defaultTaskHandle);
-        SystemClock_lprun_Config();
-        SystemPower_Config();
-    
-        HAL_PWREx_EnableLowPowerRunMode();
-        
-        
-          /* Wait until the system enters LP RUN and the Regulator is in LP mode */
-        while(__HAL_PWR_GET_FLAG(PWR_FLAG_REGLP) == RESET)
-        {
-        }
-        print_usart1("****************************** \r\n");
-        print_usart1("done\r\n");
-        print_usart1("****************************** \r\n");
-    }
-    else
-    {
-        print_usart1("****************************** \r\n");
-        print_usart1("left lp run mode  \r\n");
-        print_usart1("****************************** \r\n");
-
-            /* Exit LP RUN mode */
-        HAL_PWREx_DisableLowPowerRunMode();
-
-        /* Wait until the system exits LP RUN and the Regulator is in main mode */
-        while(__HAL_PWR_GET_FLAG(PWR_FLAG_REGLP) != RESET)
-        {
-        }
-
-        SystemClock_Config();
-        print_usart1("****************************** \r\n");
-        print_usart1("done \r\n");
-        print_usart1("****************************** \r\n");        
-    }
-
-
-}
-
-#endif
-
 void surport_mode_config(uint8_t mode,uint8_t *buf)
 {
     
@@ -1438,7 +1263,7 @@ static uint8_t get_key(void)
             }
 			else if(button_press_cnt == 125)
 		    {
-    		    button_key = POWER_KEY_LONG;
+    		    button_key = POWER_KEY_LONG_5S;
 				button_press_cnt = 126;
                 button_flag = 0xff;     
 		    }
@@ -1645,7 +1470,7 @@ void status_led_config(void)
                 BSP_LED_On(LED_GREEN);
             }
             
-            if((green_led_flag == 1)&&(HAL_GetTick() >= (green_timer_cnt + 300)))
+            if((green_led_flag == 1)&&(HAL_GetTick() >= (green_timer_cnt + 250)))
             {
                 green_timer_cnt = HAL_GetTick();
                 BSP_LED_Off(LED_GREEN);
@@ -2064,7 +1889,7 @@ void update_info(void const * argument)
                     print_usart1("****************************** \r\n");
                     print_usart1("entry surport mode  go to stop \r\n");       
                     print_usart1("****************************** \r\n");
-
+                    BSP_LED_Off(LED_SURPORT);
                     gps_power_mode(0);
                     system_flag_table->power_status = POWER_SURPORT_SLEEP;
                     osThreadSuspend(Get_gps_info_Handle);
@@ -2082,12 +1907,15 @@ void update_info(void const * argument)
                     //HAL_NVIC_DisableIRQ(EXTI1_IRQn);
       
                 }
-                if(LED_SURPORT_FLAG == 1)
+                else
                 {
-                    BSP_LED_Init(LED_SURPORT);
-                    LED_SURPORT_FLAG = 0;
+                    if(LED_SURPORT_FLAG == 1)
+                    {
+                        BSP_LED_Init(LED_SURPORT);
+                        LED_SURPORT_FLAG = 0;
+                    }
+                    BSP_LED_On(LED_SURPORT);
                 }
-                BSP_LED_On(LED_SURPORT);
             }
             else
             {

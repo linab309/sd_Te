@@ -700,7 +700,7 @@ void DisplayIDDrunmV(system_flag *system_flag_table,uint32_t IDDmeas)
         ddrunmv_cnt = 0;
 
     }
-    print_usart1("IDDRUNMV: %d  \r\n",ddrunmv);
+    print_usart1("IDDRUNMV: %d ,%d,%d  \r\n",ddrunmv,IDDmeas,SystemCoreClock);
     if(IsBatteryPoweroff(ddrunmv))
     {
         //  headsetPowerOff(getApp());system_flag_table->batt_Status
