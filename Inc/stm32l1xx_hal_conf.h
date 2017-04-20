@@ -134,8 +134,8 @@
 #define  TICK_INT_PRIORITY            ((uint32_t)0xF)    /*!< tick interrupt priority */            
 #define  USE_RTOS                     0     
 #define  PREFETCH_ENABLE              0
-#define  INSTRUCTION_CACHE_ENABLE     0
-#define  DATA_CACHE_ENABLE            0
+#define  INSTRUCTION_CACHE_ENABLE     1
+#define  DATA_CACHE_ENABLE            1
 
 /* ########################## Assert Selection ############################## */
 /**

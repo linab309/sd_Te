@@ -1348,9 +1348,9 @@ uint8_t sound_toggle_simple(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound
    for(i = 0;i< cnt ; i++)
    {
        HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
-       osDelay(sound_on_timer);
+       HAL_Delay(sound_on_timer);
        HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
-       osDelay(sound_off_timer);
+       HAL_Delay(sound_off_timer);
     }
 	 
 		return 0;
