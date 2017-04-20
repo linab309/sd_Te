@@ -150,7 +150,9 @@ typedef struct
 	uint16_t w_year;
 	uint8_t  w_month;
 	uint8_t  w_date;
-	uint8_t  week;		 
+	uint8_t  week;		 	 
+	uint8_t  hour;		 
+	uint8_t  min;		 
 	uint8_t  sec;		 
 }tm;	
 
@@ -190,8 +192,8 @@ typedef struct
     uint8_t batt_Status;
 	uint8_t charger_connected;
     uint32_t batt_change_ok_cnt;
-    RTC_DateTypeDef RTC_DateStructure;
-    RTC_TimeTypeDef RTC_TimeStructure;
+    //RTC_DateTypeDef RTC_DateStructure;
+    //RTC_TimeTypeDef RTC_TimeStructure;
     uint8_t Led_pwm_type;
     uint32_t tp_long;
     uint32_t tp_lati;

@@ -44,9 +44,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
 #include "task.h"
-#include "stm32l1xx_hal.h"
 
 /* USER CODE BEGIN Includes */     
+#include "stm32l1xx_hal.h"
+#include "FreeRTOSConfig.h"
+
+
 #define MY_SYSTICK_CTRL_REG			( * ( ( volatile uint32_t * ) 0xe000e010 ) )
 #define MY_SYSTICK_LOAD_REG			( * ( ( volatile uint32_t * ) 0xe000e014 ) )
 #define MY_SYSTICK_CURRENT_VALUE_REG	( * ( ( volatile uint32_t * ) 0xe000e018 ) )
@@ -57,7 +60,12 @@
 /* Variables -----------------------------------------------------------------*/
 
 /* USER CODE BEGIN Variables */
-extern TIM_HandleTypeDef        htim7; 
+#if configUSE_TICKLESS_IDLE == 1     
+    extern uint32_t ulTimerCountsForOneTick ;
+#endif
+
+
+
 
 /* USER CODE END Variables */
 
@@ -72,23 +80,7 @@ void PreSleepProcessing(uint32_t *ulExpectedIdleTime);
 void PostSleepProcessing(uint32_t *ulExpectedIdleTime);
 
 /* Hook prototypes */
-void vApplicationIdleHook(void);
 void vApplicationMallocFailedHook(void);
-
-/* USER CODE BEGIN 2 */
-__weak void vApplicationIdleHook( void )
-{
-   /* vApplicationIdleHook() will only be called if configUSE_IDLE_HOOK is set
-   to 1 in FreeRTOSConfig.h. It will be called on each iteration of the idle
-   task. It is essential that code added to this hook function never attempts
-   to block in any way (for example, call xQueueReceive() with a block time
-   specified, or call vTaskDelay()). If the application makes use of the
-   vTaskDelete() API function (as this demo application does) then it is also
-   important that vApplicationIdleHook() is permitted to return to its calling
-   function, because it is the responsibility of the idle task to clean up
-   memory allocated by the kernel to any task that has since been deleted. */
-}
-/* USER CODE END 2 */
 
 /* USER CODE BEGIN 5 */
 __weak void vApplicationMallocFailedHook(void)
@@ -104,6 +96,12 @@ __weak void vApplicationMallocFailedHook(void)
    to query the size of free heap space that remains (although it does not
    provide information on how the remaining heap might be fragmented). */
 }
+
+void vApplicationIdleHook(void)
+{
+ ;
+}
+
 /* USER CODE END 5 */
 
 /* USER CODE BEGIN PREPOSTSLEEP */
@@ -157,7 +155,24 @@ __weak void PostSleepProcessing(uint32_t *ulExpectedIdleTime)
 /* USER CODE END PREPOSTSLEEP */
 
 /* USER CODE BEGIN Application */
-     
+void Begin_low_power(void)
+{
+    SystemClock_Config_msi();
+#if configUSE_TICKLESS_IDLE == 1     
+    ulTimerCountsForOneTick = ( configCPU_CLOCK_HZ / configTICK_RATE_HZ );
+#endif
+    HAL_SuspendTick();  
+
+}
+
+void End_low_power(void)
+{
+    SystemClock_Config_resume();
+#if configUSE_TICKLESS_IDLE == 1     
+        ulTimerCountsForOneTick = ( configCPU_CLOCK_HZ / configTICK_RATE_HZ );
+#endif
+
+}
 /* USER CODE END Application */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

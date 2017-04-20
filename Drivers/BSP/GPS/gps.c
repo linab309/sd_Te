@@ -128,6 +128,9 @@ void NMEA_GPGGA_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	if(posx!=0XFF)gpsx->gpssta=NMEA_Str2num(p1+posx,&dx);	
 	posx=NMEA_Comma_Pos(p1,7);								//得到用于定位的卫星数
 	if(posx!=0XFF)gpsx->posslnum=NMEA_Str2num(p1+posx,&dx); 
+	posx=NMEA_Comma_Pos(p1,8);								//得到用于定位的卫星数
+	if(posx!=0XFF)gpsx->hdop=NMEA_Str2num(p1+posx,&dx); 
+
 	posx=NMEA_Comma_Pos(p1,9);	
     //得到海拔高度
 #ifdef NG_LG_ENABLE
@@ -267,6 +270,34 @@ void NMEA_GPRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
   	         gpsx->ewhemi=*(p1+posx);	
 	 
 	 }
+    
+	posx=NMEA_Comma_Pos(p1,7);								//得到地面速率
+	
+	if(posx!=0XFF)
+	{
+        gpsx->speed= NMEA_Str2num(p1+posx,&dx);
+        if(dx<3)gpsx->speed*=NMEA_Pow(10,3-dx);             //确保扩大1000倍
+    }
+    posx=NMEA_Comma_Pos(p1,8);	
+    if(posx!=0XFF)
+    {
+
+#ifdef NG_LG_ENABLE	
+        if(NS_LG > 0)
+        {
+            gpsx->angle= 0;//NMEA_Str2num(p1+posx,&dx);
+        }
+        else
+#endif            
+        {
+            gpsx->angle= NMEA_Str2num(p1+posx,&dx);
+
+        }
+        if(dx<3)gpsx->angle*=NMEA_Pow(10,3-dx);             //确保扩大1000倍
+        
+    }
+
+#if 1    
 	posx=NMEA_Comma_Pos(p1,9);								//得到UTC日期
 	if(posx!=0XFF)
 	{
@@ -280,6 +311,7 @@ void NMEA_GPRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 
 
 	} 
+#endif    
 }
 //分析GPVTG信息
 //gpsx:nmea信息结构体
