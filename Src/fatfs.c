@@ -47,6 +47,9 @@ uint8_t retUSER;    /* Return value for USER */
 char USER_Path[4];  /* USER logical drive path */
 
 /* USER CODE BEGIN Variables */
+#include "string.h"
+#include "stm_eeprom.h"
+
 FATFS SD_FatFs;
 extern system_flag *system_flag_table;
 extern void RTC_TimeShow(DWORD* fattime);
@@ -167,13 +170,239 @@ uint8_t  My_Fs_Init(FATFS *SD_FatFs)
   
 }
 
+void configfs_set(FIL *update_config_fp)
+{
+
+
+    char *string = NULL;
+    uint8_t flash_cnt = 0;
+    uint8_t i = 0;
+
+    BSP_LED_Init(LED_GPS);  
+    BSP_LED_Init(LED_SD);  
+    BSP_LED_Init(LED_SURPORT); 
+    print_usart1("%s\r\n", GetIniKeyString("CONFIG", "TimeZone", "config.ini"));
+    print_usart1("%s\r\n", GetIniKeyString("CONFIG", "SpeedWarning", "config.ini")); 
+    print_usart1("%s\r\n", GetIniKeyString("CONFIG", "AutoPower", "config.ini"));
+    print_usart1("%s\r\n", GetIniKeyString("CONFIG", "Buzzer", "config.ini")); 
+    print_usart1("%s\r\n", GetIniKeyString("RECORD", "Format", "config.ini"));
+    print_usart1("%s\r\n", GetIniKeyString("RECORD", "Mode", "config.ini")); 
+    print_usart1("%s\r\n", GetIniKeyString("RECORD", "TriggerSpeed", "config.ini"));
+    print_usart1("%d\r\n", GetIniKeyInt("RECORD", "IntervalTime", "config.ini")); 
+    print_usart1("%s\r\n", GetIniKeyString("RECORD", "ODOR", "config.ini")); 
+
+    string = GetIniKeyString("CONFIG", "TimeZone", "config.ini");
+    /*TimeZone*/
+    i = 0;
+    while(timer_zone_Aarry[i] != NULL)
+    { 
+
+        if(strcmp(timer_zone_Aarry[i],string) == 0)
+            break;
+        
+        i++;
+    }
+    system_flag_table->time_zone = i;
+    stm_write_eerpom(0,system_flag_table->time_zone);
+    /*Buzzer*/
+
+    string = GetIniKeyString("CONFIG", "Buzzer", "config.ini");
+
+    if(strcmp("ON",string) == 0)
+    {
+       system_flag_table->buzzer = 1; 
+    }
+    else if(strcmp("OFF",string) == 0)    
+    {
+       system_flag_table->buzzer = 0;             
+    }
+    stm_write_eerpom(1,system_flag_table->buzzer);
+
+    /*SpeedWarning*/
+
+    string = GetIniKeyString("CONFIG", "SpeedWarning", "config.ini");
+
+    if(strcmp("OFF",string) == 0)    
+    {
+       system_flag_table->wanng_speed_vaule = 0;             
+    }
+    else
+    {
+       system_flag_table->wanng_speed_vaule = GetIniKeyInt("CONFIG", "SpeedWarning", "config.ini"); 
+    }
+
+    stm_write_eerpom(2,system_flag_table->wanng_speed_vaule);
+
+    /*AutoPower*/
+
+    string = GetIniKeyString("CONFIG", "AutoPower", "config.ini");
+
+    if(strcmp("ON",string) == 0)
+    {
+       system_flag_table->auto_power = 1; 
+    }
+    else if(strcmp("OFF",string) == 0)    
+    {
+       system_flag_table->auto_power = 0;             
+    } 
+    stm_write_eerpom(3,system_flag_table->auto_power);
+
+    /*Format*/
+    /*
+#define GUJI_FORMATS_CSV 0
+#define GUJI_FORMATS_GPX 1
+#define GUJI_FORMATS_GPS 2
+#define GUJI_FORMATS_MEA 3
+#define GUJI_FORMATS_KML 4    
+        */
+    string = GetIniKeyString("RECORD", "Format", "config.ini");
+    //CSV, GPX, NMEA, KML
+    if(strcmp("CVS",string) == 0)
+    {
+       system_flag_table->gujiFormats = GUJI_FORMATS_CSV; 
+    }
+    else if(strcmp("GPX",string) == 0)    
+    {
+       system_flag_table->gujiFormats = GUJI_FORMATS_GPX;             
+    } 
+    else if(strcmp("NMEA",string) == 0)    
+    {
+       system_flag_table->gujiFormats = GUJI_FORMATS_MEA;             
+    } 
+    else if(strcmp("KML",string) == 0)    
+    {
+       system_flag_table->gujiFormats = GUJI_FORMATS_KML;             
+    } 
+
+    stm_write_eerpom(4,system_flag_table->gujiFormats);
+
+    /*Mode*/
+    /*
+    1Hz, 5Hz, 10Hz, 5m, 10m, 20m, 50m, 100m
+
+        */
+    string = GetIniKeyString("RECORD", "Mode", "config.ini");
+    //CSV, GPX, NMEA, KML
+    if(strcmp("1Hz",string) == 0)
+    {
+        system_flag_table->guji_record.by_time_vaule   = 1000; /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_TIMES;
+    }
+    else if(strcmp("5Hz",string) == 0)    
+    {
+        system_flag_table->guji_record.by_time_vaule   = 200; /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_TIMES;
+
+    } 
+    else if(strcmp("10Hz",string) == 0)    
+    {
+        system_flag_table->guji_record.by_time_vaule   = 100; /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_TIMES;
+
+    } 
+    else if(strcmp("5m",string) == 0)    
+    {
+        system_flag_table->guji_record.by_distance_vaule   = 5; /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
+
+    } 
+    else if(strcmp("10m",string) == 0)    
+    {
+        system_flag_table->guji_record.by_distance_vaule   = 10; /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
+
+    } 
+    else if(strcmp("20m",string) == 0)    
+    {
+        system_flag_table->guji_record.by_distance_vaule   = 20; /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
+
+    } 
+    else if(strcmp("50m",string) == 0)    
+    {
+        system_flag_table->guji_record.by_distance_vaule   = 50; /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
+
+    } 
+    else if(strcmp("100m",string) == 0)    
+    {
+        system_flag_table->guji_record.by_distance_vaule   = 100; /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
+
+    } 
+    stm_write_eerpom(5,system_flag_table->guji_record.by_time_vaule);
+    stm_write_eerpom(6,system_flag_table->guji_record.by_distance_vaule);
+    stm_write_eerpom(7,system_flag_table->guji_record.recoed_formats);    
+
+
+    string = GetIniKeyString("RECORD", "TriggerSpeed", "config.ini");
+    //CSV, GPX, NMEA, KML
+
+    if(strcmp("OFF",string) == 0)    
+    {
+       system_flag_table->guji_record.by_speed_vaule = 0;             
+    }
+    else
+    {
+       system_flag_table->guji_record.by_speed_vaule = GetIniKeyInt("RECORD", "TriggerSpeed", "config.ini");
+       if(system_flag_table->guji_record.by_speed_vaule < 1 || system_flag_table->guji_record.by_speed_vaule>200)
+        system_flag_table->guji_record.by_speed_vaule = 0;
+    }
+    stm_write_eerpom(8,system_flag_table->guji_record.by_speed_vaule);  
+
+    system_flag_table->lowpower_timer = GetIniKeyInt("RECORD", "IntervalTime", "config.ini");
+    if(system_flag_table->lowpower_timer < 5 || system_flag_table->lowpower_timer>60)
+     system_flag_table->lowpower_timer = 15;
+
+    stm_write_eerpom(9,system_flag_table->lowpower_timer);  
+
+
+    /*AutoPower*/
+
+    string = GetIniKeyString("CONFIG", "ODOR", "config.ini");
+
+    if(strcmp("ON",string) == 0)
+    {
+       system_flag_table->ODOR = 1; 
+    }
+    else if(strcmp("OFF",string) == 0)    
+    {
+       system_flag_table->ODOR = 0;             
+    } 
+    stm_write_eerpom(10,system_flag_table->ODOR);
+
+    stm_write_eerpom(0xff,0x12345678);
+
+    while(1)
+    {
+        if(flash_cnt != 3 )
+        {
+           
+            BSP_LED_On(LED_GPS);
+            BSP_LED_On(LED_SD);
+            BSP_LED_On(LED_SURPORT); 
+            osDelay(300);
+            BSP_LED_Off(LED_GPS);
+            BSP_LED_Off(LED_SD);
+            BSP_LED_Off(LED_SURPORT); 
+            osDelay(300);
+
+            flash_cnt++;
+        }
+        else
+        {
+           break;
+        }
+            
+    }
+    f_close(update_config_fp);
+
+}
+
 void entry_config_mode(system_flag *system_flag_table)
 {
     FIL update_config_fp;
-    uint8_t flash_cnt = 0;
     FRESULT fr;
-    char string[256];
-    uint8_t i = 0;
 
     if(f_open(&update_config_fp,(TCHAR const*)"P-1.BIN",FA_READ) == FR_OK)
     {
@@ -184,178 +413,7 @@ void entry_config_mode(system_flag *system_flag_table)
     else if(f_open(&update_config_fp,(TCHAR const*)"config.ini",FA_READ) == FR_OK)
     {
     
-        BSP_LED_Init(LED_GPS);  
-        BSP_LED_Init(LED_SD);  
-        BSP_LED_Init(LED_SURPORT); 
-        print_usart1("%s\n", GetIniKeyString("CONFIG", "TimeZone", "config.ini"));
-        print_usart1("%d\n", GetIniKeyString("CONFIG", "SpeedWarning", "config.ini")); 
-        print_usart1("%s\n", GetIniKeyString("CONFIG", "AutoPower", "config.ini"));
-        print_usart1("%d\n", GetIniKeyString("CONFIG", "Buzzer", "config.ini")); 
-        print_usart1("%s\n", GetIniKeyString("RECORD", "Format", "config.ini"));
-        print_usart1("%d\n", GetIniKeyString("RECORD", "Mode", "config.ini")); 
-        print_usart1("%s\n", GetIniKeyString("RECORD", "TriggerSpeed", "config.ini"));
-        print_usart1("%d\n", PutIniKeyInt("RECORD", "IntervalTime", "config.ini")); 
-        print_usart1("%d\n", GetIniKeyString("RECORD", "ODOR", "config.ini")); 
-
-        string = GetIniKeyString("CONFIG", "TimeZone", "config.ini");
-        /*TimeZone*/
-        i = 0;
-        while(timer_zone_Aarry[i] != NULL)
-        { 
-
-            if(strcmp(timer_zone_Aarry[system_flag_table->time_zone],string) == 0)
-                break;
-            
-            i++;
-        }
-        system_flag_table->time_zone = i;
-        /*Buzzer*/
-
-        string = GetIniKeyString("CONFIG", "Buzzer", "config.ini");
-
-        if(strcmp("ON",string) == 0)
-        {
-           system_flag_table->buzzer = 1; 
-        }
-        else if(strcmp("OFF",string) == 0)    
-        {
-           system_flag_table->buzzer = 0;             
-        }
- 
-        /*SpeedWarning*/
-        
-        string = GetIniKeyString("CONFIG", "SpeedWarning", "config.ini");
-        
-        if(strcmp("OFF",string) == 0)    
-        {
-           system_flag_table->wanng_speed_vaule = 0;             
-        }
-        else
-        {
-           system_flag_table->wanng_speed_vaule = GetIniKeyInt("CONFIG", "SpeedWarning", "config.ini"); 
-        }
-
- 
-        /*AutoPower*/
-        
-        string = GetIniKeyString("CONFIG", "AutoPower", "config.ini");
-        
-        if(strcmp("ON",string) == 0)
-        {
-           system_flag_table->auto_power = 1; 
-        }
-        else if(strcmp("OFF",string) == 0)    
-        {
-           system_flag_table->auto_power = 0;             
-        } 
-
-        /*Format*/
-        /*
-            #define GUJI_FORMATS_CSV 0
-            #define GUJI_FORMATS_GPX 1
-            #define GUJI_FORMATS_GPS 2
-            #define GUJI_FORMATS_MEA 3
-            #define GUJI_FORMATS_KML 4    
-            */
-        string = GetIniKeyString("RECORD", "Format", "config.ini");
-        //CSV, GPX, NMEA, KML
-        if(strcmp("CVS",string) == 0)
-        {
-           system_flag_table->gujiFormats = GUJI_FORMATS_CSV; 
-        }
-        else if(strcmp("GPX",string) == 0)    
-        {
-           system_flag_table->gujiFormats = GUJI_FORMATS_GPX;             
-        } 
-        else if(strcmp("NMEA",string) == 0)    
-        {
-           system_flag_table->gujiFormats = GUJI_FORMATS_MEA;             
-        } 
-        else if(strcmp("KML",string) == 0)    
-        {
-           system_flag_table->gujiFormats = GUJI_FORMATS_KML;             
-        } 
-        
-
-        /*Mode*/
-        /*
-    1Hz, 5Hz, 10Hz, 5m, 10m, 20m, 50m, 100m
-
-            */
-        string = GetIniKeyString("RECORD", "Mode", "config.ini");
-        //CSV, GPX, NMEA, KML
-        if(strcmp("1Hz",string) == 0)
-        {
-            system_flag_table->guji_record.by_time_vaule   = 1000; /*ms*/
-            system_flag_table->guji_record.recoed_formats  = BY_TIMES;
-        }
-        else if(strcmp("5Hz",string) == 0)    
-        {
-            system_flag_table->guji_record.by_time_vaule   = 200; /*ms*/
-            system_flag_table->guji_record.recoed_formats  = BY_TIMES;
-
-        } 
-        else if(strcmp("10Hz",string) == 0)    
-        {
-            system_flag_table->guji_record.by_time_vaule   = 100; /*ms*/
-            system_flag_table->guji_record.recoed_formats  = BY_TIMES;
-
-        } 
-        else if(strcmp("5m",string) == 0)    
-        {
-            system_flag_table->guji_record.by_distance_vaule   = 5; /*ms*/
-            system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
-
-        } 
-        else if(strcmp("10m",string) == 0)    
-        {
-            system_flag_table->guji_record.by_distance_vaule   = 10; /*ms*/
-            system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
-
-        } 
-        else if(strcmp("20m",string) == 0)    
-        {
-            system_flag_table->guji_record.by_distance_vaule   = 20; /*ms*/
-            system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
-
-        } 
-        else if(strcmp("50m",string) == 0)    
-        {
-            system_flag_table->guji_record.by_distance_vaule   = 50; /*ms*/
-            system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
-
-        } 
-        else if(strcmp("100m",string) == 0)    
-        {
-            system_flag_table->guji_record.by_distance_vaule   = 100; /*ms*/
-            system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
-
-        } 
-
-        while(1)
-        {
-            if(flash_cnt != 5 )
-            {
-               
-                BSP_LED_On(LED_GPS);
-                BSP_LED_On(LED_SD);
-                BSP_LED_On(LED_SURPORT); 
-                osDelay(300);
-                BSP_LED_Off(LED_GPS);
-                BSP_LED_Off(LED_SD);
-                BSP_LED_Off(LED_SURPORT); 
-                osDelay(2700);
-
-                flash_cnt++;
-            }
-            else
-            {
-               break;
-            }
-                
-        }
-        f_close(&update_config_fp);
-
+        configfs_set(&update_config_fp);
     }
     else
     {
@@ -368,7 +426,7 @@ void entry_config_mode(system_flag *system_flag_table)
         f_printf(&update_config_fp,"%d\r\n",system_flag_table->lowpower_timer);
         f_printf(&update_config_fp,"%s\r\n", system_flag_table->auto_new_guji ? "ON" : "OFF");
         f_printf(&update_config_fp,"%s\r\n",system_flag_table->auto_power ? "ON" : "OFF");
-        f_printf(&update_config_fp,"%s\r\n",system_flag_table->sound_onoff ? "ON" : "OFF");
+        f_printf(&update_config_fp,"%s\r\n",system_flag_table->buzzer? "ON" : "OFF");
         f_printf(&update_config_fp,"Firmware: V0.01 \r\n");
         f_printf(&update_config_fp,"PowerOn: 1\r\n");
         f_printf(&update_config_fp,"First Use: 17-03-31\r\n");

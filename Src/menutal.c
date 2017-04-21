@@ -57,7 +57,7 @@ typedef union { /* FPC_Reg6964_Dat6 */
 } GUJI_DATE;
 #endif
 
-const uint8_t format_Aarry[][7]=
+const char format_Aarry[][7]=
 {
     "CSV",
     "GPX",
@@ -66,7 +66,7 @@ const uint8_t format_Aarry[][7]=
 
 };
 
-const uint8_t timer_zone_Aarry[][7]=
+const char timer_zone_Aarry[][7]=
 {
 	"-12:00",   // 1
 	"-11:00",   // 2

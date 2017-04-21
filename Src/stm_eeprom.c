@@ -72,13 +72,13 @@ void stm_write_eerpom(uint16_t address,uint32_t data)
                   | FLASH_FLAG_SIZERR | FLASH_FLAG_OPTVERR );
     Address = DATA_EEPROM_START_ADDR;
     Address += (4*address);    
-    while(HAL_OK != HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_WORD, Address+(4*address),data))
+    while(HAL_OK != HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_WORD, Address,data))
     {
 		__HAL_FLASH_GET_FLAG(FLASH_FLAG_EOP|FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR
                | FLASH_FLAG_SIZERR );
     }
     Address = DATA_EEPROM_START_ADDR;
-    HAL_FLASHEx_DATAEEPROM_Lock();	
+    //HAL_FLASHEx_DATAEEPROM_Lock();	
 }
 
 
@@ -89,7 +89,7 @@ void stm_fast_write_eerpom(uint8_t address,uint32_t data)
     __HAL_FLASH_GET_FLAG(FLASH_FLAG_EOP|FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR
                   | FLASH_FLAG_SIZERR | FLASH_FLAG_OPTVERR );
     Address += (4*address);    
-    while(HAL_OK != HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_FASTWORD, Address+(4*address),data))
+    while(HAL_OK != HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_FASTWORD, Address,data))
     {
 		__HAL_FLASH_GET_FLAG(FLASH_FLAG_EOP|FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR
 		               | FLASH_FLAG_SIZERR | FLASH_FLAG_OPTVERR);
