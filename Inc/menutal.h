@@ -159,13 +159,11 @@ typedef struct
 
 typedef struct  
 {		
-	uint8_t    by_distance_time_flag;
 	uint16_t   by_distance_vaule;
 	uint16_t   by_time_vaule;  /*ms*/
 	uint16_t   by_speed_vaule;
     uint8_t    recoed_formats;
 	uint8_t    recoed_meth;  /*自动覆盖或是记满停止*/
-	uint8_t    auto_recoed_flag;
 }GUJI_RECOCE_TABLE; 
 
 
@@ -177,7 +175,6 @@ typedef struct
     uint8_t  guji_mode;
     uint8_t  auto_new_guji;
     uint8_t  auto_power;
-    uint8_t  sound_onoff;
     uint8_t  power_status ;
     uint8_t  power_mode ;
     uint8_t  *guji_buffer;
@@ -192,9 +189,7 @@ typedef struct
     uint8_t batt_Status;
 	uint8_t charger_connected;
     uint32_t batt_change_ok_cnt;
-    //RTC_DateTypeDef RTC_DateStructure;
-    //RTC_TimeTypeDef RTC_TimeStructure;
-    uint8_t Led_pwm_type;
+    uint8_t buzzer;
     uint32_t tp_long;
     uint32_t tp_lati;
     uint32_t grecord_timer_cnt;

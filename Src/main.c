@@ -1088,7 +1088,7 @@ static void StopSequence_Config(void)
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
   
   /* Enable WKUP pin */
-  //HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
+  HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
   //HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
   /* Request to enter STANDBY mode */
   HAL_PWR_EnterSTANDBYMode();
@@ -1347,9 +1347,9 @@ uint8_t sound_toggle_simple(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound
 
    for(i = 0;i< cnt ; i++)
    {
-       HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+       //HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
        HAL_Delay(sound_on_timer);
-       HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
+       //HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
        HAL_Delay(sound_off_timer);
     }
 	 
@@ -1830,8 +1830,15 @@ void MySystem(void const * argument)
 				  print_usart1("goto stanby.\r\n");
 				  print_usart1("************\r\n");
 
-
-				  StopSequence_Config();
+                  if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_RESET)
+                  {
+				      StopSequence_Config();
+                  }
+                  else
+                  {
+                      osThreadSuspend(defaultTaskHandle);
+                      osThreadSuspend(Get_gps_info_Handle);     
+                  }
               }            
               break;
           case POWER_USER_KEY_LONG:
@@ -1870,7 +1877,6 @@ void update_info(void const * argument)
 
   status_led_config();
   vddmv_adc_proess(system_flag_table); /*¸üÐÂµç³Ø×´Ì¬*/   
-  //print_usart1("2\r\n");
 
   if(system_flag_table->power_status == POWER_STANBY)
   {
@@ -1880,12 +1886,12 @@ void update_info(void const * argument)
          if(usb_timer_cnt == 100)
          {
              usb_timer_cnt = 0;
-             StopSequence_Config();
+
    
              print_usart1("******************************************* \r\n");
              print_usart1("when usb detect hotplug, goto stanby angin. \r\n");
              print_usart1("******************************************* \r\n");
-   
+             StopSequence_Config();   
          }
      }
      else 
@@ -1907,21 +1913,17 @@ void update_info(void const * argument)
                     print_usart1("****************************** \r\n");
                     print_usart1("entry surport mode  go to stop \r\n");       
                     print_usart1("****************************** \r\n");
+                    if(LED_SURPORT_FLAG == 1)
+                    {
+                        BSP_LED_Init(LED_SURPORT);
+                        LED_SURPORT_FLAG = 0;
+                    }                    
                     BSP_LED_Off(LED_SURPORT);
                     gps_power_mode(0);
                     system_flag_table->power_status = POWER_SURPORT_SLEEP;
                     osThreadSuspend(Get_gps_info_Handle);
                     osThreadSuspend(defaultTaskHandle);
-                    osThreadSuspend(SystemCallHandle);                    
-                    /* Enter Stop Mode */
-                    //osDelay(1000);
-                    //print_usart1("****************************** \r\n");
-                    //lowpower_record_config(1);
-                    //lowpower_record_config(0);
-
-                    //HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
-                    //SystemClock_Config();
-                          
+                    osThreadSuspend(SystemCallHandle);                                           
                     HAL_NVIC_EnableIRQ(EXTI1_IRQn);
       
                 }
