@@ -65,6 +65,9 @@
 #endif
 
 
+extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim10;
 
 
 /* USER CODE END Variables */
@@ -157,6 +160,8 @@ __weak void PostSleepProcessing(uint32_t *ulExpectedIdleTime)
 /* USER CODE BEGIN Application */
 void Begin_low_power(void)
 {
+
+    if((__HAL_TIM_GET_ENABLE(&htim10) == 0) && (__HAL_TIM_GET_ENABLE(&htim2) == 0) &&(__HAL_TIM_GET_ENABLE(&htim4) == 0))
     SystemClock_Config_msi();
 #if configUSE_TICKLESS_IDLE == 1     
     ulTimerCountsForOneTick = ( configCPU_CLOCK_HZ / configTICK_RATE_HZ );
@@ -167,6 +172,7 @@ void Begin_low_power(void)
 
 void End_low_power(void)
 {
+    if((__HAL_TIM_GET_ENABLE(&htim10) == 0) && (__HAL_TIM_GET_ENABLE(&htim2) == 0) &&(__HAL_TIM_GET_ENABLE(&htim4) == 0))
     SystemClock_Config_resume();
 #if configUSE_TICKLESS_IDLE == 1     
         ulTimerCountsForOneTick = ( configCPU_CLOCK_HZ / configTICK_RATE_HZ );

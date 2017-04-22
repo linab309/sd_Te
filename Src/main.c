@@ -302,7 +302,6 @@ int main(void)
       print_usart1("default info \r\n");
       system_flag_table->time_zone                   = 29;
       system_flag_table->gujiFormats                 = GUJI_FORMATS_GPX;
-      system_flag_table->power_status                = POWER_STANBY;
       system_flag_table->guji_record.by_time_vaule   = 100; /*ms*/
       system_flag_table->guji_record.recoed_formats  = BY_TIMES;
 
@@ -310,6 +309,7 @@ int main(void)
   }
 
   stm_read_eerpom(0xf0,&eeprom_flag);
+  system_flag_table->power_status                = POWER_STANBY;
   if(eeprom_flag == 0)
   {
       system_flag_table->power_mode                  = NORMAL_SURPORT_MODE;
