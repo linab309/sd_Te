@@ -1951,7 +1951,7 @@ void update_info(void const * argument)
             if(gpsx->speed <= 90)
             {
                 support_timer_cnt ++;
-                if(support_timer_cnt == 300)
+                if(support_timer_cnt == 3000)
                 {
                     support_timer_cnt = 0;
                     //StopSequence_Config();
