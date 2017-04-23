@@ -44,6 +44,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_storage_if.h"
 /* USER CODE BEGIN INCLUDE */
+#include "stm32_adafruit_sd.h"
+
 /* USER CODE END INCLUDE */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -112,6 +114,11 @@ const int8_t  STORAGE_Inquirydata_FS[] = {/* 36 */
 /* USER CODE END INQUIRY_DATA_FS */ 
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
+
+uint32_t sd_block_num;
+uint16_t sd_block_size;
+
+
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -178,7 +185,14 @@ USBD_StorageTypeDef USBD_Storage_Interface_fops_FS =
 int8_t STORAGE_Init_FS (uint8_t lun)
 {
   /* USER CODE BEGIN 2 */ 
-  return (USBD_OK);
+  int8_t ret = -1;
+  
+  ret = BSP_SD_Init();
+  if(ret != BSP_SD_OK )
+  {
+      print_usart1("STORAGE_Init_FS :%d\r\n",ret);
+  }
+  return (ret);
   /* USER CODE END 2 */ 
 }
 
@@ -192,9 +206,25 @@ int8_t STORAGE_Init_FS (uint8_t lun)
 int8_t STORAGE_GetCapacity_FS (uint8_t lun, uint32_t *block_num, uint16_t *block_size)
 {
   /* USER CODE BEGIN 3 */   
-  *block_num  = STORAGE_BLK_NBR;
-  *block_size = STORAGE_BLK_SIZ;
-  return (USBD_OK);
+  SD_CardInfo info;
+  int8_t ret = -1;  
+
+  //printf("STORAGE_GetCapacity_FS \r\n");
+  
+  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
+  {
+      BSP_SD_GetCardInfo(&info);
+      
+      *block_num = (info.CardCapacity)/STORAGE_BLK_SIZ  - 1;
+      *block_size = STORAGE_BLK_SIZ;
+      ret = 0;
+  
+      sd_block_size = *block_size;
+      sd_block_num  = *block_num ;
+      //print_usart1("*block_num :%d \r\n",*block_num);
+      //print_usart1("*block_size :%d \r\n",*block_size);	 
+  }
+  return (ret);
   /* USER CODE END 3 */ 
 }
 
@@ -208,7 +238,28 @@ int8_t STORAGE_GetCapacity_FS (uint8_t lun, uint32_t *block_num, uint16_t *block
 int8_t  STORAGE_IsReady_FS (uint8_t lun)
 {
   /* USER CODE BEGIN 4 */ 
-  return (USBD_OK);
+  static int8_t prev_status = 0;
+  int8_t ret = -1;
+  
+  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
+  {
+    if(prev_status < 0)
+    {
+      BSP_SD_Init();
+      prev_status = 0;
+      
+    }
+    if(BSP_SD_GetStatus() == BSP_SD_OK)
+    {
+      ret = 0;
+    }
+  }
+  else if(prev_status == 0)
+  {
+    prev_status = -1;
+  }
+
+  return (ret);
   /* USER CODE END 4 */ 
 }
 
@@ -222,6 +273,7 @@ int8_t  STORAGE_IsReady_FS (uint8_t lun)
 int8_t  STORAGE_IsWriteProtected_FS (uint8_t lun)
 {
   /* USER CODE BEGIN 5 */ 
+  //printf("*STORAGE_IsWriteProtected_FS :%d \r\n",lun);
   return (USBD_OK);
   /* USER CODE END 5 */ 
 }
@@ -239,7 +291,19 @@ int8_t STORAGE_Read_FS (uint8_t lun,
                         uint16_t blk_len)
 {
   /* USER CODE BEGIN 6 */ 
-  return (USBD_OK);
+
+    int8_t ret = -1;  
+
+    if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
+    {  
+        BSP_SD_ReadBlocks((uint32_t *)buf, (uint64_t)(blk_addr * STORAGE_BLK_SIZ), 
+        STORAGE_BLK_SIZ, blk_len);
+        ret = 0;
+    }
+    //printf("*blk_len :%d \r\n",blk_len);    
+    //printf("*r :%d \r\n",blk_addr);    
+
+    return ret;
   /* USER CODE END 6 */ 
 }
 
@@ -256,7 +320,19 @@ int8_t STORAGE_Write_FS (uint8_t lun,
                          uint16_t blk_len)
 {
   /* USER CODE BEGIN 7 */ 
-  return (USBD_OK);
+
+  int8_t ret = -1;  
+  
+  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
+  { 
+      BSP_SD_WriteBlocks((uint32_t *)buf, (uint64_t)(blk_addr * STORAGE_BLK_SIZ), 
+      STORAGE_BLK_SIZ, blk_len);
+      ret = 0;
+  }
+  //printf("* blk_len :%d \r\n",blk_len);    
+  //printf("*blk_addr :%d \r\n",blk_addr);    
+  
+  return ret; 
   /* USER CODE END 7 */ 
 }
 

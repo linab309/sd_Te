@@ -414,6 +414,7 @@ void entry_config_mode(system_flag *system_flag_table)
     {
     
         configfs_set(&update_config_fp);
+        print_usart1("\r\n read config.ini \r\n");
     }
     else
     {
@@ -432,6 +433,7 @@ void entry_config_mode(system_flag *system_flag_table)
         f_printf(&update_config_fp,"First Use: 17-03-31\r\n");
 
         f_close(&update_config_fp);
+        print_usart1("\r\n write info.txt \r\n");
 
     }
 

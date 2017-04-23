@@ -107,7 +107,7 @@
 #define configUSE_MUTEXES                        1
 #define configQUEUE_REGISTRY_SIZE                8
 #define configUSE_MALLOC_FAILED_HOOK             1
-#define configUSE_TICKLESS_IDLE                  1
+#define configUSE_TICKLESS_IDLE                  0
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES                    0

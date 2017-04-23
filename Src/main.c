@@ -56,7 +56,7 @@
 #include "Gongshi.h"
 #include "usb_device.h"
 #include "usbd_core.h"
-
+#include "stm_eeprom.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -285,17 +285,29 @@ int main(void)
   if(eeprom_flag == 0x12345678)
   {
       print_usart1("update eerpom info \r\n");
-      stm_read_eerpom(0,&system_flag_table->time_zone);
-      stm_read_eerpom(1,&system_flag_table->buzzer);
-      stm_read_eerpom(2,&system_flag_table->wanng_speed_vaule);    
-      stm_read_eerpom(3,&system_flag_table->auto_power);
-      stm_read_eerpom(4,&system_flag_table->gujiFormats);
-      stm_read_eerpom(5,&system_flag_table->guji_record.by_time_vaule);
-      stm_read_eerpom(6,&system_flag_table->guji_record.by_distance_vaule);
-      stm_read_eerpom(7,&system_flag_table->guji_record.recoed_formats);    
-      stm_read_eerpom(8,&system_flag_table->guji_record.by_speed_vaule);  
-      stm_read_eerpom(9,&system_flag_table->lowpower_timer);  
-      stm_read_eerpom(10,&system_flag_table->ODOR);   
+      stm_read_eerpom(0,&eeprom_flag);
+      system_flag_table->time_zone = eeprom_flag;
+      stm_read_eerpom(1,&eeprom_flag);
+      system_flag_table->buzzer = eeprom_flag;
+      stm_read_eerpom(2,&eeprom_flag);
+      system_flag_table->wanng_speed_vaule = eeprom_flag;
+      stm_read_eerpom(3,&eeprom_flag);
+      system_flag_table->auto_power = eeprom_flag;
+      stm_read_eerpom(4,&eeprom_flag);
+      system_flag_table->gujiFormats = eeprom_flag;
+      stm_read_eerpom(5,&eeprom_flag);
+      system_flag_table->guji_record.by_time_vaule = eeprom_flag;
+      stm_read_eerpom(6,&eeprom_flag);
+      system_flag_table->guji_record.by_distance_vaule = eeprom_flag;
+      stm_read_eerpom(7,&eeprom_flag);
+      system_flag_table->guji_record.recoed_formats = eeprom_flag;
+      stm_read_eerpom(8,&eeprom_flag);
+      system_flag_table->guji_record.by_speed_vaule = eeprom_flag;
+      stm_read_eerpom(9,&eeprom_flag);
+      system_flag_table->lowpower_timer = eeprom_flag;
+      stm_read_eerpom(10,&eeprom_flag);
+      system_flag_table->ODOR = eeprom_flag;
+
   }
   else
   {
@@ -309,7 +321,7 @@ int main(void)
   }
 
   stm_read_eerpom(0xf0,&eeprom_flag);
-  system_flag_table->power_status                = POWER_STANBY;
+
   if(eeprom_flag == 0)
   {
       system_flag_table->power_mode                  = NORMAL_SURPORT_MODE;
@@ -318,6 +330,12 @@ int main(void)
   {
       system_flag_table->power_mode                  = SENCSE_SURPORT_MODE;
   }
+
+  if(system_flag_table->auto_power == 0)
+      system_flag_table->power_status                    = POWER_STANBY;
+  else
+      system_flag_table->power_status                    = system_flag_table->power_mode;
+  
   print_usart1("system_flag_table->power_mode :%d \r\n",system_flag_table->power_mode);
   system_flag_table->guji_record.recoed_meth     = AUTO_STOP;
 
@@ -1126,7 +1144,7 @@ static void StopSequence_Config(void)
 
 
 
-void surport_mode_config(uint8_t mode,uint8_t *buf)
+void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
 {
     
     float tp_distance = 0;
@@ -1184,7 +1202,20 @@ void surport_mode_config(uint8_t mode,uint8_t *buf)
                 }
             #endif
                 
-                save_guiji_message(gpsx,system_flag_table,'T');
+                if(system_flag_table->gujiFormats == GUJI_FORMATS_MEA)
+                {
+                    memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],buf,rxlen);
+                    system_flag_table->guji_buffer_Index_wp  += rxlen;        
+                    if(system_flag_table->guji_buffer_Index_wp >= MAX_GUJI_BUFFER_MAX_LEN)
+                    {
+                        system_flag_table->guji_buffer_Index_wp = 0;
+                    }              
+                }
+                else
+                {
+                    save_guiji_message(gpsx,system_flag_table,'T');
+                }
+                
                 system_flag_table->tp_long = gpsx->longitude;
                 system_flag_table->tp_lati = gpsx->latitude;  
             }
@@ -1199,9 +1230,12 @@ void surport_mode_config(uint8_t mode,uint8_t *buf)
 
             //if(system_flag_table->guji_record.lowpower_timer <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
             {
+                if(gpsx->hdop < 5)
+                {
+                    save_guiji_message(gpsx,system_flag_table,'T');
+                    lp_number++;
+                }
                 
-                save_guiji_message(gpsx,system_flag_table,'T');
-                lp_number++;
                 if(lp_number>= 8)
                 {
                     while(system_flag_table->guji_buffer_Index_rp != system_flag_table->guji_buffer_Index_wp) {;}
@@ -1373,15 +1407,18 @@ uint8_t sound_toggle_simple(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound
 {
    uint8_t i = 0;
 
-   for(i = 0;i< cnt ; i++)
+   if(system_flag_table->buzzer == 1)
    {
-       HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
-       osDelay(sound_on_timer);
-       HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
-       osDelay(sound_off_timer);
-    }
+       for(i = 0;i< cnt ; i++)
+       {
+           HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+           osDelay(sound_on_timer);
+           HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
+           osDelay(sound_off_timer);
+       }
+   }
 	 
-		return 0;
+   return 0;
 }
 
 uint8_t breathing_toggle(uint16_t breath_on_timer, uint16_t breath_off_timer)
@@ -1683,7 +1720,7 @@ void Get_gps_info(void const * argument)
 
               if((gpsx->gpssta <1)&&(rxlen < 160))
               {
-                  //printf("%s",gps_data);
+                  //print_usart1("%s",gps_data);
                   #ifdef TEST_WRITE_SD
                   memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],gps_data,rxlen);
                   system_flag_table->guji_buffer_Index_wp  += rxlen;        
@@ -1700,12 +1737,13 @@ void Get_gps_info(void const * argument)
               }
               
               GPS_Analysis(gpsx,gps_data);
-              free(gps_data);
+
 
 /*recored mode config*/
-	          surport_mode_config(system_flag_table->power_status,NULL);
+	          surport_mode_config(system_flag_table->power_status,gps_data,rxlen);
 /*endi*/			  
      
+              free(gps_data);
 
               if (osMutexRelease(gpsMutexHandle) != osOK)
               {
@@ -1911,6 +1949,7 @@ void update_info(void const * argument)
   static uint16_t usb_timer_cnt = 0 ;
   static uint16_t sd_timer_cnt = 0 ;
   static uint16_t support_timer_cnt = 0 ;
+  static uint32_t save_file_cnt = 0 ;
 
 #if 0
      /* Get the RTC current Time */
@@ -2099,6 +2138,17 @@ void update_info(void const * argument)
              }
         }
    
+         
+    }
+
+
+    if(system_flag_table->guji_mode == RECORED_START_DOING)
+    {
+        if(HAL_GetTick() > (save_file_cnt + 60000))
+        {
+           system_flag_table->guji_mode = RECORED_SAVE; 
+           save_file_cnt  = HAL_GetTick();
+        }
          
     }
 
