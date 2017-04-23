@@ -257,7 +257,7 @@ void configfs_set(FIL *update_config_fp)
         */
     string = GetIniKeyString("RECORD", "Format", "config.ini");
     //CSV, GPX, NMEA, KML
-    if(strcmp("CVS",string) == 0)
+    if(strcmp("CSV",string) == 0)
     {
        system_flag_table->gujiFormats = GUJI_FORMATS_CSV; 
     }
@@ -372,21 +372,16 @@ void configfs_set(FIL *update_config_fp)
     stm_write_eerpom(10,system_flag_table->ODOR);
 
     stm_write_eerpom(0xff,0x12345678);
+    f_close(update_config_fp);
 
     while(1)
     {
         if(flash_cnt != 3 )
-        {
-           
-            BSP_LED_On(LED_GPS);
-            BSP_LED_On(LED_SD);
-            BSP_LED_On(LED_SURPORT); 
-            osDelay(300);
-            BSP_LED_Off(LED_GPS);
-            BSP_LED_Off(LED_SD);
-            BSP_LED_Off(LED_SURPORT); 
-            osDelay(300);
-
+        {           
+            BSP_LED_Toggle(LED_GPS);
+            BSP_LED_Toggle(LED_SD);
+            BSP_LED_Toggle(LED_SURPORT); 
+            HAL_Delay(150);
             flash_cnt++;
         }
         else
@@ -395,7 +390,11 @@ void configfs_set(FIL *update_config_fp)
         }
             
     }
-    f_close(update_config_fp);
+
+
+    BSP_LED_Off(LED_GPS);  
+    BSP_LED_Off(LED_SD);  
+    BSP_LED_Off(LED_SURPORT); 
 
 }
 

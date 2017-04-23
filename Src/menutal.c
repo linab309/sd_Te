@@ -19,7 +19,7 @@
 #define ALTITUDE 0
 
 extern osMutexId SaveGpsMessHandle;
-
+extern uint8_t get_space(void);
 
 typedef union { /* PMU_IRQ_CLR_RTC */
     uint8_t all;
@@ -394,50 +394,6 @@ void check_time(nmea_msg *gpsx ,system_flag *system_flag_table,float time_zone)
 }
 
 
-
-/*get free size of flash !!!*/
-uint8_t get_space(void)
-{
-
-    FATFS *fs;
-    DWORD fre_clust, fre_sect, tot_sect;
-    FRESULT res = FR_OK;
-    float tp;
-	
-    /* Get volume information and free clusters of drive 1 */
-    res = f_getfree("", &fre_clust, &fs);
-    if (res) 
-    {
-        print_usart1("f_getfree faild :%d\r\n",res);
-        return 0;
-    }
-    else
-    {
-        /* Get total sectors and free sectors */
-        tot_sect = (fs->n_fatent - 2) * fs->csize;
-        fre_sect = fre_clust * fs->csize ;
-        
-        /* Print the free space (assuming 512 bytes/sector) */
-        //print_usart1("%10lu KiB total drive space.\r\n%10lu KiB available.\r\n",
-        //tot_sect / 2, fre_sect / 2);
-        tp = fre_sect;
-        tp =((tp/tot_sect) *100);
-        if(tp < 1)
-        {
-		    if(tp < 0.1)
-                tp = 0.0;
-			else
-				tp = 1.0;
-        }
-        //print_usart1("get_space :%d\r\n",(uint8_t)tp);
-        return (uint8_t)tp;
-
-    }
-    
-}
-
-
-
 uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_t guji_record_type)
 {
     uint8_t one_shot_buffer[MESSAGE_LEN] = {0};
@@ -600,7 +556,7 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
     float tp_lat =0.0,tp_lon =0.0,speed =0.0;
     GUJI_TAG flag ;
     GUJI_DATE guji_data ;
-    FRESULT sys_fr ;
+    //FRESULT sys_fr ;
 
     __align(4) uint8_t dtbuf[50];                                //´òÓ¡»º´æÆ÷
    
@@ -608,10 +564,10 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
     do
     {
         message_number_index = ((buffer[3 + index])|(buffer[2 + index])|(buffer[1 + index]<<8)|(buffer[0 + index]<<16));
-        flag.all             =  buffer[MESSAGE_NUMBER_OFFSET + index];
+        flag.all             =  buffer[FLAG_OFFSET + index];
        // memcpy(&guji_data.all,buffer+index+4,4);
-        guji_data.all        = (buffer[FLAG_OFFSET+3 + index]|(buffer[FLAG_OFFSET+2 + index]<<8)\
-                                |(buffer[FLAG_OFFSET+1 + index]<<16)|(buffer[FLAG_OFFSET + index]<<24));
+        guji_data.all        = (buffer[GUJI_DATA_OFFSET+3 + index]|(buffer[GUJI_DATA_OFFSET+2 + index]<<8)\
+                                |(buffer[GUJI_DATA_OFFSET+1 + index]<<16)|(buffer[GUJI_DATA_OFFSET + index]<<24));
         tp_lat	             = (buffer[TP_LAT_OFFSET+3 + index]|(buffer[TP_LAT_OFFSET+2 + index]<<8)\
 			                    |(buffer[TP_LAT_OFFSET+1 + index]<<16)|(buffer[TP_LAT_OFFSET + index]<<24));	    	
 
@@ -681,25 +637,23 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
         {
             if(message_number_index == 1)
             {
-                if(FR_OK  == sys_fr)
-                {
-                    f_printf(sys_fp,"INDEX,TAG,DATE,TIME,LATITUDE N/S,LONGITUDE E/W,HEIGHT,SPEED,HEADING,PRES,TEMP\n");
-                }
+
+                f_printf(sys_fp,"INDEX,TAG,DATE,TIME,LATITUDE N/S,LONGITUDE E/W,HEIGHT,SPEED,HEADING\n");
+
             }
             
-            if(FR_OK  == sys_fr)
-            {
-                sprintf((char *)dtbuf,"%d,%c,%02d%02d%02d,",message_number_index,record_type,
-                    guji_data.bitc.year+16,guji_data.bitc.month,guji_data.bitc.date);
-                
-                f_printf(sys_fp,"%s",(char *)dtbuf);
-                sprintf((char *)dtbuf,"%02d%02d%02d,%.6f%c,",guji_data.bitc.hour,guji_data.bitc.min,guji_data.bitc.sec,tp_lat/1000000,lat_flag);
-        
-                f_printf(sys_fp,"%s",(char *)dtbuf);
-                sprintf((char *)dtbuf,"%.6f%c,%d,%.1f,%d",tp_lon/1000000,lon_flag,attiautl/10,(speed/10),angle);	
-                f_printf(sys_fp,"%s \n",(char *)dtbuf);
+
+            sprintf((char *)dtbuf,"%d,%c,%02d%02d%02d,",message_number_index,record_type,
+                guji_data.bitc.year+16,guji_data.bitc.month,guji_data.bitc.date);
+            
+            f_printf(sys_fp,"%s",(char *)dtbuf);
+            sprintf((char *)dtbuf,"%02d%02d%02d,%.6f%c,",guji_data.bitc.hour,guji_data.bitc.min,guji_data.bitc.sec,tp_lat/1000000,lat_flag);
     
-            }
+            f_printf(sys_fp,"%s",(char *)dtbuf);
+            sprintf((char *)dtbuf,"%.6f%c,%d,%.1f,%d",tp_lon/1000000,lon_flag,attiautl/10,(speed/10),angle);	
+            f_printf(sys_fp,"%s \n",(char *)dtbuf);
+    
+            
         }
      //print_usart1("\r\n index :%d  munber= %d\r\n ",index,munber);
     }while (index <munber);	
@@ -1085,13 +1039,13 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 
                     system_flag_table->guji_mode = 2;
                     
-                    if(system_flag_table->guji_record.recoed_formats == GUJI_FORMATS_GPS) 
+                    if(system_flag_table->gujiFormats == GUJI_FORMATS_GPS) 
                     {
                         track_file[0] = 0x07;
                         track_file[1] = 0x07;
                         f_write(sys_fp,track_file,2,&wb);
                     }
-                    else if(system_flag_table->guji_record.recoed_formats == GUJI_FORMATS_GPX)
+                    else if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)
                     {
                         //todo: add gpx file head.
                         gpx_filehead_write(sys_fp,track_file);
@@ -1158,15 +1112,28 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
             if(sys_fp != NULL)
             {
                fr = f_close(sys_fp); 
-               print_usart1("\r\n close file to save file :%d\r\n ",fr);            
-               sys_fr = open_append(sys_fp, track_file);
+               print_usart1("\r\n close file to save file :%d\r\n ",fr);   
 
                if(FR_OK  != sys_fr)
                {
-                   print_usart1("open append faild \n");
-                   return; 
+                    sys_fr = open_append(sys_fp, track_file);
+     
+                    if(FR_OK  != sys_fr)
+                    {
+                        print_usart1("open append faild \n");
+                        system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
+                        system_flag_table->guji_mode = RECORED_STOP;    
+                        return; 
+                    }
                }
-   
+               else
+               {
+                   system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
+                   system_flag_table->guji_mode = RECORED_STOP;    
+                   print_usart1("open append faild \n");
+
+                   return ; 
+               }
                system_flag_table->guji_mode = 2;          
             }
 

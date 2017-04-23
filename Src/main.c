@@ -161,6 +161,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 static void RTC_AlarmConfig(void);
 uint8_t sound_toggle_simple(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound_off_timer);
 uint8_t breathing_toggle(uint16_t breath_on_timer, uint16_t breath_off_timer);
+void gps_power_mode(uint8_t mode);
 
 /* USER CODE END PFP */
 
@@ -330,12 +331,33 @@ int main(void)
   {
       system_flag_table->power_mode                  = SENCSE_SURPORT_MODE;
   }
-
-  if(system_flag_table->auto_power == 0)
+#if 1
+  if(1)//system_flag_table->auto_power == 0)
       system_flag_table->power_status                    = POWER_STANBY;
   else
+  {
       system_flag_table->power_status                    = system_flag_table->power_mode;
-  
+      print_usart1("POWER ON \r\n");
+      sound_toggle_simple(2,50,50);                                    
+      system_flag_table->power_status = system_flag_table->power_mode;  
+      gps_power_mode(1);
+      /* init code for USB_DEVICE */
+	  system_flag_table->guji_mode = RECORED_START;
+	  if(HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1) != HAL_OK)
+	  {
+		Error_Handler();
+	  }
+
+      if(usb_init_flag == 1)
+      {
+          USBD_DeInit(&hUsbDeviceFS);
+          USBD_Stop(&hUsbDeviceFS);
+          usb_init_flag = 0;
+  	  }
+      //osThreadResume(defaultTaskHandle);
+      //osThreadResume(Get_gps_info_Handle);      
+  }
+#endif  
   print_usart1("system_flag_table->power_mode :%d \r\n",system_flag_table->power_mode);
   system_flag_table->guji_record.recoed_meth     = AUTO_STOP;
 
@@ -386,7 +408,8 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-  osThreadSuspend(Get_gps_info_Handle);
+  if(system_flag_table->auto_power == 0)  
+      osThreadSuspend(Get_gps_info_Handle);
   //osThreadSuspend(defaultTaskHandle);
   //osThreadSuspend(SystemCallHandle);
 
@@ -1100,44 +1123,48 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   */
 static void StopSequence_Config(void)
 {
-  GPIO_InitTypeDef      GPIO_InitStruct;
-  
-  /* PWR Peripheral clock enable */
-  __HAL_RCC_PWR_CLK_ENABLE();
-  
-  /* Enable GPIOs clock */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-
-  /* Configure all GPIO port pins in Analog mode */
-  GPIO_InitStruct.Pin = GPIO_PIN_All;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  GPIO_InitStruct.Pin = LED_SD_PIN|LED_SURPORT_PIN|LED_GPS_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+   GPIO_InitTypeDef      GPIO_InitStruct;
 
 
-  /* Request to enter STOP mode with regulator in low power */
-  /* Disable all used wakeup sources: WKUP pin */
-  HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN1);
-  HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN2);  
-  /* Clear all related wakeup flags */
-  /* Clear PWR wake up Flag */
-  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
-  
-  /* Enable WKUP pin */
-  HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
-  //HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
-  /* Request to enter STANDBY mode */
-  HAL_PWR_EnterSTANDBYMode();
+   if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_RESET)
+   {
+     /* PWR Peripheral clock enable */
+     __HAL_RCC_PWR_CLK_ENABLE();
+     
+     /* Enable GPIOs clock */
+     __HAL_RCC_GPIOA_CLK_ENABLE();
+     __HAL_RCC_GPIOB_CLK_ENABLE();
+     __HAL_RCC_GPIOC_CLK_ENABLE();
+   
+     /* Configure all GPIO port pins in Analog mode */
+     GPIO_InitStruct.Pin = GPIO_PIN_All;
+     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+     GPIO_InitStruct.Pull = GPIO_NOPULL;
+     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+   
+     GPIO_InitStruct.Pin = LED_SD_PIN|LED_SURPORT_PIN|LED_GPS_PIN;
+     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+   
+     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+   
+   
+     /* Request to enter STOP mode with regulator in low power */
+     /* Disable all used wakeup sources: WKUP pin */
+     HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN1);
+     HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN2);  
+     /* Clear all related wakeup flags */
+     /* Clear PWR wake up Flag */
+     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+     
+     /* Enable WKUP pin */
+     HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
+     //HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
+     /* Request to enter STANDBY mode */
+     HAL_PWR_EnterSTANDBYMode();
+   }
   //HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
 
 }
@@ -1272,7 +1299,8 @@ static uint8_t get_key(void)
 
     if((BSP_PB_GetState(BUTTON_USER) == 0)&&(BSP_PB_GetState(BUTTON_WAKEUP) == 0))
     {
-        if(button_flag == USER_KEY_MARK|WAKEUP_KEY_MARK)
+        print_usart1("button_flag :%d %d \r\n",button_flag,button_press_cnt);
+        if(button_flag == (USER_KEY_MARK|WAKEUP_KEY_MARK))
         {
             button_press_cnt++;
             if((button_press_cnt >= 50))
@@ -1287,7 +1315,7 @@ static uint8_t get_key(void)
             button_press_cnt = 0;
         }
         
-        if(button_flag == 0)
+        if(button_flag != 0xff)
             button_flag = USER_KEY_MARK|WAKEUP_KEY_MARK;
     }
     else if(BSP_PB_GetState(BUTTON_WAKEUP) == 0)
@@ -1387,14 +1415,14 @@ uint8_t sound_toggle_config(uint16_t sound_on_timer, uint16_t sound_off_timer)
     {
         sound_toggle_cnt = HAL_GetTick();
 
-        //HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+        HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
         sound_flag = 1;
     }
     
     if((sound_flag == 1)&&(HAL_GetTick() >= (sound_toggle_cnt + sound_on_timer)))
     {
         sound_toggle_cnt = HAL_GetTick();
-        //HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
+        HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
         sound_flag = 0;
     } 
 
@@ -1470,6 +1498,7 @@ uint8_t breathing_toggle_sd(uint16_t breath_on_timer, uint16_t breath_off_timer)
         breath_toggle_cnt = HAL_GetTick();
 
         print_usart1("breath on \r\n");
+        Pwm_Breathing(SD_LED,0);
         MX_TIM2_Init();
         LED_Sd_FLAG = 1;
         breath_flag = 1;
@@ -1493,6 +1522,51 @@ uint8_t breathing_toggle_sd(uint16_t breath_on_timer, uint16_t breath_off_timer)
     return 0 ;
 
 }
+
+/*get free size of flash !!!*/
+uint8_t get_space(void)
+{
+
+    FATFS *fs;
+    DWORD fre_clust, fre_sect, tot_sect;
+    FRESULT res = FR_OK;
+    float tp;
+	
+    /* Get volume information and free clusters of drive 1 */
+    res = f_getfree("", &fre_clust, &fs);
+    if (res) 
+    {
+        print_usart1("f_getfree faild :%d\r\n",res);
+        system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
+
+        return 0;
+    }
+    else
+    {
+        /* Get total sectors and free sectors */
+        tot_sect = (fs->n_fatent - 2) * fs->csize;
+        fre_sect = fre_clust * fs->csize ;
+        
+        /* Print the free space (assuming 512 bytes/sector) */
+        //print_usart1("%10lu KiB total drive space.\r\n%10lu KiB available.\r\n",
+        //tot_sect / 2, fre_sect / 2);
+        tp = fre_sect;
+        tp =((tp/tot_sect) *100);
+        if(tp < 1)
+        {
+		    if(tp < 0.1)
+                tp = 0.0;
+			else
+				tp = 1.0;
+        }
+        //print_usart1("get_space :%d\r\n",(uint8_t)tp);
+        return (uint8_t)tp;
+
+    }
+    
+}
+
+
 
 
 void gps_led_config(void)
@@ -1921,12 +1995,20 @@ void MySystem(void const * argument)
 				  print_usart1("************\r\n");
 				  print_usart1("goto stanby.\r\n");
 				  print_usart1("************\r\n");
-  
-				  StopSequence_Config();                  
+                  if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_RESET)
+                  {
+				      StopSequence_Config();                  
+                  }
                   
               }            
               break;
           case POWER_USER_KEY_LONG:
+              if(usb_init_flag == 1)
+              {
+                  USBD_DeInit(&hUsbDeviceFS);
+                  USBD_Stop(&hUsbDeviceFS);
+                  usb_init_flag = 0;
+          	  }            
               sound_toggle_simple(3,50,50);
               entry_config_mode(system_flag_table);
               break;
@@ -1982,6 +2064,22 @@ void update_info(void const * argument)
      }
      else 
        usb_timer_cnt = 0;   
+     
+    if(LED_Sd_FLAG == 1)
+    {
+        BSP_LED_Init(LED_SD);
+        //Pwm_Breathing(SD_LED,0);
+        LED_Sd_FLAG = 0;
+    }  
+    BSP_LED_Off(LED_SD);      
+
+    if(LED_SURPORT_FLAG == 1)
+    {
+        BSP_LED_Init(LED_SURPORT);
+        LED_SURPORT_FLAG = 0;
+    }
+    BSP_LED_Off(LED_SURPORT);
+                    
   }
   else   
   {
@@ -2074,8 +2172,10 @@ void update_info(void const * argument)
             {
                 if((gpsx->gpssta >= 1)&&(system_flag_table->guji_mode == RECORED_START_DOING))
                 {
-               
-                    breathing_toggle_sd(4000,4000);     
+                    if((system_flag_table->guji_record.recoed_formats == BY_TIMES && system_flag_table->guji_record.by_time_vaule < 1000))     
+                        breathing_toggle_sd(4000,1000);     
+                    else
+                        breathing_toggle_sd(4000,4000);     
                 }
                 else
                 {
@@ -2118,10 +2218,10 @@ void update_info(void const * argument)
              {
                  sound_toggle_config(50,50);
              }
+             
              sd_timer_cnt ++;
 
-             if((sd_timer_cnt%15) == 0)
-                 BSP_LED_Toggle(LED_SD);                
+             BSP_LED_Toggle(LED_SD);                
 
              if(sd_timer_cnt == 1000)
              {
@@ -2129,7 +2229,7 @@ void update_info(void const * argument)
                  HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
                  system_flag_table->power_status  = POWER_STANBY;
                  print_usart1("****************************** \r\n");
-                 print_usart1("when usb detect hotplug, goto stanby angin. \r\n");
+                 print_usart1("sd error, goto stanby angin. \r\n");
                  print_usart1("****************************** \r\n");
            
                  StopSequence_Config();
