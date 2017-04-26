@@ -48,7 +48,7 @@
 /* USER CODE BEGIN Includes */     
 #include "stm32l1xx_hal.h"
 #include "FreeRTOSConfig.h"
-
+#include "menutal.h"
 
 #define MY_SYSTICK_CTRL_REG			( * ( ( volatile uint32_t * ) 0xe000e010 ) )
 #define MY_SYSTICK_LOAD_REG			( * ( ( volatile uint32_t * ) 0xe000e014 ) )
@@ -64,7 +64,7 @@
     extern uint32_t ulTimerCountsForOneTick ;
 #endif
 
-
+extern system_flag *system_flag_table;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim10;
@@ -160,9 +160,11 @@ __weak void PostSleepProcessing(uint32_t *ulExpectedIdleTime)
 /* USER CODE BEGIN Application */
 void Begin_low_power(void)
 {
-
     if((__HAL_TIM_GET_ENABLE(&htim10) == 0) && (__HAL_TIM_GET_ENABLE(&htim2) == 0) &&(__HAL_TIM_GET_ENABLE(&htim4) == 0))
-    SystemClock_Config_msi();
+    {
+        if((system_flag_table->power_status != POWER_SURPORT_SLEEP)&&(system_flag_table->power_status != POWER_LRUN_SLEEP))
+            SystemClock_Config_msi();
+    }
 #if configUSE_TICKLESS_IDLE == 1     
     ulTimerCountsForOneTick = ( configCPU_CLOCK_HZ / configTICK_RATE_HZ );
 #endif
@@ -173,9 +175,12 @@ void Begin_low_power(void)
 void End_low_power(void)
 {
     if((__HAL_TIM_GET_ENABLE(&htim10) == 0) && (__HAL_TIM_GET_ENABLE(&htim2) == 0) &&(__HAL_TIM_GET_ENABLE(&htim4) == 0))
-    SystemClock_Config_resume();
+    {
+        if((system_flag_table->power_status != POWER_SURPORT_SLEEP)&&(system_flag_table->power_status != POWER_LRUN_SLEEP))
+            SystemClock_Config_resume();
+    }
 #if configUSE_TICKLESS_IDLE == 1     
-        ulTimerCountsForOneTick = ( configCPU_CLOCK_HZ / configTICK_RATE_HZ );
+    ulTimerCountsForOneTick = ( configCPU_CLOCK_HZ / configTICK_RATE_HZ );
 #endif
 
 }
