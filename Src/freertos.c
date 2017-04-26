@@ -126,7 +126,8 @@ __weak void PreSleepProcessing(uint32_t *ulExpectedIdleTime)
     */  
 
     /*Enter to sleep Mode using the HAL function HAL_PWR_EnterSLEEPMode with WFI instruction*/
-    HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI); 
+    if((system_flag_table->power_status == POWER_SURPORT_SLEEP)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
+        HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI); 
     
     *ulExpectedIdleTime = 0;
 
@@ -144,14 +145,17 @@ __weak void PostSleepProcessing(uint32_t *ulExpectedIdleTime)
 
     (void) ulExpectedIdleTime;
 
-    for(i = 0;i<*ulExpectedIdleTime ;i++)
+    if((system_flag_table->power_status == POWER_SURPORT_SLEEP)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
     {
-        HAL_IncTick();
+       for(i = 0;i<*ulExpectedIdleTime ;i++)
+       {
+           HAL_IncTick();
+       }
+       
     }
-    
     HAL_ResumeTick();    
 
-
+    
 
 
 }
@@ -162,8 +166,8 @@ void Begin_low_power(void)
 {
     if((__HAL_TIM_GET_ENABLE(&htim10) == 0) && (__HAL_TIM_GET_ENABLE(&htim2) == 0) &&(__HAL_TIM_GET_ENABLE(&htim4) == 0))
     {
-        if((system_flag_table->power_status != POWER_SURPORT_SLEEP)&&(system_flag_table->power_status != POWER_LRUN_SLEEP))
-            SystemClock_Config_msi();
+        //if((system_flag_table->power_status != POWER_SURPORT_SLEEP)&&(system_flag_table->power_status != POWER_LRUN_SLEEP))
+           // SystemClock_Config_msi();
     }
 #if configUSE_TICKLESS_IDLE == 1     
     ulTimerCountsForOneTick = ( configCPU_CLOCK_HZ / configTICK_RATE_HZ );
@@ -176,8 +180,8 @@ void End_low_power(void)
 {
     if((__HAL_TIM_GET_ENABLE(&htim10) == 0) && (__HAL_TIM_GET_ENABLE(&htim2) == 0) &&(__HAL_TIM_GET_ENABLE(&htim4) == 0))
     {
-        if((system_flag_table->power_status != POWER_SURPORT_SLEEP)&&(system_flag_table->power_status != POWER_LRUN_SLEEP))
-            SystemClock_Config_resume();
+        //if((system_flag_table->power_status != POWER_SURPORT_SLEEP)&&(system_flag_table->power_status != POWER_LRUN_SLEEP))
+           // SystemClock_Config_resume();
     }
 #if configUSE_TICKLESS_IDLE == 1     
     ulTimerCountsForOneTick = ( configCPU_CLOCK_HZ / configTICK_RATE_HZ );

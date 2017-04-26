@@ -345,11 +345,7 @@ int main(void)
       gps_power_mode(1);
       /* init code for USB_DEVICE */
 	  system_flag_table->guji_mode = RECORED_START;
-	  if(HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1) != HAL_OK)
-	  {
-		Error_Handler();
-	  }
-
+  	  HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1); 
       if(usb_init_flag == 1)
       {
           USBD_DeInit(&hUsbDeviceFS);
@@ -1295,26 +1291,27 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
 
             //if(system_flag_table->guji_record.lowpower_timer <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
             {
-                if(gpsx->hdop < 5)
+
+
+                if(gpsx->gpssta == 0 )
                 {
-                    save_guiji_message(gpsx,system_flag_table,'T');
-                    lp_number++;
+                    if(60000 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
+                    {
+                        lp_number = 8 ;
+                    }
+                }
+                else
+                {
+                    if(gpsx->hdop < 50)
+                    {
+                        save_guiji_message(gpsx,system_flag_table,'T');
+                        lp_number++;
+                        print_usart1("hdop :%d \r\n",gpsx->hdop );
+                        
+                    }
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
                 }
-                else 
-                {
-                    if(gpsx->gpssta == 0 )
-                    {
-                        if(60000 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
-                        {
-                            lp_number = 8 ;
-                        }
-                    }
-                    else
-                    {
-                        system_flag_table->grecord_timer_cnt = HAL_GetTick();
-                    }
-                }
+    
                 
                 if(lp_number>= 8)
                 {
@@ -1376,6 +1373,7 @@ static uint8_t get_key(void)
     {
         if(button_flag == WAKEUP_KEY_MARK)
         {
+            print_usart1("button_flag :%d %d \r\n",button_flag,button_press_cnt);
 
             button_press_cnt++;
             if(button_press_cnt == 5)
@@ -1700,7 +1698,7 @@ void status_led_config(void)
         else if(system_flag_table->power_status == POWER_LRUN_SLEEP)
         {
    
-            if((system_flag_table->lowpower_timer*1000) <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
+            if((system_flag_table->lowpower_timer*1000*60) <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
             {
                 if((green_led_flag == 0)&&(HAL_GetTick() >= (green_timer_cnt + 2700)))
                 {
@@ -1722,6 +1720,8 @@ void status_led_config(void)
                  BSP_LED_On(LED_BULE);     
                  system_flag_table->power_status = POWER_LRUN;
                  SystemClock_Config_resume();
+                 osThreadResume(Get_gps_info_Handle);
+                 osThreadResume(defaultTaskHandle);                 
                  print_usart1("****************************** \r\n");
                  print_usart1("levef lprun mode  resume \r\n");       
                  print_usart1("****************************** \r\n");                    
@@ -1990,10 +1990,7 @@ void MySystem(void const * argument)
                   osThreadSuspend(defaultTaskHandle);
                   system_flag_table->guji_mode = RECORED_START;
 
-                  if(HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1) != HAL_OK)
-                  {
-                    Error_Handler();
-                  }
+                  HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
 				  osThreadResume(Get_gps_info_Handle);
                   osThreadResume(defaultTaskHandle);
 
@@ -2026,10 +2023,7 @@ void MySystem(void const * argument)
                       gps_power_mode(1);
                       /* init code for USB_DEVICE */
 					  system_flag_table->guji_mode = RECORED_START;
-					  if(HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1) != HAL_OK)
-					  {
-						Error_Handler();
-					  }
+					  HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
 
                       if(usb_init_flag == 1)
                       {
@@ -2152,10 +2146,10 @@ void update_info(void const * argument)
   {
         if(system_flag_table->power_status == POWER_SURPORT_RUN)
         {
-            if(gpsx->speed <= 90)
+            if(gpsx->speed < 1852)
             {
                 support_timer_cnt ++;
-                if(support_timer_cnt == 30)
+                if(support_timer_cnt == 3000)
                 {
                     support_timer_cnt = 0;
                     //StopSequence_Config();
@@ -2243,7 +2237,7 @@ void update_info(void const * argument)
             {
                 if((gpsx->gpssta >= 1)&&(system_flag_table->guji_mode == RECORED_START_DOING))
                 {
-                    if((system_flag_table->guji_record.recoed_formats == BY_TIMES && system_flag_table->guji_record.by_time_vaule < 1000))     
+                    if((system_flag_table->guji_record.recoed_formats == BY_TIMES) && (system_flag_table->guji_record.by_time_vaule < 1000))     
                         breathing_toggle_sd(4000,1000);     
                     else
                         breathing_toggle_sd(4000,4000);     
