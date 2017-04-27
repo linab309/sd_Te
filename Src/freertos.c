@@ -144,7 +144,7 @@ __weak void PostSleepProcessing(uint32_t *ulExpectedIdleTime)
     uint32_t i;
 
     (void) ulExpectedIdleTime;
-
+#if 0
     if((system_flag_table->power_status == POWER_SURPORT_SLEEP)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
     {
        for(i = 0;i<*ulExpectedIdleTime ;i++)
@@ -154,7 +154,7 @@ __weak void PostSleepProcessing(uint32_t *ulExpectedIdleTime)
        
     }
     HAL_ResumeTick();    
-
+#endif
     
 
 
@@ -172,7 +172,7 @@ void Begin_low_power(void)
 #if configUSE_TICKLESS_IDLE == 1     
     ulTimerCountsForOneTick = ( configCPU_CLOCK_HZ / configTICK_RATE_HZ );
 #endif
-    HAL_SuspendTick();  
+    //HAL_SuspendTick();  
 
 }
 

@@ -989,11 +989,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                             
 
                         if((eeprom_tm.w_year != system_flag_table->sys_tm.w_year+2000)||
-                          (eeprom_tm.w_year != system_flag_table->sys_tm.w_month)||
-                          (eeprom_tm.w_year != system_flag_table->sys_tm.w_date)||
-                          (eeprom_tm.w_year != system_flag_table->sys_tm.hour)||
-                          (eeprom_tm.w_year != system_flag_table->sys_tm.min)||
-                          (eeprom_tm.w_year != system_flag_table->sys_tm.sec))
+                          (eeprom_tm.w_month!= system_flag_table->sys_tm.w_month)||
+                          (eeprom_tm.w_date!= system_flag_table->sys_tm.w_date))
                         {
                             ret = 1;
                             stm_write_eerpom(26,0);
@@ -1015,24 +1012,24 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         if(system_flag_table->gujiFormats == GUJI_FORMATS_CSV)
                         {
                             //system_flag_table->gujiFormats = GUJI_FORMATS_CSV;
-                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CSV",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
-                            system_flag_table->sys_tm.w_date, system_flag_table->sys_tm.hour,system_flag_table->sys_tm.min,system_flag_table->sys_tm.sec);
+                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CSV",eeprom_tm.w_year,eeprom_tm.w_month,
+                            eeprom_tm.w_date, eeprom_tm.hour,eeprom_tm.min,eeprom_tm.sec);
                             
                         }
                         else if(system_flag_table->gujiFormats == GUJI_FORMATS_GPS)  
                         {
-                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CPS",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
-                            system_flag_table->sys_tm.w_date, system_flag_table->sys_tm.hour,system_flag_table->sys_tm.min,system_flag_table->sys_tm.sec);
+                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CPS",eeprom_tm.w_year,eeprom_tm.w_month,
+                            eeprom_tm.w_date, eeprom_tm.hour,eeprom_tm.min,eeprom_tm.sec);
                         }
                         else if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)  
                         {
-                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CPX",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
-                            system_flag_table->sys_tm.w_date, system_flag_table->sys_tm.hour,system_flag_table->sys_tm.min,system_flag_table->sys_tm.sec);
+                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CPX",eeprom_tm.w_year,eeprom_tm.w_month,
+                            eeprom_tm.w_date, eeprom_tm.hour,eeprom_tm.min,eeprom_tm.sec);
                         }                    
                         else if(system_flag_table->gujiFormats == GUJI_FORMATS_MEA)  
                         {
-                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.NMEA",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
-                            system_flag_table->sys_tm.w_date, system_flag_table->sys_tm.hour,system_flag_table->sys_tm.min,system_flag_table->sys_tm.sec);
+                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.NMEA",eeprom_tm.w_year,eeprom_tm.w_month,
+                            eeprom_tm.w_date, eeprom_tm.hour,eeprom_tm.min,eeprom_tm.sec);
                         }   
                         print_usart1("\r\n open old file :%s \r\n ",track_file);
 
@@ -1063,6 +1060,14 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                             system_flag_table->sys_tm.w_date, system_flag_table->sys_tm.hour,system_flag_table->sys_tm.min,system_flag_table->sys_tm.sec);
                         }   
                         print_usart1("\r\n create new file :%s \r\n ",track_file);
+                        
+                        stm_write_eerpom(20,system_flag_table->sys_tm.w_year+2000);
+                        stm_write_eerpom(21,system_flag_table->sys_tm.w_month);
+                        stm_write_eerpom(22,system_flag_table->sys_tm.w_date);
+                        stm_write_eerpom(23,system_flag_table->sys_tm.hour);
+                        stm_write_eerpom(24,system_flag_table->sys_tm.min);
+                        stm_write_eerpom(25,system_flag_table->sys_tm.sec);
+
                         stm_read_eerpom(26,&eeprom_vaule);
                         stm_write_eerpom(26,(eeprom_vaule|(1<<system_flag_table->gujiFormats)));
 
