@@ -257,7 +257,9 @@ int main(void)
   MX_RTC_Init();
   MX_TIM2_Init();
 
+
   /* USER CODE BEGIN 2 */
+  //sd_power_mode(1)
 
   print_usart1("P-1 running !! sb_flag :%x  wu_flag:%x\r\n",__HAL_PWR_GET_FLAG(PWR_FLAG_SB),__HAL_PWR_GET_FLAG(PWR_FLAG_WU));
   RTC_AlarmConfig();
@@ -375,7 +377,13 @@ int main(void)
   system_flag_table->auto_power = 1;
 #if 1
   if(system_flag_table->auto_power == 0)
+  {
       system_flag_table->power_status                    = POWER_STANBY;
+      if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_SET)
+      {
+          sd_power_mode(1);
+      }
+  }
   else
   {
       system_flag_table->power_status                    = system_flag_table->power_mode;
@@ -814,6 +822,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPS_POWER_GPIO_Port, GPS_POWER_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(SD_POWER_GPIO_Port, SD_POWER_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : usb_hotplug_Pin */
   GPIO_InitStruct.Pin = usb_hotplug_Pin;
@@ -832,6 +841,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : GPS_POWER_Pin */
+  GPIO_InitStruct.Pin = SD_POWER_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(SD_POWER_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
@@ -947,15 +962,24 @@ void gps_power_mode(uint8_t mode)
     {
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); 
         memset(gpsx,0,sizeof(nmea_msg));
-        //BSP_LED_Init(LED_GPS);
-        //BSP_LED_On(LED_GPS);
     }            
     else
     {
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);    
         memset(gpsx,0,sizeof(nmea_msg));
-        //BSP_LED_Init(LED_GPS);
-        //BSP_LED_Off(LED_GPS);
+    }
+}
+
+void sd_power_mode(uint8_t mode)
+{
+    if(mode == 1)
+    {
+        HAL_GPIO_WritePin(SD_POWER_GPIO_Port, SD_POWER_Pin, GPIO_PIN_RESET); 
+
+    }            
+    else
+    {
+        HAL_GPIO_WritePin(SD_POWER_GPIO_Port, SD_POWER_Pin, GPIO_PIN_SET);    
     }
 }
 
@@ -1380,7 +1404,8 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                     while(system_flag_table->guji_buffer_Index_rp != system_flag_table->guji_buffer_Index_wp) {;}
                     lp_number = 0;
                     BSP_LED_Off(LED_BULE);
-                    //gps_power_mode(0);
+                    gps_power_mode(0);
+                    sd_power_mode(0);
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
                     system_flag_table->power_status = POWER_LRUN_SLEEP;
                     osThreadSuspend(Get_gps_info_Handle);
@@ -1782,6 +1807,9 @@ void status_led_config(void)
                  BSP_LED_On(LED_BULE);     
                  system_flag_table->power_status = POWER_LRUN;
                  SystemClock_Config_resume();
+                 gps_power_mode(1);
+                 sd_power_mode(1);
+                 HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
                  osThreadResume(Get_gps_info_Handle);
                  osThreadResume(defaultTaskHandle);                 
                  print_usart1("****************************** \r\n");
@@ -1886,6 +1914,7 @@ void Get_gps_info(void const * argument)
   /* USER CODE BEGIN Get_gps_info */
   uint16_t rxlen = 0;
   uint8_t *gps_data = NULL;
+  
   /* Infinite loop */
   print_usart1("Get_gps_info\r\n");
   /*##-4- Put UART peripheral in reception process ###########################*/  
@@ -2228,6 +2257,7 @@ void update_info(void const * argument)
                    }                    
                    BSP_LED_Off(LED_SURPORT);
                    gps_power_mode(0);
+                   sd_power_mode(0) ;
                    system_flag_table->power_status = POWER_SURPORT_SLEEP;
                    SystemClock_Config_msi();
                    osThreadSuspend(Get_gps_info_Handle);
@@ -2263,6 +2293,7 @@ void update_info(void const * argument)
                    system_flag_table->power_status = POWER_SURPORT_RUN;
                    support_timer_cnt = 0;
                    gps_power_mode(1);
+                   sd_power_mode(1) ;
                    SystemClock_Config_resume();
                    HAL_NVIC_DisableIRQ(EXTI1_IRQn);
                    osThreadResume(Get_gps_info_Handle);

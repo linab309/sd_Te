@@ -57,6 +57,8 @@
 #define surprot_line_GPIO_Port GPIOA
 #define GPS_POWER_Pin GPIO_PIN_8
 #define GPS_POWER_GPIO_Port GPIOA
+#define SD_POWER_Pin GPIO_PIN_2
+#define SD_POWER_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 #define  MAX_BMP_FILES  25
