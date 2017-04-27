@@ -176,7 +176,7 @@ typedef struct
 typedef struct  
 {
     GUJI_RECOCE_TABLE guji_record;
-    uint16_t lowpower_timer;
+    uint32_t lowpower_timer;
     uint16_t wanng_speed_vaule;
     uint8_t  guji_mode;
     uint8_t  auto_new_guji;
@@ -190,7 +190,7 @@ typedef struct
     uint8_t  gujiFormats;
     uint8_t  baifenbi;
     uint8_t  time_zone;
-    float    index_timerzone;
+    uint8_t  frist_power;
     tm       sys_tm;    
     uint8_t batt_Status;
 	uint8_t charger_connected;
@@ -214,6 +214,6 @@ extern uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table
 extern void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx);
 extern uint8_t RTC_Get_Week(uint16_t year,uint8_t month,uint8_t day);
 extern void write_flash(FIL *sys_fp,system_flag *system_flag_table);  /*write to  the file by true*/
-
+extern void check_time(nmea_msg *gpsx ,system_flag *system_flag_table);
 #endif
 

@@ -123,7 +123,7 @@ uint8_t  My_Fs_Init(FATFS *SD_FatFs)
 {
 
 	uint8_t ret = 0;
-	FRESULT fr;
+	//FRESULT fr;
 //	FIL fil;	
 
 	/* Check the mounted device */
@@ -132,10 +132,12 @@ uint8_t  My_Fs_Init(FATFS *SD_FatFs)
     	if(f_mount(SD_FatFs, (TCHAR const*)USER_Path, 0) != FR_OK)
     	{
     	   print_usart1("BSP_SD_INIT_FAILED \r\n");
+           ret  = 1;
     	}  
     	else
     	{
-    	
+    	   print_usart1("\r\n f_mount ok \r\n");
+    #if 0	
     		fr = f_mkdir("POI");
     		print_usart1("\r\n mkdir_init %d \r\n",fr);
     		
@@ -158,7 +160,7 @@ uint8_t  My_Fs_Init(FATFS *SD_FatFs)
                     }
     			 }
     		 }
-        
+#endif        
     	}
     }
     else
@@ -402,6 +404,7 @@ void entry_config_mode(system_flag *system_flag_table)
 {
     FIL update_config_fp;
     FRESULT fr;
+    uint32_t eeprom_flag = 0;
 
     if(f_open(&update_config_fp,(TCHAR const*)"P-1.BIN",FA_READ) == FR_OK)
     {
@@ -428,8 +431,17 @@ void entry_config_mode(system_flag *system_flag_table)
         f_printf(&update_config_fp,"%s\r\n",system_flag_table->auto_power ? "ON" : "OFF");
         f_printf(&update_config_fp,"%s\r\n",system_flag_table->buzzer? "ON" : "OFF");
         f_printf(&update_config_fp,"Firmware: V0.01 \r\n");
-        f_printf(&update_config_fp,"PowerOn: 1\r\n");
-        f_printf(&update_config_fp,"First Use: 17-03-31\r\n");
+        stm_read_eerpom(11,&eeprom_flag);
+        f_printf(&update_config_fp,"PowerOn: %d\r\n",eeprom_flag);
+        stm_read_eerpom(12,&eeprom_flag);
+        if(eeprom_flag == 0xaaaaaaaa)
+        {
+            stm_read_eerpom(12,&eeprom_flag);
+            f_printf(&update_config_fp,"First Use: %02d-%02d-%02d\r\n",(eeprom_flag>>16)&0xff,(eeprom_flag>>8)&0xff,(eeprom_flag)&0xff);
+        }
+
+        else
+            f_printf(&update_config_fp,"First Use: ---\r\n");
 
         f_close(&update_config_fp);
         print_usart1("\r\n write info.txt \r\n");

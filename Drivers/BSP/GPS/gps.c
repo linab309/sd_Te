@@ -271,14 +271,20 @@ void NMEA_GPRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	 
 	 }
     
-	posx=NMEA_Comma_Pos(p1,7);								//得到地面速率
+	posx = NMEA_Comma_Pos(p1,7);								//得到地面速率
 	
 	if(posx!=0XFF)
 	{
-        gpsx->speed= NMEA_Str2num(p1+posx,&dx);
-        if(dx<3)gpsx->speed*=NMEA_Pow(10,3-dx);             //确保扩大1000倍
+        gpsx->speed = NMEA_Str2num(p1+posx,&dx);
+
+        if(dx<3)
+        {
+            gpsx->speed*=NMEA_Pow(10,3-dx);             //确保扩大1000倍
+            gpsx->speed = gpsx->speed*1000/1852;             //确保扩大1000倍
+
+        }
     }
-    posx=NMEA_Comma_Pos(p1,8);	
+    posx = NMEA_Comma_Pos(p1,8);	
     if(posx!=0XFF)
     {
 
