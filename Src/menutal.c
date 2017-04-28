@@ -920,8 +920,11 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 
 			break;
 		case RECORED_START:
-            if(system_flag_table->ODOR == 0)
+        case RECORED_RESTART:
+            
+            if((system_flag_table->ODOR == 0)&&(mode == RECORED_START ))
 			     system_flag_table->Message_head_number = 0;
+            
 			if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
 			{
 				system_flag_table->guji_buffer_Index_rp = 0;
@@ -970,7 +973,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 				        fr = f_mkdir(track_file);
 				    }
 
-                    if(system_flag_table->ODOR == 1)
+                    if((system_flag_table->ODOR == 0)&&(mode == RECORED_START ))
                     {
                         /*eeprom 20 -25*/
                         stm_read_eerpom(20,&eeprom_vaule);

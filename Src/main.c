@@ -118,6 +118,7 @@ static uint8_t LED_SURPORT_FLAG = 0;
 
 static uint8_t LED_Sd_FLAG = 0;
 static uint8_t Wang_FLAG = 0;
+static uint8_t key_status = 0;
 
 
 /* Private function prototypes 
@@ -184,7 +185,6 @@ PUTCHAR_PROTOTYPE
 {
   /* Place your implementation of fputc here */
   /* e.g. write a character to the EVAL_COM1 and Loop until the end of transmission */
-  while(HAL_UART_GetState(&huart1) == HAL_UART_STATE_BUSY_TX){}
   HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
 
   return ch;
@@ -314,10 +314,12 @@ int main(void)
       system_flag_table->guji_record.by_speed_vaule = eeprom_flag;
       stm_read_eerpom(9,&eeprom_flag);
       system_flag_table->lowpower_timer = eeprom_flag;
-      system_flag_table->lowpower_timer = system_flag_table->lowpower_timer*1000*60;
-      print_usart1("system_flag_table->lowpower_timer :%d \r\n",system_flag_table->lowpower_timer);
       if(system_flag_table->lowpower_timer == 0)
         system_flag_table->lowpower_timer = 15;
+      
+      system_flag_table->lowpower_timer = system_flag_table->lowpower_timer*1000*60;
+      print_usart1("system_flag_table->lowpower_timer :%d \r\n",system_flag_table->lowpower_timer);
+
       stm_read_eerpom(10,&eeprom_flag);
       system_flag_table->ODOR = eeprom_flag;
       stm_read_eerpom(11,&eeprom_flag);
@@ -334,10 +336,10 @@ int main(void)
       system_flag_table->guji_record.recoed_formats  = BY_TIMES;
 
       system_flag_table->lowpower_timer              = 15;
-      system_flag_table->ODOR = 0;
-      system_flag_table->buzzer = 0;
-      system_flag_table->auto_power = 0;
-      system_flag_table->guji_record.by_speed_vaule = 0;
+      system_flag_table->ODOR                        = 0;
+      system_flag_table->buzzer                      = 0;
+      system_flag_table->auto_power                  = 0;
+      system_flag_table->guji_record.by_speed_vaule  = 0;
       system_flag_table->wanng_speed_vaule = 0;
       stm_write_eerpom(0,system_flag_table->time_zone);
       /*Buzzer*/
@@ -354,16 +356,16 @@ int main(void)
       stm_write_eerpom(9,system_flag_table->lowpower_timer);             
       stm_write_eerpom(10,system_flag_table->ODOR);
       stm_write_eerpom(11,1);
-      
+      /*一天一轨迹存储空间清零*/   
       stm_write_eerpom(20,0);
       stm_write_eerpom(21,0);
       stm_write_eerpom(22,0);
       stm_write_eerpom(23,0);
       stm_write_eerpom(24,0);
       stm_write_eerpom(25,0);
-
+      /*标记EERPOM表示已初始化*/
       stm_write_eerpom(0xff,0x12345678);
-      stm_write_eerpom(0xf0,0);   
+      stm_write_eerpom(0xf0,0);   /*power mode save ! default is normal support mode*/
       system_flag_table->frist_power = 1;
   }
 
@@ -379,10 +381,11 @@ int main(void)
   }
 
   system_flag_table->auto_power = 1;
+  
 #if 1
   if(system_flag_table->auto_power == 0)
   {
-      system_flag_table->power_status                    = POWER_STANBY;
+      system_flag_table->power_status                = POWER_STANBY;
       if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_SET)
       {
           sd_power_mode(1);
@@ -390,13 +393,13 @@ int main(void)
   }
   else
   {
-      system_flag_table->power_status                    = system_flag_table->power_mode;
+      system_flag_table->power_status                = system_flag_table->power_mode;
       print_usart1("POWER ON \r\n");
       sound_toggle_simple(2,50,50);                                    
-      system_flag_table->power_status = system_flag_table->power_mode;  
+      system_flag_table->power_status                = system_flag_table->power_mode;  
       gps_power_mode(1);
       /* init code for USB_DEVICE */
-	  system_flag_table->guji_mode = RECORED_START;
+	  system_flag_table->guji_mode                   = RECORED_START;
   	  HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1); 
       if(usb_init_flag == 1)
       {
@@ -409,7 +412,7 @@ int main(void)
   }
 #endif  
   print_usart1("system_flag_table->power_mode :%d \r\n",system_flag_table->power_mode);
-  system_flag_table->guji_record.recoed_meth     = AUTO_STOP;
+  system_flag_table->guji_record.recoed_meth         = AUTO_STOP;
 
   /* USER CODE END 2 */
 
@@ -1219,6 +1222,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     else if(GPIO_Pin == GPIO_PIN_1)
     {   
         support_cnt ++;
+
+        if(support_cnt > 30)
+        {
+            HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+        }
     }
     else if(GPIO_Pin == GPIO_PIN_0)
     {
@@ -1442,6 +1450,8 @@ static uint8_t get_key(void)
     static uint8_t button_press_cnt = 0xff; 
     uint8_t button_key = 0; 
 
+    key_status = 1;
+
     if((BSP_PB_GetState(BUTTON_USER) == 0)&&(BSP_PB_GetState(BUTTON_WAKEUP) == 0))
     {
         //print_usart1("button_flag :%d %d \r\n",button_flag,button_press_cnt);
@@ -1462,6 +1472,7 @@ static uint8_t get_key(void)
         
         if(button_flag != 0xff)
             button_flag = USER_KEY_MARK|WAKEUP_KEY_MARK;
+        
     }
     else if(BSP_PB_GetState(BUTTON_WAKEUP) == 0)
     {
@@ -1529,16 +1540,28 @@ static uint8_t get_key(void)
     }
     else
     {
-       if((button_key == 0)&&(button_press_cnt<5))
+       if(button_key == 0)
         {
-            //print_usart1("button_flag :%d \r\n",button_flag);
-            switch(button_flag)
+            if(button_press_cnt < 5)
             {
-                case WAKEUP_KEY_MARK:  button_key = POWER_KEY;
-                    break;
-                case USER_KEY_MARK:    button_key = USER_KEY;
-                     break;
-                default :break;
+                switch(button_flag)
+                {
+                    case WAKEUP_KEY_MARK:  button_key = POWER_KEY;
+                        break;
+                    case USER_KEY_MARK:    button_key = USER_KEY;
+                         break;
+                    default :break;
+                }
+            }
+            else if(button_press_cnt < 12)
+           /*POWER键起来后，先不切换到START，过滤掉POWER LP时出现的问题
+                    start后如果马上认到GPS就会开启文件，会导致 后续连按会有问题。*/
+            {
+                if((button_flag == WAKEUP_KEY_MARK)&&(system_flag_table->guji_mode != RECORED_START))   					  
+                {
+                    system_flag_table->guji_mode = RECORED_START;
+		            HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);            
+                }
             }
         }
         else
@@ -1546,6 +1569,7 @@ static uint8_t get_key(void)
         
         button_flag = 0;
         button_press_cnt = 0;
+        key_status = 0;
     }
     
 
@@ -2012,7 +2036,7 @@ void MySystem(void const * argument)
 {
   /* USER CODE BEGIN MySystem */
   uint8_t _user_key_ = 0;
-  uint16_t _commit_ = 0;
+  //uint16_t _commit_ = 0;
 
   extern USBD_HandleTypeDef hUsbDeviceFS;
 //  uint8_t _breath_flag_ = 0;
@@ -2085,12 +2109,10 @@ void MySystem(void const * argument)
 				  osThreadSuspend(Get_gps_info_Handle);
 				  sound_toggle_simple(3,50,50);
                   Recording_guji(&gps_fp,system_flag_table,gpsx);
-                  osThreadSuspend(defaultTaskHandle);
-                  system_flag_table->guji_mode = RECORED_START;
-
+                  system_flag_table->guji_mode = RECORED_RESTART;
                   HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
 				  osThreadResume(Get_gps_info_Handle);
-                  osThreadResume(defaultTaskHandle);
+ 
 
 				  
               }
@@ -2103,12 +2125,17 @@ void MySystem(void const * argument)
                  print_usart1("L - POWER ON \r\n");
                  BSP_LED_Off(LED_SURPORT);
                  sound_toggle_simple(2,500,150); 
+                 if(system_flag_table->guji_mode != RECORED_START)
+                 {
+                     
+                     system_flag_table->guji_mode = RECORED_START;
+                     HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
+                 }
 
               }
               
               break;
           case POWER_KEY_LONG:
-
 
               if(system_flag_table->power_status == POWER_STANBY)
               {
@@ -2119,10 +2146,6 @@ void MySystem(void const * argument)
                       sound_toggle_simple(2,50,50);                                    
                       system_flag_table->power_status = system_flag_table->power_mode;  
                       gps_power_mode(1);
-                      /* init code for USB_DEVICE */					  
-                      system_flag_table->guji_mode = RECORED_START;
-					  HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
-                      _commit_ = 25;
 
                       if(usb_init_flag == 1)
                       {

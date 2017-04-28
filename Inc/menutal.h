@@ -18,8 +18,9 @@
 #define RECORED_START 1
 #define RECORED_START_DOING 2
 #define RECORED_T  3
-#define RECORED_STOP 4
-#define RECORED_SAVE 5
+#define RECORED_RESTART 4
+#define RECORED_STOP 5
+#define RECORED_SAVE 6
 
 
 #define KEY_UP 0
