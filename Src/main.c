@@ -264,11 +264,6 @@ int main(void)
   print_usart1("P-1 running !! sb_flag :%x  wu_flag:%x\r\n",__HAL_PWR_GET_FLAG(PWR_FLAG_SB),__HAL_PWR_GET_FLAG(PWR_FLAG_WU));
   RTC_AlarmConfig();
 
-  if(__HAL_PWR_GET_FLAG(PWR_FLAG_SB) == 1)
-  {
-
-  }
-
   gpsx = &gpsx_1;    
   memset(gpsx,0,sizeof(nmea_msg));
   system_flag_table = &system_flag_table_1;    
@@ -286,6 +281,17 @@ int main(void)
   BSP_LED_Init(LED_GPS);  
   BSP_LED_Init(LED_SD);  
   BSP_LED_Init(LED_SURPORT);  
+
+  BSP_LED_On(LED_GREEN);
+  BSP_LED_On(LED_RED);
+  BSP_LED_On(LED_BULE);
+
+  HAL_Delay(2000);
+
+  BSP_LED_Off(LED_GREEN);
+  BSP_LED_Off(LED_RED);
+  BSP_LED_Off(LED_BULE);
+
   LED_SURPORT_FLAG = 0;
   LED_Sd_FLAG = 0;
 
@@ -380,7 +386,7 @@ int main(void)
       system_flag_table->power_mode                  = SENCSE_SURPORT_MODE;
   }
 
-  system_flag_table->auto_power = 1;
+  //system_flag_table->auto_power = 1;
   
 #if 1
   if(system_flag_table->auto_power == 0)
@@ -1247,11 +1253,12 @@ static void StopSequence_Config(void)
    GPIO_InitTypeDef      GPIO_InitStruct;
 
 
-   if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_RESET)
+   //if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_RESET)
    {
      /* PWR Peripheral clock enable */
      __HAL_RCC_PWR_CLK_ENABLE();
-     
+
+     SystemClock_Config_msi();
      /* Enable GPIOs clock */
      __HAL_RCC_GPIOA_CLK_ENABLE();
      __HAL_RCC_GPIOB_CLK_ENABLE();
@@ -1279,9 +1286,18 @@ static void StopSequence_Config(void)
      /* Clear all related wakeup flags */
      /* Clear PWR wake up Flag */
      __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
-     
+
+     BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_EXTI);     
+     /*Configure GPIO pin : usb_hotplug_Pin */
+     GPIO_InitStruct.Pin = usb_hotplug_Pin;
+     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+     HAL_GPIO_Init(usb_hotplug_GPIO_Port, &GPIO_InitStruct);     
+       /* EXTI interrupt init*/
+     HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
+     HAL_NVIC_EnableIRQ(EXTI0_IRQn);   
      /* Enable WKUP pin */
-     HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
+     //HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
      //HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
      memset(gpsx,0,sizeof(nmea_msg));
      if(Wang_FLAG == 1)
@@ -1289,8 +1305,30 @@ static void StopSequence_Config(void)
         Wang_FLAG = 0;
         HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);              
      }     
-     /* Request to enter STANDBY mode */
-     HAL_PWR_EnterSTANDBYMode();
+     /* Request to enter STOP mode */
+      
+     HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON,PWR_STOPENTRY_WFI);
+
+     SystemClock_Config();
+     MX_GPIO_Init();
+     MX_USART1_UART_Init();
+     MX_ADC_Init();
+     MX_USART3_UART_Init();
+     MX_TIM10_Init();
+     MX_SPI1_Init();
+     MX_TIM4_Init();
+     MX_RTC_Init();
+     MX_TIM2_Init();     
+     BSP_PB_Init(BUTTON_USER,BUTTON_MODE_GPIO);  
+     BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_GPIO);
+   
+     BSP_LED_Init(LED_GREEN);
+     BSP_LED_Init(LED_RED);
+     BSP_LED_Init(LED_BULE);
+     BSP_LED_Init(LED_GPS);  
+     BSP_LED_Init(LED_SD);  
+     BSP_LED_Init(LED_SURPORT);   
+     print_usart1("leve from stop! \r\n");
    }
   //HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
 
