@@ -500,6 +500,8 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
          
         
         system_flag_table->Message_head_number++;
+        system_flag_table->feq++;
+
         //print_usart1("save\r\n");
         //if (osMutexRelease(SaveGpsMessHandle) != osOK)
         {
@@ -922,7 +924,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 		case RECORED_START:
         case RECORED_RESTART:
             
-            if((system_flag_table->ODOR == 0)&&(mode == RECORED_START ))
+            if((system_flag_table->ODOR == 0)||(mode == RECORED_RESTART ))
 			     system_flag_table->Message_head_number = 0;
             
 			if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
@@ -973,7 +975,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 				        fr = f_mkdir(track_file);
 				    }
 
-                    if((system_flag_table->ODOR == 0)&&(mode == RECORED_START ))
+                    if((system_flag_table->ODOR == 1)&&(mode == RECORED_START ))
                     {
                         /*eeprom 20 -25*/
                         stm_read_eerpom(20,&eeprom_vaule);
@@ -989,7 +991,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         stm_read_eerpom(25,&eeprom_vaule);
                         eeprom_tm.sec     = eeprom_vaule;
 
-                            
+                        print_usart1("%04d-%02d/%02d%02d%02d%02d.CSV \r\n",eeprom_tm.w_year,eeprom_tm.w_month,
+                            eeprom_tm.w_date, eeprom_tm.hour,eeprom_tm.min,eeprom_tm.sec);    
 
                         if((eeprom_tm.w_year != system_flag_table->sys_tm.w_year+2000)||
                           (eeprom_tm.w_month!= system_flag_table->sys_tm.w_month)||
@@ -1005,9 +1008,15 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         {
                             ret = 1;
                         }
-
+                        
+                        if((eeprom_tm.w_year <2017 )||(eeprom_tm.w_year >2210 ))
+                        {
+                            ret = 1;                      
+                        }
                         
                     }
+                    else 
+                        ret = 1;
 
                     if(ret == 0)
                     {
@@ -1163,7 +1172,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
             if(sys_fp != NULL)
             {
                fr = f_close(sys_fp); 
-               print_usart1("\r\n close file to save file :%d\r\n ",fr);   
+               print_usart1("\r\n close :%d\r\n ",fr);   
 
                if(FR_OK  != sys_fr)
                {

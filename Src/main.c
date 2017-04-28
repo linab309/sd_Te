@@ -282,22 +282,12 @@ int main(void)
   BSP_LED_Init(LED_SD);  
   BSP_LED_Init(LED_SURPORT);  
 
-  BSP_LED_On(LED_GREEN);
-  BSP_LED_On(LED_RED);
-  BSP_LED_On(LED_BULE);
-
-  HAL_Delay(2000);
-
-  BSP_LED_Off(LED_GREEN);
-  BSP_LED_Off(LED_RED);
-  BSP_LED_Off(LED_BULE);
-
   LED_SURPORT_FLAG = 0;
   LED_Sd_FLAG = 0;
 
   HAL_NVIC_DisableIRQ(EXTI1_IRQn);
   stm_read_eerpom(0xff,&eeprom_flag);
-  if(eeprom_flag == 0x12345678)
+  if(eeprom_flag == 0x12345677)
   {
       print_usart1("update eerpom info \r\n");
       stm_read_eerpom(0,&eeprom_flag);
@@ -863,7 +853,7 @@ static void MX_GPIO_Init(void)
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+  //HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
 }
 
@@ -1488,7 +1478,7 @@ static uint8_t get_key(void)
     static uint8_t button_press_cnt = 0xff; 
     uint8_t button_key = 0; 
 
-    key_status = 1;
+    //key_status = 1;
 
     if((BSP_PB_GetState(BUTTON_USER) == 0)&&(BSP_PB_GetState(BUTTON_WAKEUP) == 0))
     {
@@ -1591,23 +1581,25 @@ static uint8_t get_key(void)
                     default :break;
                 }
             }
+#if 0            
             else if(button_press_cnt < 12)
            /*POWER键起来后，先不切换到START，过滤掉POWER LP时出现的问题
                     start后如果马上认到GPS就会开启文件，会导致 后续连按会有问题。*/
             {
-                if((button_flag == WAKEUP_KEY_MARK)&&(system_flag_table->guji_mode != RECORED_START))   					  
+                if((button_flag == 0xff)&&(system_flag_table->guji_mode != RECORED_START))   					  
                 {
                     system_flag_table->guji_mode = RECORED_START;
 		            HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);            
                 }
             }
+#endif            
         }
         else
             button_key = 0;
         
         button_flag = 0;
         button_press_cnt = 0;
-        key_status = 0;
+        //key_status = 0;
     }
     
 
@@ -1668,7 +1660,7 @@ uint8_t breathing_toggle(uint16_t breath_on_timer, uint16_t breath_off_timer)
     {
         breath_toggle_cnt = HAL_GetTick();
 
-        print_usart1("sp breath on \r\n");
+        //print_usart1("sp breath on \r\n");
         MX_TIM4_Init();
         LED_SURPORT_FLAG = 1;
 
@@ -1680,7 +1672,7 @@ uint8_t breathing_toggle(uint16_t breath_on_timer, uint16_t breath_off_timer)
         breath_toggle_cnt = HAL_GetTick();
         Pwm_Breathing(SPRORT_LED,0);
         breath_flag = 0;
-        print_usart1("sp breath off \r\n");
+        //print_usart1("sp breath off \r\n");
 
         BSP_LED_Init(LED_SURPORT);
         LED_SURPORT_FLAG = 0;
@@ -1706,7 +1698,7 @@ uint8_t breathing_toggle_sd(uint16_t breath_on_timer, uint16_t breath_off_timer)
     {
         breath_toggle_cnt = HAL_GetTick();
 
-        print_usart1("breath on \r\n");
+        //print_usart1("breath on \r\n");
         Pwm_Breathing(SD_LED,0);
         MX_TIM2_Init();
         LED_Sd_FLAG = 1;
@@ -1718,7 +1710,7 @@ uint8_t breathing_toggle_sd(uint16_t breath_on_timer, uint16_t breath_off_timer)
         breath_toggle_cnt = HAL_GetTick();
         Pwm_Breathing(SD_LED,0);
         breath_flag = 0;
-        print_usart1("breath off \r\n");
+        //print_usart1("breath off \r\n");
         BSP_LED_Init(LED_SD);
         LED_Sd_FLAG = 0;   
         BSP_LED_Off(LED_SD);        
@@ -1818,7 +1810,11 @@ void status_led_config(void)
     if((system_flag_table->power_status != POWER_STANBY)&&(system_flag_table->power_status != POWER_LRUN_SLEEP)\
       &&(system_flag_table->power_status != POWER_SURPORT_SLEEP))  
     {
-        BSP_LED_On(LED_GREEN);
+        if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_RESET)
+        {
+            if(system_flag_table->power_status  == POWER_RUN)
+                BSP_LED_On(LED_GREEN);
+        }
          
         if(system_flag_table->power_status == POWER_LRUN)
         {
@@ -1878,14 +1874,15 @@ void status_led_config(void)
                  system_flag_table->power_status = POWER_LRUN;
 
                  SystemClock_Config_resume();
+                 print_usart1("*********\r\n");
+                 print_usart1("levef lprun mode  resume \r\n");       
+                 print_usart1("******** \r\n");           
                  gps_power_mode(1);
                  sd_power_mode(1);
                  HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
                  osThreadResume(Get_gps_info_Handle);
                  osThreadResume(defaultTaskHandle);                 
-                 print_usart1("****************************** \r\n");
-                 print_usart1("levef lprun mode  resume :%d :%d \r\n",system_flag_table->lowpower_timer,(HAL_GetTick() - system_flag_table->grecord_timer_cnt));       
-                 print_usart1("****************************** \r\n");           
+
                 system_flag_table->grecord_timer_cnt = HAL_GetTick();
                  
             }
@@ -1898,14 +1895,27 @@ void status_led_config(void)
     if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) != GPIO_PIN_RESET)
     {
         if(system_flag_table->batt_Status == BATT_CHARG_OK)
+        {
             BSP_LED_On(LED_GREEN);
+            BSP_LED_Off(LED_RED);
+        }
         else
-            BSP_LED_On(LED_RED);        
+        {
+
+            BSP_LED_On(LED_RED);
+
+           if(system_flag_table->charger_connected  == 0)
+           {
+               BSP_LED_Off(LED_GREEN);
+           }
+        }
 
         system_flag_table->charger_connected = 1;
     }
     else
     {
+        system_flag_table->charger_connected = 0;
+
         if(system_flag_table->batt_Status <= BATT_LOW)
         {
             if((read_led_flag == 0)&&(HAL_GetTick() >= (read_timer_cnt + 150)))
@@ -1943,6 +1953,15 @@ void StartDefaultTask(void const * argument)
   usb_init_flag = 1;
   print_usart1("StartDefaultTask \r\n");
 
+  BSP_LED_On(LED_GREEN);
+  BSP_LED_On(LED_RED);
+  BSP_LED_On(LED_BULE);
+
+  osDelay(2000);
+
+  BSP_LED_Off(LED_GREEN);
+  BSP_LED_Off(LED_RED);
+  BSP_LED_Off(LED_BULE);
 
   /*保存文件*/
   /* Infinite loop */
@@ -2184,6 +2203,8 @@ void MySystem(void const * argument)
                       sound_toggle_simple(2,50,50);                                    
                       system_flag_table->power_status = system_flag_table->power_mode;  
                       gps_power_mode(1);
+                      system_flag_table->guji_mode = RECORED_START;
+                      HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1); 
 
                       if(usb_init_flag == 1)
                       {
@@ -2203,6 +2224,7 @@ void MySystem(void const * argument)
                               
                   //print_usart1("POWER OFF \r\n");
                   gps_power_mode(0);
+                  BSP_LED_Off(LED_GREEN);
                   //USBD_Start(&hUsbDeviceFS);
                   if(usb_init_flag == 0)
                   {
@@ -2325,7 +2347,7 @@ void update_info(void const * argument)
            if(gpsx->speed == 0)
            {
                support_timer_cnt ++;
-               if(support_timer_cnt == 300)
+               if(support_timer_cnt == 3000)
                {
                    support_timer_cnt = 0;
                    //StopSequence_Config();
@@ -2489,6 +2511,10 @@ void update_info(void const * argument)
            save_file_cnt  = HAL_GetTick();
         }
          
+    }
+    else
+    {
+        save_file_cnt  = HAL_GetTick();
     }
 
     if(system_flag_table->wanng_speed_vaule >0)
