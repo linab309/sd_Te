@@ -144,6 +144,37 @@ void NMEA_GPGGA_Analysis(nmea_msg *gpsx,uint8_t *buf)
     	if(posx!=0XFF)gpsx->altitude= NMEA_Str2num(p1+posx,&dx);  
     }
 }
+
+//分析GPGGA信息
+//gpsx:nmea信息结构体
+//buf:接收到的GPS数据缓冲区首地址
+void NMEA_GNGGA_Analysis(nmea_msg *gpsx,uint8_t *buf)
+{
+	uint8_t *p1,dx;			 
+	uint8_t posx;    
+	p1=(uint8_t*)strstr((const char *)buf,"$GNGGA");
+	posx=NMEA_Comma_Pos(p1,6);								//得到GPS状态
+	if(posx!=0XFF)gpsx->gpssta=NMEA_Str2num(p1+posx,&dx);	
+	posx=NMEA_Comma_Pos(p1,7);								//得到用于定位的卫星数
+	if(posx!=0XFF)gpsx->posslnum=NMEA_Str2num(p1+posx,&dx); 
+	posx=NMEA_Comma_Pos(p1,8);								//得到用于定位的卫星数
+	if(posx!=0XFF)gpsx->hdop=NMEA_Str2num(p1+posx,&dx); 
+
+	posx=NMEA_Comma_Pos(p1,9);	
+    //得到海拔高度
+#ifdef NG_LG_ENABLE
+    if(NS_LG > 0)
+    {
+    	if(posx!=0XFF)gpsx->altitude= 0;//NMEA_Str2num(p1+posx,&dx);  
+    }
+    else
+#endif
+    {
+    	if(posx!=0XFF)gpsx->altitude= NMEA_Str2num(p1+posx,&dx);  
+    }
+}
+
+
 //分析GPGSA信息
 //gpsx:nmea信息结构体
 //buf:接收到的GPS数据缓冲区首地址
@@ -319,6 +350,150 @@ void NMEA_GPRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	} 
 #endif    
 }
+
+//分析GPRMC信息
+//gpsx:nmea信息结构体
+//buf:接收到的GPS数据缓冲区首地址
+void NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
+{
+	uint8_t *p1,dx;			 
+	uint8_t posx;     
+	uint32_t temp;	   
+	float rs;  
+	p1=(uint8_t*)strstr((const char *)buf,"$GNRMC");
+	posx=NMEA_Comma_Pos(p1,1);								//得到UTC时间
+	if(posx!=0XFF)
+	{
+		temp=NMEA_Str2num(p1+posx,&dx)/NMEA_Pow(10,dx);	 	//得到UTC时间,去掉ms
+		gpsx->utc.hour=temp/10000;
+		gpsx->utc.min=(temp/100)%100;
+		gpsx->utc.sec=temp%100;	 	 
+	}			  			  
+	posx=NMEA_Comma_Pos(p1,3);								//得到纬度
+	if(posx!=0XFF)
+	{
+		temp=NMEA_Str2num(p1+posx,&dx);		 	 
+#ifdef NG_LG_ENABLE
+
+        if(NS_LG > 0)
+        {
+           gpsx->latitude= 45;//temp/NMEA_Pow(10,dx+2);	//得到°
+           rs= 0 ;//temp%NMEA_Pow(10,dx+2);
+        }
+
+		else
+#endif        
+
+		{
+		    gpsx->latitude=temp/NMEA_Pow(10,dx+2);	//得到°
+		    rs= temp%NMEA_Pow(10,dx+2);		
+		}//得到'		 
+		gpsx->latitude=gpsx->latitude*NMEA_Pow(10,6)+(rs*NMEA_Pow(10,6-dx))/60;//转换为°
+
+//		gpsx->latitude = temp;
+	}
+	posx=NMEA_Comma_Pos(p1,4);		
+	//南纬还是北纬 
+	if(posx!=0XFF)
+    {
+#ifdef NG_LG_ENABLE   
+        if((NS_LG == 1)||(NS_LG == 3))
+            gpsx->nshemi='N';	
+        else if((NS_LG == 2)||(NS_LG == 4))
+            gpsx->nshemi='S';//*(p1+posx);	
+        else
+#endif            
+            gpsx->nshemi=*(p1+posx);	
+	}
+ 	posx=NMEA_Comma_Pos(p1,5);								//得到经度
+	if(posx!=0XFF)
+	{												  
+		temp=NMEA_Str2num(p1+posx,&dx);	
+#ifdef NG_LG_ENABLE
+
+
+        if(NS_LG > 0)
+        {
+    		gpsx->longitude = 90;//temp/NMEA_Pow(10,dx+2);	//得到°
+    		rs= 0 ;//temp%NMEA_Pow(10,dx+2);
+		}
+      
+		else
+#endif  
+
+		{
+    		gpsx->longitude=temp/NMEA_Pow(10,dx+2);	//得到°
+    		rs=temp%NMEA_Pow(10,dx+2);				//得到'		 
+		}
+		gpsx->longitude=gpsx->longitude*NMEA_Pow(10,6)+(rs*NMEA_Pow(10,6-dx))/60;//转换为° 
+	
+//		gpsx->longitude = temp;
+	}
+	posx=NMEA_Comma_Pos(p1,6);								//东经还是西经
+	if(posx!=0XFF)
+	{
+	
+#ifdef NG_LG_ENABLE
+	     if((NS_LG == 1)||(NS_LG == 2))
+	        gpsx->ewhemi='E';	
+	     else if((NS_LG == 3)||(NS_LG == 4))
+  	         gpsx->ewhemi='W';//*(p1+posx);	
+  	     else
+#endif            
+  	         gpsx->ewhemi=*(p1+posx);	
+	 
+	 }
+    
+	posx = NMEA_Comma_Pos(p1,7);								//得到地面速率
+	
+	if(posx!=0XFF)
+	{
+        gpsx->speed = NMEA_Str2num(p1+posx,&dx);
+
+        if(dx<3)
+        {
+            gpsx->speed*=NMEA_Pow(10,3-dx);             //确保扩大1000倍
+            gpsx->speed = gpsx->speed*1000/1852;             //确保扩大1000倍
+
+        }
+    }
+    posx = NMEA_Comma_Pos(p1,8);	
+    if(posx!=0XFF)
+    {
+
+#ifdef NG_LG_ENABLE	
+        if(NS_LG > 0)
+        {
+            gpsx->angle= 0;//NMEA_Str2num(p1+posx,&dx);
+        }
+        else
+#endif            
+        {
+            gpsx->angle= NMEA_Str2num(p1+posx,&dx);
+
+        }
+        if(dx<3)gpsx->angle*=NMEA_Pow(10,3-dx);             //确保扩大1000倍
+        
+    }
+
+#if 1    
+	posx=NMEA_Comma_Pos(p1,9);								//得到UTC日期
+	if(posx!=0XFF)
+	{
+		temp=NMEA_Str2num(p1+posx,&dx);		 				//得到UTC日期
+		gpsx->utc.date=temp/10000;
+		gpsx->utc.month=(temp/100)%100;
+		gpsx->utc.year=2000+temp%100;	 
+
+	    //v1000_debug("\r\n%d-%d-%d    %d-%d-%d\r\n",gpsx->utc.year,gpsx->utc.month,gpsx->utc.date,gpsx->utc.hour,gpsx->utc.min,gpsx->utc.sec);
+
+
+
+	} 
+#endif    
+}
+
+
 //分析GPVTG信息
 //gpsx:nmea信息结构体
 //buf:接收到的GPS数据缓冲区首地址
@@ -372,6 +547,9 @@ void GPS_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	NMEA_GPGSA_Analysis(gpsx,buf);	//GPGSA解析
 	NMEA_GPRMC_Analysis(gpsx,buf);	//GPRMC解析
 	NMEA_GPVTG_Analysis(gpsx,buf);	//GPVTG解析
+	NMEA_GNGGA_Analysis(gpsx,buf);	//GnGGA解析 	
+	NMEA_GNRMC_Analysis(gpsx,buf);	//GnRMC解析
+
 }
 
 //GPS校验和计算

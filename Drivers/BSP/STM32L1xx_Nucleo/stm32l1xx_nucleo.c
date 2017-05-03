@@ -336,7 +336,7 @@ void BSP_PB_Init(Button_TypeDef Button, ButtonMode_TypeDef ButtonMode)
   WAKEUP_BUTTONx_GPIO_CLK_ENABLE(Button);
 
   gpioinitstruct.Pin = BUTTON_PIN[Button];
-  gpioinitstruct.Pull = GPIO_PULLUP;
+  gpioinitstruct.Pull = GPIO_PULLDOWN;
   gpioinitstruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
 
   if (ButtonMode == BUTTON_MODE_GPIO)
@@ -697,6 +697,8 @@ void DisplayIDDrunmV(system_flag *system_flag_table,uint32_t IDDmeas)
     else
     {
         ddrunmv = ddrunmv/11;
+        ddrunmv = ddrunmv*2;		
+
         ddrunmv_cnt = 0;
 
     }

@@ -377,14 +377,14 @@ int main(void)
   }
 
   //system_flag_table->auto_power = 1;
-  
+  sd_power_mode(1);
 #if 1
   if(system_flag_table->auto_power == 0)
   {
       system_flag_table->power_status                = POWER_STANBY;
-      if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_SET)
+     // if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_SET)
       {
-          sd_power_mode(1);
+      
       }
   }
   else
@@ -824,8 +824,8 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPS_POWER_GPIO_Port, GPS_POWER_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(SD_POWER_GPIO_Port, SD_POWER_Pin, GPIO_PIN_SET);
+  //HAL_GPIO_WritePin(GPS_POWER_GPIO_Port, GPS_POWER_Pin, GPIO_PIN_SET);
+  //HAL_GPIO_WritePin(SD_POWER_GPIO_Port, SD_POWER_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : usb_hotplug_Pin */
   GPIO_InitStruct.Pin = usb_hotplug_Pin;
@@ -841,14 +841,14 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : GPS_POWER_Pin */
   GPIO_InitStruct.Pin = GPS_POWER_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : GPS_POWER_Pin */
   GPIO_InitStruct.Pin = SD_POWER_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(SD_POWER_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
@@ -961,28 +961,53 @@ void SystemClock_Config_resume(void)
 
 void gps_power_mode(uint8_t mode)
 {
+
+	GPIO_InitTypeDef GPIO_InitStruct;
+
     if(mode == 1)
     {
+      /*Configure GPIO pin : GPS_POWER_Pin */    
+		GPIO_InitStruct.Pin = GPS_POWER_Pin;
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);	  
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); 
         memset(gpsx,0,sizeof(nmea_msg));
     }            
     else
     {
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);    
+		GPIO_InitStruct.Pin = GPS_POWER_Pin;
+		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+		GPIO_InitStruct.Pull = GPIO_PULLUP;
+		HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
+    
+        //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);    
         memset(gpsx,0,sizeof(nmea_msg));
     }
 }
 
 void sd_power_mode(uint8_t mode)
 {
+
+	GPIO_InitTypeDef GPIO_InitStruct;
+
     if(mode == 1)
     {
+		GPIO_InitStruct.Pin = SD_POWER_Pin;
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		HAL_GPIO_Init(SD_POWER_GPIO_Port, &GPIO_InitStruct);	
         HAL_GPIO_WritePin(SD_POWER_GPIO_Port, SD_POWER_Pin, GPIO_PIN_RESET); 
 
     }            
     else
     {
-        HAL_GPIO_WritePin(SD_POWER_GPIO_Port, SD_POWER_Pin, GPIO_PIN_SET);    
+        /*Configure GPIO pin : GPS_POWER_Pin */
+        GPIO_InitStruct.Pin = SD_POWER_Pin;
+        GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+        GPIO_InitStruct.Pull = GPIO_PULLUP;
+        HAL_GPIO_Init(SD_POWER_GPIO_Port, &GPIO_InitStruct);    
+        //HAL_GPIO_WritePin(SD_POWER_GPIO_Port, SD_POWER_Pin, GPIO_PIN_SET);    
     }
 }
 
@@ -1248,26 +1273,11 @@ static void StopSequence_Config(void)
      /* PWR Peripheral clock enable */
      __HAL_RCC_PWR_CLK_ENABLE();
 
-     SystemClock_Config_msi();
+     //SystemClock_Config_msi();
      /* Enable GPIOs clock */
      __HAL_RCC_GPIOA_CLK_ENABLE();
      __HAL_RCC_GPIOB_CLK_ENABLE();
      __HAL_RCC_GPIOC_CLK_ENABLE();
-   
-     /* Configure all GPIO port pins in Analog mode */
-     GPIO_InitStruct.Pin = GPIO_PIN_All;
-     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-     GPIO_InitStruct.Pull = GPIO_NOPULL;
-     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-   
-     GPIO_InitStruct.Pin = LED_SD_PIN|LED_SURPORT_PIN|LED_GPS_PIN;
-     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-   
-     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-   
    
      /* Request to enter STOP mode with regulator in low power */
      /* Disable all used wakeup sources: WKUP pin */
@@ -1276,19 +1286,35 @@ static void StopSequence_Config(void)
      /* Clear all related wakeup flags */
      /* Clear PWR wake up Flag */
      __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+     BSP_PB_Init(BUTTON_USER,BUTTON_MODE_EXTI);  
+     BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_EXTI);	 
 
-     BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_EXTI);     
+    
      /*Configure GPIO pin : usb_hotplug_Pin */
      GPIO_InitStruct.Pin = usb_hotplug_Pin;
      GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
      GPIO_InitStruct.Pull = GPIO_PULLDOWN;
      HAL_GPIO_Init(usb_hotplug_GPIO_Port, &GPIO_InitStruct);     
+
+     /*Configure GPIO pin : GPS_POWER_Pin */
+     GPIO_InitStruct.Pin = GPS_POWER_Pin;
+     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+     GPIO_InitStruct.Pull = GPIO_PULLUP;
+     HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
+     
+     /*Configure GPIO pin : GPS_POWER_Pin */
+     GPIO_InitStruct.Pin = SD_POWER_Pin;
+     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+     GPIO_InitStruct.Pull = GPIO_PULLUP;
+     HAL_GPIO_Init(SD_POWER_GPIO_Port, &GPIO_InitStruct);
+  
        /* EXTI interrupt init*/
      HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
-     HAL_NVIC_EnableIRQ(EXTI0_IRQn);   
+     HAL_NVIC_EnableIRQ(EXTI0_IRQn); 
+
      /* Enable WKUP pin */
-     //HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
-     //HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
+     //L_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);
+     //L_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);  
      memset(gpsx,0,sizeof(nmea_msg));
      if(Wang_FLAG == 1)
      {
@@ -1318,6 +1344,7 @@ static void StopSequence_Config(void)
      BSP_LED_Init(LED_GPS);  
      BSP_LED_Init(LED_SD);  
      BSP_LED_Init(LED_SURPORT);   
+	 sd_power_mode(1);
      print_usart1("leve from stop! \r\n");
    }
   //HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
@@ -1480,7 +1507,7 @@ static uint8_t get_key(void)
 
     //key_status = 1;
 
-    if((BSP_PB_GetState(BUTTON_USER) == 0)&&(BSP_PB_GetState(BUTTON_WAKEUP) == 0))
+    if((BSP_PB_GetState(BUTTON_USER) == 1)&&(BSP_PB_GetState(BUTTON_WAKEUP) == 1))
     {
         //print_usart1("button_flag :%d %d \r\n",button_flag,button_press_cnt);
         if(button_flag == (USER_KEY_MARK|WAKEUP_KEY_MARK))
@@ -1502,11 +1529,11 @@ static uint8_t get_key(void)
             button_flag = USER_KEY_MARK|WAKEUP_KEY_MARK;
         
     }
-    else if(BSP_PB_GetState(BUTTON_WAKEUP) == 0)
+    else if(BSP_PB_GetState(BUTTON_WAKEUP) == 1)
     {
         if(button_flag == WAKEUP_KEY_MARK)
         {
-            print_usart1("button_flag :%d %d \r\n",button_flag,button_press_cnt);
+            //print_usart1("button_flag :%d %d \r\n",button_flag,button_press_cnt);
 
             button_press_cnt++;
             if(button_press_cnt == 5)
@@ -1535,7 +1562,7 @@ static uint8_t get_key(void)
     
     
     }
-    else if(BSP_PB_GetState(BUTTON_USER) == 0)
+    else if(BSP_PB_GetState(BUTTON_USER) ==1)
     {
 
         if(button_flag == USER_KEY_MARK)
@@ -1932,6 +1959,10 @@ void status_led_config(void)
                 read_led_flag = 0;
             } 
         }
+		else
+	    {
+	        BSP_LED_Off(LED_RED);
+	    }
         system_flag_table->charger_connected = 0;
     }    
 
@@ -2203,6 +2234,7 @@ void MySystem(void const * argument)
                       sound_toggle_simple(2,50,50);                                    
                       system_flag_table->power_status = system_flag_table->power_mode;  
                       gps_power_mode(1);
+					  sd_power_mode(1);
                       system_flag_table->guji_mode = RECORED_START;
                       HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1); 
 
@@ -2224,6 +2256,8 @@ void MySystem(void const * argument)
                               
                   //print_usart1("POWER OFF \r\n");
                   gps_power_mode(0);
+                  sd_power_mode(0);
+
                   BSP_LED_Off(LED_GREEN);
                   //USBD_Start(&hUsbDeviceFS);
                   if(usb_init_flag == 0)
@@ -2310,7 +2344,7 @@ void update_info(void const * argument)
      if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_RESET)
      {
          usb_timer_cnt ++;
-         if(usb_timer_cnt == 100)
+         if(usb_timer_cnt == 1000)
          {
              usb_timer_cnt = 0;
 
