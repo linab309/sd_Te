@@ -104,6 +104,7 @@
 #define POWER_USER_KEY_LONG    0x05
 #define POWER_KEY_LONG_5S    0x06
 
+//#define OLD 
 
 
 #define USER_KEY_NO_LONG

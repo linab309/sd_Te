@@ -336,7 +336,11 @@ void BSP_PB_Init(Button_TypeDef Button, ButtonMode_TypeDef ButtonMode)
   WAKEUP_BUTTONx_GPIO_CLK_ENABLE(Button);
 
   gpioinitstruct.Pin = BUTTON_PIN[Button];
+#ifdef OLD  
+  gpioinitstruct.Pull = GPIO_PULLUP;
+#else
   gpioinitstruct.Pull = GPIO_PULLDOWN;
+#endif
   gpioinitstruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
 
   if (ButtonMode == BUTTON_MODE_GPIO)

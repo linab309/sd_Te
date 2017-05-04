@@ -151,9 +151,8 @@ void StartDefaultTask(void const * argument);
 void Get_gps_info(void const * argument);
 void MySystem(void const * argument);
 void update_info(void const * argument);
-
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-                                
+static void MX_USART3_UART_Init_9600(void);                                
                                 
                                 
 
@@ -806,6 +805,25 @@ static void MX_USART3_UART_Init(void)
 
 }
 
+
+static void MX_USART3_UART_Init_9600(void)
+{
+
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 9600;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+}
+
 /** Configure pins as 
         * Analog 
         * Input 
@@ -956,8 +974,37 @@ void SystemClock_Config_resume(void)
 
 }
 
+const uint8_t BaudRate_config[]="$PMTK251,115200*1f\r\n";
+const uint8_t filt_config[]="$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n";
+const uint8_t A1hz_config[]="$PMTK220,1000*1f\r\n";
+const uint8_t A5hz_config[]="$PMTK220,200*2c\r\n";
+const uint8_t A10hz_config[]="$PMTK220,100*2f\r\n";
 
+void gps_init(void)
+{
+    MX_USART3_UART_Init_9600();
+	HAL_UART_Transmit_IT(&huart3,(uint8_t*)BaudRate_config,sizeof(BaudRate_config));
+	osDelay(1000);
+	MX_USART3_UART_Init();
+	HAL_UART_Transmit_IT(&huart3,(uint8_t*)filt_config,sizeof(filt_config));  
+	osDelay(100);
+	if(system_flag_table->guji_record.recoed_formats == BY_TIMES)
+    {
+    	if(system_flag_table->guji_record.by_time_vaule == 100)
+        	HAL_UART_Transmit_IT(&huart3,(uint8_t*)A10hz_config,sizeof(A10hz_config));  
+    	else if(system_flag_table->guji_record.by_time_vaule == 200)
+    		HAL_UART_Transmit_IT(&huart3,(uint8_t*)A5hz_config,sizeof(A5hz_config));  
+    	else if(system_flag_table->guji_record.by_time_vaule == 1000)
+    		HAL_UART_Transmit_IT(&huart3,(uint8_t*)A1hz_config,sizeof(A1hz_config));  
+    }
+	else
+    {
+    	HAL_UART_Transmit_IT(&huart3,(uint8_t*)A1hz_config,sizeof(A1hz_config));          
+    }
+	
+		
 
+}
 
 void gps_power_mode(uint8_t mode)
 {
@@ -973,6 +1020,9 @@ void gps_power_mode(uint8_t mode)
 		HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);	  
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); 
         memset(gpsx,0,sizeof(nmea_msg));
+		gps_init();
+
+		
     }            
     else
     {
@@ -1382,6 +1432,8 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                      }
                      else if(system_flag_table->guji_record.recoed_formats == BY_TIMES)
                      {
+
+#if 0					 
                          if(system_flag_table->guji_record.by_time_vaule <= 100)
                          {
                              if(gpsx->speed >= (system_flag_table->guji_record.by_speed_vaule*1000))
@@ -1397,6 +1449,13 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                                  ret = 1;
                              }
                          }
+#endif						
+    					 if(gpsx->speed >= (system_flag_table->guji_record.by_speed_vaule*1000))
+    					 {
+    						 //system_flag_table->grecord_timer_cnt = HAL_GetTick();
+    						 ret = 1;
+    					 }
+
                      }
 
                      
@@ -1506,8 +1565,12 @@ static uint8_t get_key(void)
     uint8_t button_key = 0; 
 
     //key_status = 1;
+#ifdef OLD  
+    if((BSP_PB_GetState(BUTTON_USER) == 0)&&(BSP_PB_GetState(BUTTON_WAKEUP) == 0))
 
+#else
     if((BSP_PB_GetState(BUTTON_USER) == 1)&&(BSP_PB_GetState(BUTTON_WAKEUP) == 1))
+#endif		
     {
         //print_usart1("button_flag :%d %d \r\n",button_flag,button_press_cnt);
         if(button_flag == (USER_KEY_MARK|WAKEUP_KEY_MARK))
@@ -1529,7 +1592,13 @@ static uint8_t get_key(void)
             button_flag = USER_KEY_MARK|WAKEUP_KEY_MARK;
         
     }
+#ifdef OLD  
+	else if(BSP_PB_GetState(BUTTON_WAKEUP) == 0)
+	
+#else
+
     else if(BSP_PB_GetState(BUTTON_WAKEUP) == 1)
+#endif		
     {
         if(button_flag == WAKEUP_KEY_MARK)
         {
@@ -1562,7 +1631,13 @@ static uint8_t get_key(void)
     
     
     }
-    else if(BSP_PB_GetState(BUTTON_USER) ==1)
+#ifdef OLD  
+    else if(BSP_PB_GetState(BUTTON_USER) == 0)
+		
+#else
+
+	else if(BSP_PB_GetState(BUTTON_USER) == 1)
+#endif		
     {
 
         if(button_flag == USER_KEY_MARK)
@@ -1999,13 +2074,13 @@ void StartDefaultTask(void const * argument)
   for(;;)
   {
 
-    if (osMutexWait(gpsMutexHandle, osWaitForever) == osOK)
+    //if (osMutexWait(gpsMutexHandle, osWaitForever) == osOK)
     {          
         Recording_guji(&gps_fp,system_flag_table,gpsx);
         
-        if (osMutexRelease(gpsMutexHandle) != osOK)
+        //if (osMutexRelease(gpsMutexHandle) != osOK)
         {
-            Error_Handler();
+        //    Error_Handler();
         }
 
         //ThreadResume(Get_gps_info_Handle);
@@ -2047,7 +2122,7 @@ void Get_gps_info(void const * argument)
       if(USART2_RX_STA == 1)
       {
 		  
-          if(osMutexWait(gpsMutexHandle, 0) == osOK)
+          //if(osMutexWait(gpsMutexHandle, 0) == osOK)
           {
 			  USART2_RX_STA = 0;		   //启动下一次接收
 
@@ -2086,7 +2161,7 @@ void Get_gps_info(void const * argument)
 
 
               }
-              
+              memset(gpsx,0,sizeof(nmea_msg));
               GPS_Analysis(gpsx,gps_data);
 
 
@@ -2096,9 +2171,9 @@ void Get_gps_info(void const * argument)
      
               free(gps_data);
 
-              if (osMutexRelease(gpsMutexHandle) != osOK)
+              //if (osMutexRelease(gpsMutexHandle) != osOK)
               {
-                  Error_Handler();
+              //    Error_Handler();
               }  		  
           }
           
@@ -2590,7 +2665,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM7) {
   	if(HAL_GetTick() > (gps_data_time + 10))
   	{
-  	    if(USART2_RX_STA_RP!= USART2_RX_STA_WP)
+  	    if(USART2_RX_STA_RP != USART2_RX_STA_WP)
         { 
   	        USART2_RX_STA = 1;
         }
