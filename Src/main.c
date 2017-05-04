@@ -118,7 +118,7 @@ static uint8_t LED_SURPORT_FLAG = 0;
 
 static uint8_t LED_Sd_FLAG = 0;
 static uint8_t Wang_FLAG = 0;
-static uint8_t key_status = 0;
+//static uint8_t key_status = 0;
 
 
 /* Private function prototypes 
