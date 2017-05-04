@@ -532,7 +532,7 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
 
     do
     {
-        message_number_index = ((buffer[3 + index])|(buffer[2 + index])|(buffer[1 + index]<<8)|(buffer[0 + index]<<16));
+        message_number_index = ((buffer[3 + index])|(buffer[2 + index]<<8)|(buffer[1 + index]<<16)|(buffer[0 + index]<<24));
         flag.all             =  buffer[FLAG_OFFSET + index];
        // memcpy(&guji_data.all,buffer+index+4,4);
         guji_data.all        = (buffer[GUJI_DATA_OFFSET+3 + index]|(buffer[GUJI_DATA_OFFSET+2 + index]<<8)\
