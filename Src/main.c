@@ -381,14 +381,11 @@ int main(void)
   if(system_flag_table->auto_power == 0)
   {
       system_flag_table->power_status                = POWER_STANBY;
-     // if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_SET)
-      {
-      
-      }
+
   }
   else
   {
-      system_flag_table->power_status                = system_flag_table->power_mode;
+     
       print_usart1("POWER ON \r\n");
       sound_toggle_simple(2,50,50);                                    
       system_flag_table->power_status                = system_flag_table->power_mode;  
@@ -1679,7 +1676,7 @@ static uint8_t get_key(void)
                     case WAKEUP_KEY_MARK:  button_key = POWER_KEY;
                         break;
                     case USER_KEY_MARK:    button_key = USER_KEY;
-                         break;
+                        break;
                     default :break;
                 }
             }
@@ -2111,6 +2108,7 @@ void Get_gps_info(void const * argument)
   /* USER CODE BEGIN Get_gps_info */
   uint16_t rxlen = 0;
   uint8_t *gps_data = NULL;
+  uint8_t ret = 0;
   
   /* Infinite loop */
   print_usart1("Get_gps_info\r\n");
@@ -2159,16 +2157,21 @@ void Get_gps_info(void const * argument)
               else if(gpsx->gpssta >= 1)
               {
 
-
+                  ret = 1;
               }
-              memset(gpsx,0,sizeof(nmea_msg));
-              GPS_Analysis(gpsx,gps_data);
-
-
-/*recored mode config*/
-	          surport_mode_config(system_flag_table->power_status,gps_data,rxlen);
-/*endi*/			  
-     
+              
+              do
+              {
+                  memset(gpsx,0,sizeof(nmea_msg));
+                  ret = GPS_Analysis(gpsx,gps_data);
+    /*recored mode config*/
+    	          surport_mode_config(system_flag_table->power_status,gps_data,rxlen);
+/*endi*/			  if(ret == 0)
+                      break;
+                  else 
+                      gps_data = gps_data + 100;
+              }while(1);
+              
               free(gps_data);
 
               //if (osMutexRelease(gpsMutexHandle) != osOK)
@@ -2668,6 +2671,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   	    if(USART2_RX_STA_RP != USART2_RX_STA_WP)
         { 
   	        USART2_RX_STA = 1;
+            
         }
 		gps_data_time = 0xffffffff;
     }

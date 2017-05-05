@@ -79,12 +79,15 @@ __packed typedef struct
 }_ublox_cfg_rate; 
 				 
 int NMEA_Str2num(uint8_t *buf,uint8_t*dx);
-void GPS_Analysis(nmea_msg *gpsx,uint8_t *buf);
+uint8_t GPS_Analysis(nmea_msg *gpsx,uint8_t *buf);
 void NMEA_GPGSV_Analysis(nmea_msg *gpsx,uint8_t *buf);
-void NMEA_GPGGA_Analysis(nmea_msg *gpsx,uint8_t *buf);
+uint8_t NMEA_GPGGA_Analysis(nmea_msg *gpsx,uint8_t *buf);
 void NMEA_GPGSA_Analysis(nmea_msg *gpsx,uint8_t *buf);
 void NMEA_GPGSA_Analysis(nmea_msg *gpsx,uint8_t *buf);
-void NMEA_GPRMC_Analysis(nmea_msg *gpsx,uint8_t *buf);
+uint8_t NMEA_GPRMC_Analysis(nmea_msg *gpsx,uint8_t *buf);
+uint8_t NMEA_GNGGA_Analysis(nmea_msg *gpsx,uint8_t *buf);
+uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf);
+
 void NMEA_GPVTG_Analysis(nmea_msg *gpsx,uint8_t *buf);
 void Ublox_Cfg_Tp(uint32_t interval,uint32_t length,signed char status);
 void Ublox_Cfg_Rate(uint16_t measrate,uint8_t reftime);

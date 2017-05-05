@@ -141,7 +141,7 @@ __weak void PostSleepProcessing(uint32_t *ulExpectedIdleTime)
     configPOST_SLEEP_PROCESSING is #defined to PostSleepProcessing(). */
     
     /* Avoid compiler warnings about the unused parameter. */
-    uint32_t i;
+//    uint32_t i;
 
     (void) ulExpectedIdleTime;
 #if 0

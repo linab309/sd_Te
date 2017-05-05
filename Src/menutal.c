@@ -1111,7 +1111,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 
                     }
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
-        			save_guiji_message(gpsx,system_flag_table,'T');
+        			//save_guiji_message(gpsx,system_flag_table,'T');
                     
         			//interst_pos_number = 0;
 
