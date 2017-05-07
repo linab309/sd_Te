@@ -141,7 +141,7 @@ uint8_t NMEA_GPGGA_Analysis(nmea_msg *gpsx,uint8_t *buf)
 {
 	uint8_t *p,*p1,dx;			 
 	uint8_t posx; 
-    uint8_t ret = 0;
+  //uint8_t ret = 0;
 
     p    = buf;
 	p1   = (uint8_t*)strstr((const char *)buf,"$GPGGA");
@@ -165,6 +165,7 @@ uint8_t NMEA_GPGGA_Analysis(nmea_msg *gpsx,uint8_t *buf)
     	if(posx != 0XFF) gpsx->altitude= NMEA_Str2num(p1+posx,&dx);  
     }
 
+#if 1
     p  = p1+1;//切换到下一个GPGSV信息
     p1 = (uint8_t*)strstr((const char *)p,"$GPGGA");
     if(p1 != NULL)
@@ -173,7 +174,7 @@ uint8_t NMEA_GPGGA_Analysis(nmea_msg *gpsx,uint8_t *buf)
 
         return 1;
     }
-
+#endif
     return 0;
     
 
@@ -399,6 +400,8 @@ uint8_t NMEA_GPRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	} 
 #endif    
 
+
+#if 1
     p  = p1+1;//切换到下一个GPGSV信息
     p1 = (uint8_t*)strstr((const char *)p,"$GPRMC");
     if(p1 != NULL)
@@ -406,6 +409,7 @@ uint8_t NMEA_GPRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
         print_usart1("$GPRMC more \r\n");
         return 1;
     }
+#endif
 
     return 0;
 }
@@ -514,7 +518,7 @@ uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
         if(dx<3)
         {
             gpsx->speed*=NMEA_Pow(10,3-dx);             //确保扩大1000倍
-            gpsx->speed = gpsx->speed*1000/1852;             //确保扩大1000倍
+            gpsx->speed = gpsx->speed*1852/1000;             //确保扩大1000倍
 
         }
     }

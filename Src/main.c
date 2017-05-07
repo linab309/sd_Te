@@ -1232,13 +1232,14 @@ void RTC_TimeShow(DWORD* fattime)
     #endif
     
     /* Display time Format : hh:mm:ss */
-    //print_usart1("time: %02d:%02d:%02d \r\n",stimestructureget.Hours, stimestructureget.Minutes, stimestructureget.Seconds);
-    //print_usart1("date: %02d:%02d:%02d \r\n",sdatestructureget.Year, sdatestructureget.Month, sdatestructureget.Date);
   #if 0
     *fattime =  ((DWORD)((sdatestructureget.Year + 20) << 25) | (DWORD)(sdatestructureget.Month<< 21) | (DWORD)(sdatestructureget.Date<< 16));
     *fattime |= ((DWORD)(stimestructureget.Hours << 11) | (DWORD)(stimestructureget.Minutes<< 5)|((DWORD)(stimestructureget.Seconds)/2));  
   #endif
     check_time(gpsx,system_flag_table);
+    //print_usart1("time: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.w_year, system_flag_table->sys_tm.w_month,system_flag_table->sys_tm.w_date);
+    //print_usart1("date: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.hour, system_flag_table->sys_tm.min, system_flag_table->sys_tm.sec);
+
     *fattime =  ((DWORD)((system_flag_table->sys_tm.w_year + 20) << 25) | (DWORD)(system_flag_table->sys_tm.w_month<< 21)\
                | (DWORD)(system_flag_table->sys_tm.w_date < 16));
     *fattime |= ((DWORD)(system_flag_table->sys_tm.hour << 11) | (DWORD)(system_flag_table->sys_tm.min<< 5)\
@@ -1406,14 +1407,16 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
     float tp_distance = 0;
     uint8_t ret = 0 ; 
     static uint8_t lp_number = 0;
+    static uint16_t test_cnt = 0;
 
     switch(mode)
     {
         case POWER_RUN:
         case POWER_SURPORT_RUN:
-             if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
-             {                                    
-                 if(system_flag_table->guji_mode == RECORED_START_DOING)
+             //if(gpsx->gpssta >= 1)
+             {   
+				if((system_flag_table->guji_mode == RECORED_START_DOING)||(system_flag_table->guji_mode == RECORED_SAVE)\
+				||(system_flag_table->guji_mode == RECORED_T))
                  {  
                      tp_distance = getDistanceVer2( system_flag_table->tp_lati,gpsx->nshemi,system_flag_table->tp_long,
                                                    gpsx->ewhemi, gpsx->latitude, gpsx->nshemi, gpsx->longitude,gpsx->ewhemi);
@@ -1446,11 +1449,16 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                                  ret = 1;
                              }
                          }
-#endif						
-    					 if(gpsx->speed >= (system_flag_table->guji_record.by_speed_vaule*1000))
+#endif					 
+						 if(system_flag_table->guji_record.by_speed_vaule == 0)	
+						 {
+						 	ret = 1;
+	
+						 }
+						 else  if(gpsx->speed >= (system_flag_table->guji_record.by_speed_vaule*1000))
     					 {
-    						 //system_flag_table->grecord_timer_cnt = HAL_GetTick();
-    						 ret = 1;
+    						ret = 1;
+									 
     					 }
 
                      }
@@ -1484,6 +1492,8 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                 {
 
                      save_guiji_message(gpsx,system_flag_table,'T');
+					 test_cnt++;
+					 print_usart1("save :%d \r\n",test_cnt);
 
                     
                 }
@@ -1496,6 +1506,7 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                   #ifdef TEST_WRITE_SD
                       //memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],buf,rxlen);
                   #endif
+				  print_usart1("save :%d \r\n",test_cnt);
             }
             break;
         case POWER_LRUN:
@@ -2074,12 +2085,13 @@ void StartDefaultTask(void const * argument)
     //if (osMutexWait(gpsMutexHandle, osWaitForever) == osOK)
     {          
         Recording_guji(&gps_fp,system_flag_table,gpsx);
-        
-        //if (osMutexRelease(gpsMutexHandle) != osOK)
-        {
-        //    Error_Handler();
-        }
 
+#if 0   
+        if (osMutexRelease(gpsMutexHandle) != osOK)
+        {
+            Error_Handler();
+        }
+#endif
         //ThreadResume(Get_gps_info_Handle);
     }
     
@@ -2109,7 +2121,7 @@ void Get_gps_info(void const * argument)
   uint16_t rxlen = 0;
   uint8_t *gps_data = NULL;
   uint8_t ret = 0;
-  
+  static   uint16_t cnt_record = 0;
   /* Infinite loop */
   print_usart1("Get_gps_info\r\n");
   /*##-4- Put UART peripheral in reception process ###########################*/  
@@ -2120,7 +2132,7 @@ void Get_gps_info(void const * argument)
       if(USART2_RX_STA == 1)
       {
 		  
-          //if(osMutexWait(gpsMutexHandle, 0) == osOK)
+          //(osMutexWait(gpsMutexHandle, 0) == osOK)
           {
 			  USART2_RX_STA = 0;		   //启动下一次接收
 
@@ -2140,7 +2152,22 @@ void Get_gps_info(void const * argument)
 
 			  }
               gps_data[rxlen] = 0;
-              USART2_RX_STA_RP = USART2_RX_STA_WP;	 //得到数据长度
+              USART2_RX_STA_RP = USART2_RX_STA_WP;	 //得到数据长度  
+
+			  //if(rxlen)
+
+			  memset(gpsx,0,sizeof(nmea_msg));
+			  ret = GPS_Analysis(gpsx,gps_data);
+			  free(gps_data);
+
+
+			
+			  if(gpsx->gpssta <1)
+			  {
+			      //print_usart1("bad \r\n");
+			  }
+			 // else
+			      //print_usart1("cnt_record %d\r\n",cnt_record);
 
               if((gpsx->gpssta <1)&&(rxlen < 160))
               {
@@ -2154,29 +2181,29 @@ void Get_gps_info(void const * argument)
                   }
                   #endif              
               } 
+			  
               else if(gpsx->gpssta >= 1)
               {
-
                   ret = 1;
-              }
-              
-              do
-              {
-                  memset(gpsx,0,sizeof(nmea_msg));
-                  ret = GPS_Analysis(gpsx,gps_data);
-    /*recored mode config*/
-    	          surport_mode_config(system_flag_table->power_status,gps_data,rxlen);
-/*endi*/			  if(ret == 0)
-                      break;
-                  else 
-                      gps_data = gps_data + 100;
-              }while(1);
-              
-              free(gps_data);
+				  cnt_record++;
+        	      surport_mode_config(system_flag_table->power_status,gps_data,rxlen);
+				  //print_usart1("cnt_record %d\r\n",cnt_record);
 
-              //if (osMutexRelease(gpsMutexHandle) != osOK)
+
+              }
+			  else
+			  {
+			       //print_usart1("gpsx->gpssta %d\r\n",gpsx->gpssta);
+			  }
+	 
+    	      
+
+
+  
+
+              // (osMutexRelease(gpsMutexHandle) != osOK)
               {
-              //    Error_Handler();
+                 //rror_Handler();
               }  		  
           }
           

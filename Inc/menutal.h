@@ -187,7 +187,7 @@ typedef struct
     uint8_t  *guji_buffer;
     uint16_t guji_buffer_Index_rp;
     uint16_t guji_buffer_Index_wp;
-    uint16_t feq;
+   // uint16_t feq;
 
     uint32_t Message_head_number;
     uint8_t  gujiFormats;
