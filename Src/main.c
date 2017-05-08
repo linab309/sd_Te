@@ -979,12 +979,14 @@ const uint8_t A10hz_config[]="$PMTK220,100*2f\r\n";
 
 void gps_init(void)
 {
+	osDelay(1000);
+	osDelay(1000);
     MX_USART3_UART_Init_9600();
 	HAL_UART_Transmit_IT(&huart3,(uint8_t*)BaudRate_config,sizeof(BaudRate_config));
 	osDelay(1000);
 	MX_USART3_UART_Init();
 	HAL_UART_Transmit_IT(&huart3,(uint8_t*)filt_config,sizeof(filt_config));  
-	osDelay(100);
+	osDelay(1000);
 	if(system_flag_table->guji_record.recoed_formats == BY_TIMES)
     {
     	if(system_flag_table->guji_record.by_time_vaule == 100)
@@ -1300,8 +1302,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     else if(GPIO_Pin == GPIO_PIN_0)
     {
     }
+	else if(GPIO_Pin == GPIO_PIN_13)
+    {
+         HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);   
+    }
 
-    print_usart1("exit :%d %d\r\n",GPIO_Pin,support_cnt);
+    //print_usart1("exit :%d %d\r\n",GPIO_Pin,support_cnt);
     
 }/* USER CODE HAL_GPIO_EXTI_Callback*/
 
@@ -1334,7 +1340,7 @@ static void StopSequence_Config(void)
      /* Clear all related wakeup flags */
      /* Clear PWR wake up Flag */
      __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
-     BSP_PB_Init(BUTTON_USER,BUTTON_MODE_EXTI);  
+     //BSP_PB_Init(BUTTON_USER,BUTTON_MODE_EXTI);  
      BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_EXTI);	 
 
     
