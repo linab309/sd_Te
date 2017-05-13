@@ -126,7 +126,7 @@ __weak void PreSleepProcessing(uint32_t *ulExpectedIdleTime)
     */  
 
     /*Enter to sleep Mode using the HAL function HAL_PWR_EnterSLEEPMode with WFI instruction*/
-    if((system_flag_table->power_status == POWER_SURPORT_SLEEP)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
+    if((system_flag_table->power_status == POWER_STANBY)||(system_flag_table->power_status == POWER_SURPORT_SLEEP)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
         HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI); 
     
     *ulExpectedIdleTime = 0;
@@ -141,11 +141,11 @@ __weak void PostSleepProcessing(uint32_t *ulExpectedIdleTime)
     configPOST_SLEEP_PROCESSING is #defined to PostSleepProcessing(). */
     
     /* Avoid compiler warnings about the unused parameter. */
-//    uint32_t i;
+    uint32_t i;
 
     (void) ulExpectedIdleTime;
-#if 0
-    if((system_flag_table->power_status == POWER_SURPORT_SLEEP)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
+#if 1
+    if((system_flag_table->power_status == POWER_STANBY)||(system_flag_table->power_status == POWER_SURPORT_SLEEP)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
     {
        for(i = 0;i<*ulExpectedIdleTime ;i++)
        {
@@ -172,7 +172,8 @@ void Begin_low_power(void)
 #if configUSE_TICKLESS_IDLE == 1     
     ulTimerCountsForOneTick = ( configCPU_CLOCK_HZ / configTICK_RATE_HZ );
 #endif
-    //HAL_SuspendTick();  
+    HAL_SuspendTick();
+    //print_usart1("start !\r\n");
 
 }
 
@@ -186,6 +187,7 @@ void End_low_power(void)
 #if configUSE_TICKLESS_IDLE == 1     
     ulTimerCountsForOneTick = ( configCPU_CLOCK_HZ / configTICK_RATE_HZ );
 #endif
+//print_usart1("end !\r\n");
 
 }
 /* USER CODE END Application */

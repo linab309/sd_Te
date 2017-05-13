@@ -701,12 +701,12 @@ void DisplayIDDrunmV(system_flag *system_flag_table,uint32_t IDDmeas)
     else
     {
         ddrunmv = ddrunmv/11;
-        ddrunmv = ddrunmv*2;		
+ //        ddrunmv = ddrunmv;		
 
         ddrunmv_cnt = 0;
 
     }
-    //print_usart1("IDDRUNMV: %d ,%d,%d  \r\n",ddrunmv,IDDmeas,SystemCoreClock);
+    print_usart1("IDDRUNMV: %d ,%d,%d  \r\n",ddrunmv,IDDmeas,SystemCoreClock);
     if(IsBatteryPoweroff(ddrunmv))
     {
         //  headsetPowerOff(getApp());system_flag_table->batt_Status
@@ -803,7 +803,7 @@ void vddmv_adc_proess(system_flag *system_flag_table)
      }
 
     /* Calculate voltage value*/
-    VDDmV = (uint32_t)((uint32_t)ADCdata *6000/4095);
+    VDDmV = (uint32_t)((uint32_t)ADCdata *6600/4095);
    
 
     /* Display the IDD measured Value On the LCD Glass (mA) */
