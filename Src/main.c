@@ -432,7 +432,7 @@ int main(void)
   /* start timers, add new ones, ... */
 
   /* Start Timer */
-  osTimerStart(TimerUpdateHandle, 1000);
+  osTimerStart(TimerUpdateHandle, 100);
 
   /* USER CODE END RTOS_TIMERS */
 
