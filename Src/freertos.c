@@ -125,8 +125,9 @@ __weak void PreSleepProcessing(uint32_t *ulExpectedIdleTime)
       function does not need to execute the wfi instruction  
     */  
 
+
     /*Enter to sleep Mode using the HAL function HAL_PWR_EnterSLEEPMode with WFI instruction*/
-    if((system_flag_table->power_status == POWER_STANBY)||(system_flag_table->power_status == POWER_SURPORT_SLEEP)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
+    if((system_flag_table->power_status == POWER_SURPORT_SLEEP)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
         HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI); 
     
     *ulExpectedIdleTime = 0;
@@ -145,7 +146,7 @@ __weak void PostSleepProcessing(uint32_t *ulExpectedIdleTime)
 
     (void) ulExpectedIdleTime;
 #if 1
-    if((system_flag_table->power_status == POWER_STANBY)||(system_flag_table->power_status == POWER_SURPORT_SLEEP)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
+    if((system_flag_table->power_status == POWER_SURPORT_SLEEP)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
     {
        for(i = 0;i<*ulExpectedIdleTime ;i++)
        {

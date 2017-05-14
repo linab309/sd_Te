@@ -183,17 +183,18 @@ void configfs_set(FIL *update_config_fp)
     BSP_LED_Init(LED_GPS);  
     BSP_LED_Init(LED_SD);  
     BSP_LED_Init(LED_SURPORT); 
-    print_usart1("%s\r\n", GetIniKeyString("CONFIG", "TimeZone", "config.ini"));
-    print_usart1("%s\r\n", GetIniKeyString("CONFIG", "SpeedWarning", "config.ini")); 
-    print_usart1("%s\r\n", GetIniKeyString("CONFIG", "AutoPower", "config.ini"));
-    print_usart1("%s\r\n", GetIniKeyString("CONFIG", "Buzzer", "config.ini")); 
+    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "TimeZone", "config.ini"));
+    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "SpeedAlert", "config.ini")); 
+    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "AutoPowerOn", "config.ini"));
+    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "Beeper", "config.ini")); 
+    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "FunctionKey", "config.ini")); 
     print_usart1("%s\r\n", GetIniKeyString("RECORD", "Format", "config.ini"));
-    print_usart1("%s\r\n", GetIniKeyString("RECORD", "Mode", "config.ini")); 
-    print_usart1("%s\r\n", GetIniKeyString("RECORD", "TriggerSpeed", "config.ini"));
-    print_usart1("%d\r\n", GetIniKeyInt("RECORD", "IntervalTime", "config.ini")); 
-    print_usart1("%s\r\n", GetIniKeyString("RECORD", "ODOR", "config.ini")); 
+    print_usart1("%s\r\n", GetIniKeyString("RECORD", "LogMode", "config.ini")); 
+    print_usart1("%s\r\n", GetIniKeyString("RECORD", "SpeedMask", "config.ini"));
+    print_usart1("%d\r\n", GetIniKeyInt("RECORD", "SpyModeTimer", "config.ini")); 
+    print_usart1("%s\r\n", GetIniKeyString("RECORD", "OneTrackPerDay", "config.ini")); 
 
-    string = GetIniKeyString("CONFIG", "TimeZone", "config.ini");
+    string = GetIniKeyString("SETTINGS", "TimeZone", "config.ini");
     /*TimeZone*/
     i = 0;
     while(timer_zone_Aarry[i] != NULL)
@@ -208,7 +209,7 @@ void configfs_set(FIL *update_config_fp)
     stm_write_eerpom(0,system_flag_table->time_zone);
     /*Buzzer*/
 
-    string = GetIniKeyString("CONFIG", "Buzzer", "config.ini");
+    string = GetIniKeyString("SETTINGS", "Beeper", "config.ini");
 
     if(strcmp("ON",string) == 0)
     {
@@ -222,7 +223,7 @@ void configfs_set(FIL *update_config_fp)
 
     /*SpeedWarning*/
 
-    string = GetIniKeyString("CONFIG", "SpeedWarning", "config.ini");
+    string = GetIniKeyString("SETTINGS", "SpeedAlert", "config.ini");
 
     if(strcmp("OFF",string) == 0)    
     {
@@ -230,14 +231,14 @@ void configfs_set(FIL *update_config_fp)
     }
     else
     {
-       system_flag_table->wanng_speed_vaule = GetIniKeyInt("CONFIG", "SpeedWarning", "config.ini"); 
+       system_flag_table->wanng_speed_vaule = GetIniKeyInt("SETTINGS", "SpeedAlert", "config.ini"); 
     }
 
     stm_write_eerpom(2,system_flag_table->wanng_speed_vaule);
 
     /*AutoPower*/
 
-    string = GetIniKeyString("CONFIG", "AutoPower", "config.ini");
+    string = GetIniKeyString("SETTINGS", "AutoPowerOn", "config.ini");
 
     if(strcmp("ON",string) == 0)
     {
@@ -283,7 +284,7 @@ void configfs_set(FIL *update_config_fp)
     1Hz, 5Hz, 10Hz, 5m, 10m, 20m, 50m, 100m
 
         */
-    string = GetIniKeyString("RECORD", "Mode", "config.ini");
+    string = GetIniKeyString("RECORD", "LogMode", "config.ini");
     //CSV, GPX, NMEA, KML
     if(strcmp("1Hz",string) == 0)
     {
@@ -337,7 +338,7 @@ void configfs_set(FIL *update_config_fp)
     stm_write_eerpom(7,system_flag_table->guji_record.recoed_formats);    
 
 
-    string = GetIniKeyString("RECORD", "TriggerSpeed", "config.ini");
+    string = GetIniKeyString("RECORD", "SpeedMask", "config.ini");
     //CSV, GPX, NMEA, KML
 
     if(strcmp("OFF",string) == 0)    
@@ -346,13 +347,13 @@ void configfs_set(FIL *update_config_fp)
     }
     else
     {
-       system_flag_table->guji_record.by_speed_vaule = GetIniKeyInt("RECORD", "TriggerSpeed", "config.ini");
+       system_flag_table->guji_record.by_speed_vaule = GetIniKeyInt("RECORD", "SpeedMask", "config.ini");
        if(system_flag_table->guji_record.by_speed_vaule < 1 || system_flag_table->guji_record.by_speed_vaule>200)
         system_flag_table->guji_record.by_speed_vaule = 0;
     }
     stm_write_eerpom(8,system_flag_table->guji_record.by_speed_vaule);  
 
-    system_flag_table->lowpower_timer = GetIniKeyInt("RECORD", "IntervalTime", "config.ini");
+    system_flag_table->lowpower_timer = GetIniKeyInt("RECORD", "SpyModeTimer", "config.ini");
     if(system_flag_table->lowpower_timer < 5 || system_flag_table->lowpower_timer>60)
      system_flag_table->lowpower_timer = 15;
 
@@ -361,7 +362,7 @@ void configfs_set(FIL *update_config_fp)
 
     /*AutoPower*/
 
-    string = GetIniKeyString("CONFIG", "ODOR", "config.ini");
+    string = GetIniKeyString("RECORD", "OneTrackPerDay", "config.ini");
 
     if(strcmp("ON",string) == 0)
     {
@@ -383,11 +384,12 @@ void configfs_set(FIL *update_config_fp)
             BSP_LED_Toggle(LED_GPS);
             BSP_LED_Toggle(LED_SD);
             BSP_LED_Toggle(LED_SURPORT); 
-            HAL_Delay(150);
+            HAL_Delay(300);
             flash_cnt++;
         }
         else
-        {
+        {  
+           flash_cnt = 0;
            break;
         }
             

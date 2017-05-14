@@ -406,7 +406,8 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
         }
         else
         {
-            error = 1;
+            //error = 1;
+            print_usart1("error :%x \r\n",gpsx->nshemi);
         }
     
     
@@ -420,7 +421,8 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
         }
         else
         {
-            error = 1;
+            //error = 1;
+            print_usart1("error :%x \r\n",gpsx->ewhemi);
         }
     
     
@@ -502,7 +504,7 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
         system_flag_table->Message_head_number++;
         //system_flag_table->feq++;
 
-        //print_usart1("save\r\n");
+        print_usart1("save\r\n");
         //if (osMutexRelease(SaveGpsMessHandle) != osOK)
         {
             //Error_Handler();

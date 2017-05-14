@@ -687,7 +687,11 @@ static bool IsBatteryFull(uint16_t mv) {return mv>=4100 ? TRUE:FALSE;}
 
 void DisplayIDDrunmV(system_flag *system_flag_table,uint32_t IDDmeas)
 { 
-    static int ddrunmv = 0;
+	static int ddrunmv = 0;
+	ddrunmv = IDDmeas;
+
+#if 0
+ 
     /* x  current value*/
     static uint8_t ddrunmv_cnt = 0;
     
@@ -706,8 +710,9 @@ void DisplayIDDrunmV(system_flag *system_flag_table,uint32_t IDDmeas)
         ddrunmv_cnt = 0;
 
     }
-    print_usart1("IDDRUNMV: %d ,%d,%d  \r\n",ddrunmv,IDDmeas,SystemCoreClock);
-    if(IsBatteryPoweroff(ddrunmv))
+#endif	
+    print_usart1("IDDRUNMV: %d,%d  \r\n",IDDmeas,SystemCoreClock);
+    if(IsBatteryPoweroff(IDDmeas))
     {
         //  headsetPowerOff(getApp());system_flag_table->batt_Status
         system_flag_table->batt_Status = 0xFF;
