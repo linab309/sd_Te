@@ -2175,6 +2175,8 @@ void status_led_config(void)
                      system_flag_table->power_status = POWER_LRUN;
     
                      SystemClock_Config_resume();
+                     BSP_SD_Init();
+                     MX_TIM10_Init();                                        
                      print_usart1("*********\r\n");
                      print_usart1("levef lprun mode  resume \r\n");       
                      print_usart1("******** \r\n");           
@@ -2400,6 +2402,8 @@ void MySystem(void const * argument)
                     system_flag_table->power_status = POWER_LRUN;
     
                     SystemClock_Config_resume();
+ 				    BSP_SD_Init();
+ 				    MX_TIM10_Init();                    
                     print_usart1("*********\r\n");
                     print_usart1("levef lprun mode  resume \r\n");       
                     print_usart1("******** \r\n");           
@@ -2450,6 +2454,8 @@ void MySystem(void const * argument)
     			   system_flag_table->power_status = POWER_LRUN;
     			
     			   SystemClock_Config_resume();
+ 				   BSP_SD_Init();
+ 				   MX_TIM10_Init();                       
     			   print_usart1("*********\r\n");
     			   print_usart1("levef lprun mode  resume \r\n");		
     			   print_usart1("******** \r\n");			
@@ -2706,7 +2712,7 @@ void update_info(void const * argument)
        usb_timer_cnt = 0;
        if(system_flag_table->power_status == POWER_SURPORT_RUN)
        {
-           if(gpsx->speed < 1)
+           if((gpsx->speed < 1)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
            {
                support_timer_cnt ++;
                if(support_timer_cnt == 3000)

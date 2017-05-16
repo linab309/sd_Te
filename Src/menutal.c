@@ -378,7 +378,14 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
     {
         //RTC_DateStructure = system_flag_table->RTC_DateStructure;
         //RTC_TimeStructure = system_flag_table->RTC_TimeStructure;
-    
+
+
+        if(system_flag_table->Message_head_number == 0)
+        {
+            if(gpsx->hdop >= 5)
+                return 1;
+        }
+        
         one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>24)&0xff;  // 1mb
         one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>16)&0xff;  // 1mb
         one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>8)&0xff;  // 2mb
@@ -927,7 +934,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 		case RECORED_START:
         case RECORED_RESTART:
             
-            if((system_flag_table->ODOR == 0)||(mode == RECORED_RESTART ))
+            if((system_flag_table->ODOR == 0)
+||(mode == RECORED_RESTART ))
 			     system_flag_table->Message_head_number = 0;
             
 			if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
