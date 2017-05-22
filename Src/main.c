@@ -52,7 +52,13 @@
 #include <stdarg.h>
 #include "menutal.h"
 #include "stm32l1xx_nucleo.h"
+
+#if defined(STM32L151xB)
 #include "stm32_adafruit_sd.h"
+#else
+#include "v1000_sd.h"
+#endif
+
 #include "Gongshi.h"
 #include "usb_device.h"
 #include "usbd_core.h"

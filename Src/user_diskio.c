@@ -59,7 +59,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include <string.h>
 #include "ff_gen_drv.h"
+
+#if defined(STM32L151xB)
 #include "stm32_adafruit_sd.h"
+#else
+#include "v1000_sd.h"
+#endif
+
 
 
 /* Private typedef -----------------------------------------------------------*/

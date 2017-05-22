@@ -44,8 +44,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_storage_if.h"
 /* USER CODE BEGIN INCLUDE */
+#if defined(STM32L151xB)
 #include "stm32_adafruit_sd.h"
-
+#else
+#include "v1000_sd.h"
+#endif
 /* USER CODE END INCLUDE */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -188,7 +191,7 @@ int8_t STORAGE_Init_FS (uint8_t lun)
   int8_t ret = -1;
   
   ret = BSP_SD_Init();
-  if(ret != BSP_SD_OK )
+  if(ret != 0 )
   {
       print_usart1("STORAGE_Init_FS :%d\r\n",ret);
   }
@@ -249,7 +252,7 @@ int8_t  STORAGE_IsReady_FS (uint8_t lun)
       prev_status = 0;
       
     }
-    if(BSP_SD_GetStatus() == BSP_SD_OK)
+    if(BSP_SD_GetStatus() == 0)
     {
       ret = 0;
     }
