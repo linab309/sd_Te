@@ -442,7 +442,7 @@ void configfs_set(FIL *update_config_fp)
 
     while(1)
     {
-        if(flash_cnt != 3 )
+        if(flash_cnt != 6 )
         {           
             BSP_LED_Toggle(LED_GPS);
             BSP_LED_Toggle(LED_SD);

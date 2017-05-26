@@ -2082,6 +2082,12 @@ void status_led_config(void)
         }
 
         system_flag_table->charger_connected = 1;
+        if((system_flag_table->power_status != POWER_STANBY)&&(system_flag_table->power_status != POWER_LRUN_SLEEP)\
+          &&(system_flag_table->power_status != POWER_SURPORT_SLEEP))  
+        {
+            gps_led_config();
+        }
+
     }
     else
     {
@@ -2319,7 +2325,7 @@ void Get_gps_info(void const * argument)
 			  GPS_Analysis(gpsx,gps_data);
               if((gpsx->gpssta <1)&&(rxlen < 160))
               {
-                  print_usart1("%s",gps_data);
+                  //print_usart1("%s",gps_data);
                   #ifdef TEST_WRITE_SD
                   memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],gps_data,rxlen);
                   system_flag_table->guji_buffer_Index_wp  += rxlen;        
