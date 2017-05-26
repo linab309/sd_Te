@@ -2751,7 +2751,7 @@ void update_info(void const * argument)
            else
            {
                support_timer_cnt = 0; 
-               surport_led_config(700,300);                  
+               surport_led_config(300,700);                  
            }
        } 
        else if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
@@ -2803,9 +2803,9 @@ void update_info(void const * argument)
 	               if((gpsx->gpssta >= 1)&&(system_flag_table->guji_mode == RECORED_START_DOING))
 	               {
 	                   if((system_flag_table->guji_record.recoed_formats == BY_TIMES) && (system_flag_table->guji_record.by_time_vaule < 1000))     
-	                       sd_led_config(2700,300);     
+	                       sd_led_config(300,700);     
 	                   else
-	                       sd_led_config(700,300);     
+	                       sd_led_config(300,2700);     
 	               }
 	               else
 	               {
