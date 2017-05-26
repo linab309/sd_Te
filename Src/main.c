@@ -324,6 +324,9 @@ int main(void)
 
       stm_read_eerpom(10,&eeprom_flag);
       system_flag_table->ODOR = eeprom_flag;
+
+      stm_read_eerpom(12,&eeprom_flag);
+      system_flag_table->unit = eeprom_flag;
       //stm_read_eerpom(12,&eeprom_flag);
       system_flag_table->frist_power = 0;
   }
@@ -341,6 +344,8 @@ int main(void)
       system_flag_table->auto_power                  = 0;
       system_flag_table->guji_record.by_speed_vaule  = 0;
       system_flag_table->wanng_speed_vaule = 0;
+      system_flag_table->unit = 0;
+      
       stm_write_eerpom(0,system_flag_table->time_zone);
       /*Buzzer*/
       stm_write_eerpom(1,system_flag_table->buzzer);    
@@ -356,6 +361,8 @@ int main(void)
       stm_write_eerpom(9,system_flag_table->lowpower_timer);             
       stm_write_eerpom(10,system_flag_table->ODOR);
       stm_write_eerpom(11,1);
+      stm_write_eerpom(12,system_flag_table->unit);
+
       /*一天一轨迹存储空间清零*/   
       stm_write_eerpom(20,0);
       stm_write_eerpom(21,0);
@@ -2175,6 +2182,8 @@ void status_led_config(void)
                      system_flag_table->power_status = POWER_LRUN;
     
                      SystemClock_Config_resume();
+                     BSP_SD_Init();
+                     MX_TIM10_Init();                                        
                      print_usart1("*********\r\n");
                      print_usart1("levef lprun mode  resume \r\n");       
                      print_usart1("******** \r\n");           
@@ -2400,6 +2409,8 @@ void MySystem(void const * argument)
                     system_flag_table->power_status = POWER_LRUN;
     
                     SystemClock_Config_resume();
+ 				    BSP_SD_Init();
+ 				    MX_TIM10_Init();                    
                     print_usart1("*********\r\n");
                     print_usart1("levef lprun mode  resume \r\n");       
                     print_usart1("******** \r\n");           
@@ -2450,6 +2461,8 @@ void MySystem(void const * argument)
     			   system_flag_table->power_status = POWER_LRUN;
     			
     			   SystemClock_Config_resume();
+ 				   BSP_SD_Init();
+ 				   MX_TIM10_Init();                       
     			   print_usart1("*********\r\n");
     			   print_usart1("levef lprun mode  resume \r\n");		
     			   print_usart1("******** \r\n");			
@@ -2706,7 +2719,7 @@ void update_info(void const * argument)
        usb_timer_cnt = 0;
        if(system_flag_table->power_status == POWER_SURPORT_RUN)
        {
-           if(gpsx->speed < 1)
+           if((gpsx->speed < 1)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
            {
                support_timer_cnt ++;
                if(support_timer_cnt == 3000)
