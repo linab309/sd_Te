@@ -204,6 +204,7 @@ typedef struct
     uint32_t grecord_timer_cnt;
     uint8_t sd_stats;
     uint8_t ODOR;
+    uint8_t unit;
 
 }system_flag;
 

@@ -1024,7 +1024,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         {
                             ret = 1;                      
                         }
-                        
+
+       
                     }
                     else 
                         ret = 1;
