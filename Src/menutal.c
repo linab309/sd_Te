@@ -511,7 +511,7 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
         system_flag_table->Message_head_number++;
         //system_flag_table->feq++;
 
-        print_usart1("save\r\n");
+        //print_usart1("save\r\n");
         //if (osMutexRelease(SaveGpsMessHandle) != osOK)
         {
             //Error_Handler();
@@ -631,7 +631,7 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
             sprintf((char *)dtbuf,"%.6f%c,%d,%.1f,%d",tp_lon/1000000,lon_flag,attiautl/10,(speed/10),angle);	
             f_printf(sys_fp,"%s \n",(char *)dtbuf);
 			
-            print_usart1("index :%d \r\n",message_number_index);
+            //print_usart1("index :%d \r\n",message_number_index);
             
         }
      //print_usart1("\r\n index :%d  munber= %d\r\n ",index,munber);

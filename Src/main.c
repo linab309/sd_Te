@@ -2000,7 +2000,7 @@ void sd_led_config(uint16_t breath_on_timer, uint16_t breath_off_timer)
     static uint32_t gps_timer_cnt = 0 ;
     static uint8_t gps_led_flag = 0;
     
-    if(gpsx->gpssta >= 1)
+    if((gpsx->gpssta >= 1)&&(system_flag_table->Message_head_number > 0))
     {
         if((gps_led_flag == 0)&&(HAL_GetTick() >= (gps_timer_cnt + breath_on_timer)))
         {
@@ -2725,7 +2725,7 @@ void update_info(void const * argument)
        usb_timer_cnt = 0;
        if(system_flag_table->power_status == POWER_SURPORT_RUN)
        {
-           if((gpsx->speed < 1)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
+           if((gpsx->speed < 3000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
            {
                support_timer_cnt ++;
                if(support_timer_cnt == 3000)
@@ -2754,7 +2754,7 @@ void update_info(void const * argument)
                    osThreadSuspend(defaultTaskHandle);
 				   sleep_power_config();				   
                    //osThreadSuspend(SystemCallHandle);                                           
-                   HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+                   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
      
                }
                else
@@ -2770,7 +2770,10 @@ void update_info(void const * argument)
            else
            {
                support_timer_cnt = 0; 
-               surport_led_config(300,700);                  
+               if(system_flag_table->Message_head_number > 0)
+                   surport_led_config(300,700);    
+               else
+                    BSP_LED_On(LED_SURPORT);
            }
        } 
        else if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
