@@ -1181,33 +1181,39 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 			system_flag_table->guji_mode = RECORED_START_DOING;
 			break;
         case RECORED_SAVE:
-            if(sys_fp != NULL)
+            if((system_flag_table->power_status != POWER_STANBY)&&(system_flag_table->power_status != POWER_LRUN_SLEEP)\
+            &&(system_flag_table->power_status != POWER_SURPORT_SLEEP))  
             {
-               fr = f_close(sys_fp); 
-               //print_usart1("\r\n close :%d\r\n ",fr);   
-
-               if(FR_OK  != sys_fr)
-               {
-                    sys_fr = open_append(sys_fp, track_file);
-     
-                    if(FR_OK  != sys_fr)
-                    {
-                        print_usart1("open append faild \n");
-                        system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
-                        system_flag_table->guji_mode = RECORED_STOP;    
-                        return; 
-                    }
-               }
-               else
-               {
-                   system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
-                   system_flag_table->guji_mode = RECORED_STOP;    
-                   print_usart1("open append faild \n");
-
-                   return ; 
-               }
-               system_flag_table->guji_mode = 2;          
+              
+                if(sys_fp != NULL)
+                {
+                   fr = f_close(sys_fp); 
+                   print_usart1("\r\n close :%d\r\n ",fr);   
+    
+                   if(FR_OK  != sys_fr)
+                   {
+                        sys_fr = open_append(sys_fp, track_file);
+         
+                        if(FR_OK  != sys_fr)
+                        {
+                            print_usart1("open append faild \n");
+                            system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
+                            system_flag_table->guji_mode = RECORED_STOP;    
+                            return; 
+                        }
+                   }
+                   else
+                   {
+                       system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
+                       system_flag_table->guji_mode = RECORED_STOP;    
+                       print_usart1("open append faild \n");
+    
+                       return ; 
+                   }
+                          
+                }
             }
+            system_flag_table->guji_mode = 2;   
 
             break;
 		case RECORED_STOP:

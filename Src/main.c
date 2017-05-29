@@ -1319,7 +1319,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
          //HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);   
     }
 
-    print_usart1("exit :%d %d\r\n",GPIO_Pin,support_cnt);
+    //print_usart1("exit :%d %d\r\n",GPIO_Pin,support_cnt);
     
 }/* USER CODE HAL_GPIO_EXTI_Callback*/
 
@@ -1685,7 +1685,7 @@ static uint8_t get_key(void)
     {
         if(button_flag == WAKEUP_KEY_MARK)
         {
-            print_usart1("button_flag :%d %d \r\n",button_flag,button_press_cnt);
+            //print_usart1("button_flag :%d %d \r\n",button_flag,button_press_cnt);
 
             button_press_cnt++;
             if(button_press_cnt == 13)
@@ -2725,7 +2725,7 @@ void update_info(void const * argument)
        usb_timer_cnt = 0;
        if(system_flag_table->power_status == POWER_SURPORT_RUN)
        {
-           if((gpsx->speed < 3000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
+           if((gpsx->speed < 2000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
            {
                support_timer_cnt ++;
                if(support_timer_cnt == 3000)
@@ -2784,7 +2784,7 @@ void update_info(void const * argument)
            {
                if(support_cnt > 20)
                {
-                   system_flag_table->power_status = POWER_SURPORT_RUN;
+                   
                    support_timer_cnt = 0;
                    gps_power_mode(1);
                    sd_power_mode(1) ;
@@ -2796,7 +2796,8 @@ void update_info(void const * argument)
                    osThreadResume(defaultTaskHandle);
                    print_usart1("****************************** \r\n");
                    print_usart1("levef surport mode  resume \r\n");       
-                   print_usart1("****************************** \r\n");                    
+                   print_usart1("****************************** \r\n");     
+                   system_flag_table->power_status = POWER_SURPORT_RUN;
                    //osThreadResume(SystemCallHandle); 
                }
                system_flag_table->grecord_timer_cnt = HAL_GetTick();
