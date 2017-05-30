@@ -21,6 +21,8 @@
 #define RECORED_RESTART 4
 #define RECORED_STOP 5
 #define RECORED_SAVE 6
+#define RECORED_RESTART_2 7
+
 
 
 #define KEY_UP 0

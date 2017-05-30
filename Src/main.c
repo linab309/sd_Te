@@ -1306,7 +1306,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     {   
         support_cnt ++;
 
-        if(support_cnt > 30)
+        if(support_cnt > 40)
         {
             HAL_NVIC_DisableIRQ(EXTI1_IRQn);
         }
@@ -1623,7 +1623,7 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                     osThreadSuspend(defaultTaskHandle);
                     //osThreadSuspend(Get_gps_info_Handle);
                     SystemClock_Config_msi();
-					sleep_power_config();
+					//sleep_power_config();
 
                     
                 }
@@ -2259,7 +2259,8 @@ void StartDefaultTask(void const * argument)
         //ThreadResume(Get_gps_info_Handle);
     }
     
-    if(system_flag_table->power_status == POWER_STANBY)
+    if((system_flag_table->power_status == POWER_STANBY)
+        ||(system_flag_table->power_status == POWER_LRUN_SLEEP)||(system_flag_table->power_status == POWER_SURPORT_SLEEP))
     {
         if(system_flag_table->guji_mode  == RECORED_START_DOING)
         {
@@ -2321,7 +2322,7 @@ void Get_gps_info(void const * argument)
 
 			  //if(rxlen)
 
-			  memset(gpsx,0,sizeof(nmea_msg));
+			  //memset(gpsx,0,sizeof(nmea_msg));
 			  GPS_Analysis(gpsx,gps_data);
               if((gpsx->gpssta <1)&&(rxlen < 160))
               {
@@ -2351,7 +2352,8 @@ void Get_gps_info(void const * argument)
 
       }
      
-      if((system_flag_table->power_status == POWER_STANBY)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
+      if((system_flag_table->power_status == POWER_STANBY)
+        ||(system_flag_table->power_status == POWER_LRUN_SLEEP)||(system_flag_table->power_status == POWER_SURPORT_SLEEP))
         osThreadSuspend(NULL);
       //print_usart1("3\r\n");
 	  //print_usart1("Get_gps_info go\r\n");
@@ -2394,11 +2396,12 @@ void MySystem(void const * argument)
 
 		  	    if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
 		  	    {			
-                    system_flag_table->power_status = POWER_SURPORT_RUN;
+                    system_flag_table->power_status = POWER_SURPORT_RUN;\
+                    BSP_SD_Init();
                     gps_power_mode(1);
                     sd_power_mode(1) ;
                     SystemClock_Config_resume();
- 				    BSP_SD_Init();
+ 				
                     HAL_NVIC_DisableIRQ(EXTI1_IRQn);
  				    MX_TIM10_Init();
                     osThreadResume(Get_gps_info_Handle);
@@ -2447,10 +2450,11 @@ void MySystem(void const * argument)
     			if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
     			{			
     				system_flag_table->power_status = POWER_SURPORT_RUN;
+                    BSP_SD_Init();
     				gps_power_mode(1);
     				sd_power_mode(1) ;
     				SystemClock_Config_resume();
-    				BSP_SD_Init();
+    				
     				HAL_NVIC_DisableIRQ(EXTI1_IRQn);
     				MX_TIM10_Init();
     				osThreadResume(Get_gps_info_Handle);
@@ -2465,7 +2469,7 @@ void MySystem(void const * argument)
     			{
     			   BSP_LED_On(LED_BULE);	 
     			   system_flag_table->power_status = POWER_LRUN;
-    			
+    			   system_flag_table->guji_mode  = RECORED_RESTART_2;
     			   SystemClock_Config_resume();
  				   BSP_SD_Init();
  				   MX_TIM10_Init();                       
@@ -2746,13 +2750,18 @@ void update_info(void const * argument)
                    BSP_LED_Off(LED_SURPORT);
                    BSP_LED_Off(LED_SD);
 
+     
+                   system_flag_table->power_status = POWER_SURPORT_SLEEP;
+
+                   //osThreadSuspend(Get_gps_info_Handle);
+                   //osThreadSuspend(defaultTaskHandle);
+          		   while(osThreadGetState(Get_gps_info_Handle) != osThreadSuspended) { osDelay(1);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
+          		   while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(1);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
                    gps_power_mode(0);
                    sd_power_mode(0) ;
-                   system_flag_table->power_status = POWER_SURPORT_SLEEP;
+
                    SystemClock_Config_msi();
-                   osThreadSuspend(Get_gps_info_Handle);
-                   osThreadSuspend(defaultTaskHandle);
-				   sleep_power_config();				   
+				   //sleep_power_config();				   
                    //osThreadSuspend(SystemCallHandle);                                           
                    HAL_NVIC_EnableIRQ(EXTI1_IRQn);
      
@@ -2782,22 +2791,26 @@ void update_info(void const * argument)
            //print_usart1("--%d \r\n",(HAL_GetTick() - system_flag_table->grecord_timer_cnt));
            if( 2000 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
            {
-               if(support_cnt > 20)
+               if(support_cnt > 40)
                {
                    
                    support_timer_cnt = 0;
-                   gps_power_mode(1);
-                   sd_power_mode(1) ;
-                   SystemClock_Config_resume();
-				   BSP_SD_Init();
+                   system_flag_table->guji_mode  = RECORED_RESTART_2;
+                   system_flag_table->power_status = POWER_SURPORT_RUN; 
                    HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+                   SystemClock_Config_resume();                 
+                   BSP_SD_ITConfig();
+                   SD_IO_Init();     
+                   gps_power_mode(1);
+                   sd_power_mode(1) ;                   
 				   MX_TIM10_Init();
+                                     
                    osThreadResume(Get_gps_info_Handle);
                    osThreadResume(defaultTaskHandle);
                    print_usart1("****************************** \r\n");
                    print_usart1("levef surport mode  resume \r\n");       
                    print_usart1("****************************** \r\n");     
-                   system_flag_table->power_status = POWER_SURPORT_RUN;
+                  
                    //osThreadResume(SystemCallHandle); 
                }
                system_flag_table->grecord_timer_cnt = HAL_GetTick();
