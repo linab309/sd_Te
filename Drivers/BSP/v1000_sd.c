@@ -119,7 +119,7 @@ HAL_SD_ErrorTypedef SD_DMAConfigTx(SD_HandleTypeDef *hsd);
   * @brief  Initializes the SD card device.
   * @retval SD status.
   */
-uint8_t BSP_SD_Init(void)
+uint8_t BSP_SD_Init(uint32_t ClockDiv)
 { 
   uint8_t state = MSD_OK;
   
@@ -131,35 +131,35 @@ uint8_t BSP_SD_Init(void)
   uSdHandle.Init.ClockPowerSave      = SDIO_CLOCK_POWER_SAVE_DISABLE;
   uSdHandle.Init.BusWide             = SDIO_BUS_WIDE_1B;
   uSdHandle.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
-  uSdHandle.Init.ClockDiv            = SDIO_TRANSFER_CLK_DIV;
-  
+  uSdHandle.Init.ClockDiv            = ClockDiv;
   /* Check if the SD card is plugged in the slot */
   if(BSP_SD_IsDetected() != SD_PRESENT)
   {
-    return MSD_ERROR;
+    return 1;
   }
-  
+  //print_usart1("111\r\n");
   /* HAL SD initialization */
   SD_MspInit();
+  print_usart1("ClockDiv :%d \r\n",ClockDiv);  
   if(HAL_SD_Init(&uSdHandle, &uSdCardInfo) != SD_OK)
   {
-    state = MSD_ERROR;
+    state = 2;
   }
-  
+  //print_usart1("222\r\n");  
   /* Configure SD Bus width */
-  if(state == MSD_OK)
+  if((state == MSD_OK)&&(ClockDiv <=4))
   {
     /* Enable wide operation */
     if(HAL_SD_WideBusOperation_Config(&uSdHandle, SDIO_BUS_WIDE_4B) != SD_OK)
     {
-      state = MSD_ERROR;
+      state = 3;
     }
     else
     {
       state = MSD_OK;
     }
   }
-  
+  //print_usart1("333\r\n");    
   return  state;
 }
 
@@ -173,14 +173,14 @@ uint8_t BSP_SD_ITConfig(void)
   
   /* Configure Interrupt mode for SD detection pin */ 
   gpioinitstruct.Mode      = GPIO_MODE_IT_RISING_FALLING;
-  gpioinitstruct.Pull      = GPIO_PULLUP;
+  gpioinitstruct.Pull      = GPIO_PULLDOWN;
   gpioinitstruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
   gpioinitstruct.Pin       = SD_DETECT_PIN;
   HAL_GPIO_Init(SD_DETECT_GPIO_PORT, &gpioinitstruct);
     
   /* NVIC configuration for SDIO interrupts */
-  HAL_NVIC_SetPriority(SD_DETECT_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(SD_DETECT_IRQn);
+  //HAL_NVIC_SetPriority(SD_DETECT_IRQn, 5, 0);
+  //HAL_NVIC_EnableIRQ(SD_DETECT_IRQn);
   
   return 0;
 }
@@ -194,7 +194,7 @@ uint8_t BSP_SD_IsDetected(void)
   __IO uint8_t status = SD_PRESENT;
 
   /* Check SD card detect pin */
-  if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET) 
+  if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_SET) 
   {
     status = SD_NOT_PRESENT;
   }
@@ -234,8 +234,11 @@ __weak void BSP_SD_DetectCallback(void)
   */
 uint8_t BSP_SD_ReadBlocks(uint32_t *pData, uint64_t ReadAddr, uint32_t BlockSize, uint32_t NumOfBlocks)
 {
-  if(HAL_SD_ReadBlocks(&uSdHandle, pData, ReadAddr, BlockSize, NumOfBlocks) != SD_OK)
+   HAL_SD_ErrorTypedef err;
+   err = HAL_SD_ReadBlocks(&uSdHandle, pData, ReadAddr, BlockSize, NumOfBlocks);
+  if(err != SD_OK)
   {
+    print_usart1("err :%d \r\n",err);
     return MSD_ERROR;
   }
   else
@@ -354,6 +357,7 @@ uint8_t BSP_SD_Erase(uint64_t StartAddr, uint64_t EndAddr)
   */
 void BSP_SD_IRQHandler(void)
 {
+ // print_usart1("BSP_SD_IRQHandler\r\n");
   HAL_SD_IRQHandler(&uSdHandle);
 }
 
@@ -444,7 +448,7 @@ static void SD_MspInit(void)
 
   /* SD Card detect pin configuration */
   gpioinitstruct.Mode      = GPIO_MODE_INPUT;
-  gpioinitstruct.Pull      = GPIO_PULLDOWN;
+  gpioinitstruct.Pull      = GPIO_PULLUP;
   gpioinitstruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
   gpioinitstruct.Pin       = SD_DETECT_PIN;
   HAL_GPIO_Init(SD_DETECT_GPIO_PORT, &gpioinitstruct);

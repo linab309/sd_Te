@@ -180,9 +180,9 @@ void configfs_set(FIL *update_config_fp)
     uint8_t flash_cnt = 0;
     uint8_t i = 0;
 
-    BSP_LED_Init(LED_GPS);  
-    BSP_LED_Init(LED_SD);  
-    BSP_LED_Init(LED_SURPORT); 
+    //BSP_LED_Init(LED_GPS);  
+    //BSP_LED_Init(LED_SD);  
+    //BSP_LED_Init(LED_SURPORT); 
     print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "TimeZone", "config.ini"));
     print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "SpeedAlert", "config.ini")); 
     print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "AutoPowerOn", "config.ini"));
@@ -377,28 +377,37 @@ void configfs_set(FIL *update_config_fp)
     stm_write_eerpom(0xff,0x12345677);
     f_close(update_config_fp);
 
-    while(1)
-    {
-        if(flash_cnt != 3 )
-        {           
-            BSP_LED_Toggle(LED_GPS);
-            BSP_LED_Toggle(LED_SD);
-            BSP_LED_Toggle(LED_SURPORT); 
-            HAL_Delay(300);
-            flash_cnt++;
-        }
-        else
-        {  
-           flash_cnt = 0;
-           break;
-        }
-            
-    }
+          
+    BSP_LED_On(LED_GPS);  
+    BSP_LED_On(LED_SD);	
+    BSP_LED_On(LED_SURPORT);
 
+    osDelay(300);
 
     BSP_LED_Off(LED_GPS);  
     BSP_LED_Off(LED_SD);  
     BSP_LED_Off(LED_SURPORT); 
+ 
+    osDelay(300);
+    BSP_LED_On(LED_GPS);  
+    BSP_LED_On(LED_SD);	
+    BSP_LED_On(LED_SURPORT);
+
+    osDelay(300);
+    BSP_LED_Off(LED_GPS);  
+    BSP_LED_Off(LED_SD);  
+    BSP_LED_Off(LED_SURPORT); 
+
+    osDelay(300);
+    BSP_LED_On(LED_GPS);  
+    BSP_LED_On(LED_SD); 
+    BSP_LED_On(LED_SURPORT);
+    
+    osDelay(300);
+    BSP_LED_Off(LED_GPS);  
+    BSP_LED_Off(LED_SD);  
+    BSP_LED_Off(LED_SURPORT); 
+
 
 }
 

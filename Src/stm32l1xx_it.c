@@ -248,4 +248,39 @@ void EXTI15_10_IRQHandler(void)
 
 
 /* USER CODE END 1 */
+
+/**
+  * @brief  This function handles SDIO interrupt request.
+  * @param  None
+  * @retval None
+  */
+void SDIO_IRQHandler(void)
+{
+  BSP_SD_IRQHandler();
+}
+
+/**
+* @brief  This function handles DMA2_Channel4 interrupt request.
+* @param  None
+* @retval None
+*/
+void DMA2_Channel4_IRQHandler(void)
+{
+  extern  SD_HandleTypeDef uSdHandle;
+  if (__HAL_SD_SDIO_GET_FLAG(&uSdHandle, SDIO_FLAG_RXACT))
+  {
+    /* Reception case*/
+    HAL_DMA_IRQHandler(uSdHandle.hdmarx);
+  }
+  else if (__HAL_SD_SDIO_GET_FLAG(&uSdHandle, SDIO_FLAG_TXACT))
+  { 
+    /* Transmit case*/
+    HAL_DMA_IRQHandler(uSdHandle.hdmatx);
+  }
+  else
+  {
+
+  }
+}
+
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

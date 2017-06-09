@@ -934,8 +934,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 		case RECORED_START:
         case RECORED_RESTART:
             
-            if((system_flag_table->ODOR == 0)
-||(mode == RECORED_RESTART ))
+            if((system_flag_table->ODOR == 0)||(mode == RECORED_RESTART ))
 			     system_flag_table->Message_head_number = 0;
             
 			if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
@@ -1069,12 +1068,12 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         }
                         else if(system_flag_table->gujiFormats == GUJI_FORMATS_GPS)  
                         {
-                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CPS",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
+                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.GPS",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
                             system_flag_table->sys_tm.w_date, system_flag_table->sys_tm.hour,system_flag_table->sys_tm.min,system_flag_table->sys_tm.sec);
                         }
                         else if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)  
                         {
-                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CPX",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
+                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.GPX",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
                             system_flag_table->sys_tm.w_date, system_flag_table->sys_tm.hour,system_flag_table->sys_tm.min,system_flag_table->sys_tm.sec);
                         }                    
                         else if(system_flag_table->gujiFormats == GUJI_FORMATS_MEA)  
@@ -1132,10 +1131,10 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
             else
             {
                 #ifdef TEST_WRITE_SD
-                    RTC_DateStructure = system_flag_table->RTC_DateStructure;
-                    RTC_TimeStructure = system_flag_table->RTC_TimeStructure;   
+                    //RTC_DateStructure = system_flag_table->RTC_DateStructure;
+                   // RTC_TimeStructure = system_flag_table->RTC_TimeStructure;   
                     
-                    sprintf(track_file,"%04d-%02d",RTC_DateStructure.Year + 2000,RTC_DateStructure.Month); 
+                    sprintf(track_file,"%04d-%02d",17+ 2000,6); 
                     print_usart1("track_file :%s \r\n",track_file);
                     fr= f_opendir(dp,track_file);
                     if((FR_OK  == fr) && (FR_EXIST == fr)) 
@@ -1151,9 +1150,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     print_usart1("track file dir fr %d\r\n",fr);
                     
 
-                    sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.GPS",RTC_DateStructure.Year+2000,
-                        RTC_DateStructure.Month,RTC_DateStructure.Date,
-                        RTC_TimeStructure.Hours,RTC_TimeStructure.Minutes,RTC_TimeStructure.Seconds);                
+                    sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.GPS",2017,
+                        6,9,21,47,10);                
                     print_usart1("\r\n track_file :%s \r\n ",track_file);
                     sys_fr = open_append(sys_fp, track_file);
                     

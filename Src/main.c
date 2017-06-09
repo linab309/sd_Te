@@ -259,7 +259,7 @@ int main(void)
   MX_ADC_Init();
   MX_USART3_UART_Init();
   MX_TIM10_Init();
-  MX_SPI1_Init();
+  //MX_SPI1_Init();
   //MX_TIM4_Init();
   //MX_RTC_Init();
   //MX_TIM2_Init();
@@ -268,7 +268,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   //sd_power_mode(1)
 
-  print_usart1("P-1 running !! sb_flag :%x  wu_flag:%x\r\n",__HAL_PWR_GET_FLAG(PWR_FLAG_SB),__HAL_PWR_GET_FLAG(PWR_FLAG_WU));
+  print_usart1("P-1 running !!TIME:%s sb_flag :%x  wu_flag:%x\r\n",__DATE__,__HAL_PWR_GET_FLAG(PWR_FLAG_SB),__HAL_PWR_GET_FLAG(PWR_FLAG_WU));
   //RTC_AlarmConfig();
 
   gpsx = &gpsx_1;    
@@ -337,8 +337,8 @@ int main(void)
   {
       print_usart1("default info \r\n");
       system_flag_table->time_zone                   = 16;
-      system_flag_table->gujiFormats                 = GUJI_FORMATS_GPX;
-      system_flag_table->guji_record.by_time_vaule   = 100; /*ms*/
+      system_flag_table->gujiFormats                 = GUJI_FORMATS_CSV;
+      system_flag_table->guji_record.by_time_vaule   = 1000; /*ms*/
       system_flag_table->guji_record.recoed_formats  = BY_TIMES;
 
       system_flag_table->lowpower_timer              = 15;
@@ -451,7 +451,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 512);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 768);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of Get_gps_info_ */
@@ -459,7 +459,7 @@ int main(void)
   Get_gps_info_Handle = osThreadCreate(osThread(Get_gps_info_), NULL);
 
   /* definition and creation of SystemCall */
-  osThreadDef(SystemCall, MySystem, osPriorityHigh, 0, 128);
+  osThreadDef(SystemCall, MySystem, osPriorityHigh, 0, 512);
   SystemCallHandle = osThreadCreate(osThread(SystemCall), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -2081,6 +2081,12 @@ void status_led_config(void)
         }
 
         system_flag_table->charger_connected = 1;
+        if((system_flag_table->power_status != POWER_STANBY)&&(system_flag_table->power_status != POWER_LRUN_SLEEP)\
+          &&(system_flag_table->power_status != POWER_SURPORT_SLEEP))  
+        {
+    
+            gps_led_config();
+        }		
     }
     else
     {
@@ -2181,7 +2187,7 @@ void status_led_config(void)
                      system_flag_table->power_status = POWER_LRUN;
     
                      SystemClock_Config_resume();
-                     BSP_SD_Init();
+                     //BSP_SD_Init();
                      MX_TIM10_Init();                                        
                      print_usart1("*********\r\n");
                      print_usart1("levef lprun mode  resume \r\n");       
@@ -2234,6 +2240,7 @@ void StartDefaultTask(void const * argument)
   BSP_LED_Off(LED_RED);
   BSP_LED_Off(LED_BULE);
 #endif
+
   /*±£´æÎÄ¼þ*/
   /* Infinite loop */
   for(;;)
@@ -2284,6 +2291,8 @@ void Get_gps_info(void const * argument)
   /*##-4- Put UART peripheral in reception process ###########################*/  
   gps_init();  
   HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1); 
+  //print_usart1("Get_gps_info start !\r\n");
+
   for(;;)
   {
    
@@ -2318,7 +2327,7 @@ void Get_gps_info(void const * argument)
 			  GPS_Analysis(gpsx,gps_data);
               if((gpsx->gpssta <1)&&(rxlen < 160))
               {
-                  print_usart1("%s",gps_data);
+                  //print_usart1("%s",gps_data); 
                   #ifdef TEST_WRITE_SD
                   memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],gps_data,rxlen);
                   system_flag_table->guji_buffer_Index_wp  += rxlen;        
@@ -2328,6 +2337,8 @@ void Get_gps_info(void const * argument)
                   }
                   #endif              
               } 
+			  
+			   
 		      free(gps_data);		  
 
     	      surport_mode_config(system_flag_table->power_status,gps_data,rxlen);      
@@ -2391,7 +2402,7 @@ void MySystem(void const * argument)
                     gps_power_mode(1);
                     sd_power_mode(1) ;
                     SystemClock_Config_resume();
- 				    BSP_SD_Init();
+// 				    BSP_SD_Init();
                     HAL_NVIC_DisableIRQ(EXTI1_IRQn);
  				    MX_TIM10_Init();
                     osThreadResume(Get_gps_info_Handle);
@@ -2408,7 +2419,7 @@ void MySystem(void const * argument)
                     system_flag_table->power_status = POWER_LRUN;
     
                     SystemClock_Config_resume();
- 				    BSP_SD_Init();
+// 				    BSP_SD_Init();
  				    MX_TIM10_Init();                    
                     print_usart1("*********\r\n");
                     print_usart1("levef lprun mode  resume \r\n");       
@@ -2443,7 +2454,7 @@ void MySystem(void const * argument)
     				gps_power_mode(1);
     				sd_power_mode(1) ;
     				SystemClock_Config_resume();
-    				BSP_SD_Init();
+//    				BSP_SD_Init();
     				HAL_NVIC_DisableIRQ(EXTI1_IRQn);
     				MX_TIM10_Init();
     				osThreadResume(Get_gps_info_Handle);
@@ -2460,7 +2471,7 @@ void MySystem(void const * argument)
     			   system_flag_table->power_status = POWER_LRUN;
     			
     			   SystemClock_Config_resume();
- 				   BSP_SD_Init();
+// 				   BSP_SD_Init();
  				   MX_TIM10_Init();                       
     			   print_usart1("*********\r\n");
     			   print_usart1("levef lprun mode  resume \r\n");		
@@ -2779,7 +2790,7 @@ void update_info(void const * argument)
                    gps_power_mode(1);
                    sd_power_mode(1) ;
                    SystemClock_Config_resume();
-				   BSP_SD_Init();
+//				   BSP_SD_Init();
                    HAL_NVIC_DisableIRQ(EXTI1_IRQn);
 				   MX_TIM10_Init();
                    osThreadResume(Get_gps_info_Handle);

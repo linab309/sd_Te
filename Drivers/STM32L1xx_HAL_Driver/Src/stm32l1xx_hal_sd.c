@@ -348,7 +348,7 @@ HAL_SD_ErrorTypedef HAL_SD_Init(SD_HandleTypeDef *hsd, HAL_SD_CardInfoTypedef *S
   
   /* Initialize the low level hardware (MSP) */
   HAL_SD_MspInit(hsd);
-  
+  print_usart1("1\r\n");
   /* Default SDIO peripheral configuration for SD card initialization */
   tmpinit.ClockEdge           = SDIO_CLOCK_EDGE_RISING;
   tmpinit.ClockBypass         = SDIO_CLOCK_BYPASS_DISABLE;
@@ -359,10 +359,10 @@ HAL_SD_ErrorTypedef HAL_SD_Init(SD_HandleTypeDef *hsd, HAL_SD_CardInfoTypedef *S
   
   /* Initialize SDIO peripheral interface with default configuration */
   SDIO_Init(hsd->Instance, tmpinit);
-  
+  //print_usart1("2\r\n")  ;
   /* Identify card operating voltage */
   errorstate = SD_PowerON(hsd); 
-  
+  //print_usart1("3\r\n")  ;  
   if(errorstate != SD_OK)     
   {
     return errorstate;
@@ -370,7 +370,7 @@ HAL_SD_ErrorTypedef HAL_SD_Init(SD_HandleTypeDef *hsd, HAL_SD_CardInfoTypedef *S
   
   /* Initialize the present SDIO card(s) and put them in idle state */
   errorstate = SD_Initialize_Cards(hsd);
-  
+  //print_usart1("4\r\n") ;     
   if (errorstate != SD_OK)
   {
     return errorstate;
@@ -378,16 +378,16 @@ HAL_SD_ErrorTypedef HAL_SD_Init(SD_HandleTypeDef *hsd, HAL_SD_CardInfoTypedef *S
   
   /* Read CSD/CID MSD registers */
   errorstate = HAL_SD_Get_CardInfo(hsd, SDCardInfo);
-  
+  //print_usart1("5\r\n") ;       
   if (errorstate == SD_OK)
   {
     /* Select the Card */
     errorstate = SD_Select_Deselect(hsd, (uint32_t)(((uint32_t)SDCardInfo->RCA) << 16));
   }
-  
+  //print_usart1("6\r\n") ;         
   /* Configure SDIO peripheral interface */
   SDIO_Init(hsd->Instance, hsd->Init);   
-  
+  //print_usart1("7\r\n") ;           
   return errorstate;
 }
 
@@ -2467,23 +2467,28 @@ static HAL_SD_ErrorTypedef SD_PowerON(SD_HandleTypeDef *hsd)
 {
   SDIO_CmdInitTypeDef sdio_cmdinitstructure; 
   __IO HAL_SD_ErrorTypedef errorstate = SD_OK; 
+  uint32_t i = 0;
   uint32_t response = 0, count = 0, validvoltage = 0;
   uint32_t sdtype = SD_STD_CAPACITY;
-  
+   // print_usart1("7\r\n");          
   /* Power ON Sequence -------------------------------------------------------*/
   /* Disable SDIO Clock */
   __HAL_SD_SDIO_DISABLE(); 
-  
+  //print_usart1("8\r\n");          
   /* Set Power State to ON */
   SDIO_PowerState_ON(hsd->Instance);
-  
+  //print_usart1("9\r\n");          
   /* 1ms: required power up waiting time before starting the SD initialization 
      sequence */
-  HAL_Delay(1);
-  
+  //osDelay(1);
+  for(i = 0; i<100000;i++)
+  {
+     ;
+  }
+  print_usart1("SD_PowerON \r\n");
   /* Enable SDIO Clock */
   __HAL_SD_SDIO_ENABLE();
-  
+  //print_usart1("10\r\n") ;           
   /* CMD0: GO_IDLE_STATE -----------------------------------------------------*/
   /* No CMD response required */
   sdio_cmdinitstructure.Argument         = 0;
@@ -2492,10 +2497,10 @@ static HAL_SD_ErrorTypedef SD_PowerON(SD_HandleTypeDef *hsd)
   sdio_cmdinitstructure.WaitForInterrupt = SDIO_WAIT_NO;
   sdio_cmdinitstructure.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(hsd->Instance, &sdio_cmdinitstructure);
-  
+  //print_usart1("11\r\n");              
   /* Check for error conditions */
   errorstate = SD_CmdError(hsd);
-  
+  //print_usart1("12\r\n") ;               
   if(errorstate != SD_OK)
   {
     /* CMD Response Timeout (wait for CMDSENT flag) */
@@ -2512,10 +2517,10 @@ static HAL_SD_ErrorTypedef SD_PowerON(SD_HandleTypeDef *hsd)
   sdio_cmdinitstructure.CmdIndex         = SD_SDIO_SEND_IF_COND;
   sdio_cmdinitstructure.Response         = SDIO_RESPONSE_SHORT;
   SDIO_SendCommand(hsd->Instance, &sdio_cmdinitstructure);
-  
+   //print_usart1("13\r\n") ;                
   /* Check for error conditions */ 
   errorstate = SD_CmdResp7Error(hsd);
-  
+  //print_usart1("14\r\n") ;                
   if (errorstate == SD_OK)
   {
     /* SD Card 2.0 */
@@ -2527,20 +2532,21 @@ static HAL_SD_ErrorTypedef SD_PowerON(SD_HandleTypeDef *hsd)
   sdio_cmdinitstructure.Argument         = 0;
   sdio_cmdinitstructure.CmdIndex         = SD_CMD_APP_CMD;
   SDIO_SendCommand(hsd->Instance, &sdio_cmdinitstructure);
-  
+   //print_usart1("15\r\n") ;                 
   /* Check for error conditions */
   errorstate = SD_CmdResp1Error(hsd, SD_CMD_APP_CMD);
-  
+    // print_usart1("16\r\n") ;                 
   /* If errorstate is Command Timeout, it is a MMC card */
   /* If errorstate is SD_OK it is a SD card: SD card 2.0 (voltage range mismatch)
      or SD card 1.x */
   if(errorstate == SD_OK)
   {
+      // print_usart1("17\r\n") ;                 
     /* SD CARD */
     /* Send ACMD41 SD_APP_OP_COND with Argument 0x80100000 */
     while((!validvoltage) && (count < SD_MAX_VOLT_TRIAL))
     {
-      
+       //print_usart1("18\r\n") ;                       
       /* SEND CMD55 APP_CMD with RCA as 0 */
       sdio_cmdinitstructure.Argument         = 0;
       sdio_cmdinitstructure.CmdIndex         = SD_CMD_APP_CMD;
@@ -2548,10 +2554,10 @@ static HAL_SD_ErrorTypedef SD_PowerON(SD_HandleTypeDef *hsd)
       sdio_cmdinitstructure.WaitForInterrupt = SDIO_WAIT_NO;
       sdio_cmdinitstructure.CPSM             = SDIO_CPSM_ENABLE;
       SDIO_SendCommand(hsd->Instance, &sdio_cmdinitstructure);
-      
+          //print_usart1("19\r\n") ;                          
       /* Check for error conditions */
       errorstate = SD_CmdResp1Error(hsd, SD_CMD_APP_CMD);
-      
+         // print_usart1("20\r\n") ;                                
       if(errorstate != SD_OK)
       {
         return errorstate;
@@ -2564,10 +2570,10 @@ static HAL_SD_ErrorTypedef SD_PowerON(SD_HandleTypeDef *hsd)
       sdio_cmdinitstructure.WaitForInterrupt = SDIO_WAIT_NO;
       sdio_cmdinitstructure.CPSM             = SDIO_CPSM_ENABLE;
       SDIO_SendCommand(hsd->Instance, &sdio_cmdinitstructure);
-      
+              // print_usart1("21\r\n") ;                                 
       /* Check for error conditions */
       errorstate = SD_CmdResp3Error(hsd);
-      
+             //print_usart1("22\r\n") ;  
       if(errorstate != SD_OK)
       {
         return errorstate;
@@ -2575,10 +2581,10 @@ static HAL_SD_ErrorTypedef SD_PowerON(SD_HandleTypeDef *hsd)
       
       /* Get command response */
       response = SDIO_GetResponse(SDIO_RESP1);
-      
+         // print_usart1("23\r\n") ;   
       /* Get operating voltage*/
       validvoltage = (((response >> 31) == 1) ? 1 : 0);
-      
+         // print_usart1("validvoltage :%d count :%d\r\n",validvoltage,count) ;         
       count++;
     }
     

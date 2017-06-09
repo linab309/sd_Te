@@ -88,7 +88,7 @@
   */ 
 #define SD_DETECT_PIN                    GPIO_PIN_4
 #define SD_DETECT_GPIO_PORT              GPIOA
-#define __SD_DETECT_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOC_CLK_ENABLE()
+#define __SD_DETECT_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOA_CLK_ENABLE()
 #define SD_DETECT_IRQn                   EXTI4_IRQn
     
     
@@ -131,7 +131,7 @@
 /** @addtogroup STM32L152D_EVAL_SD_Exported_Functions
   * @{
   */  
-uint8_t BSP_SD_Init(void);
+uint8_t BSP_SD_Init(uint32_t ClockDiv);
 uint8_t BSP_SD_ITConfig(void);
 void    BSP_SD_DetectIT(void);
 void    BSP_SD_DetectCallback(void);

@@ -121,7 +121,7 @@ DSTATUS USER_initialize (
     Stat = STA_NOINIT;
     
     /* Configure the uSD device */
-    if(BSP_SD_Init() == MSD_OK)
+    if(BSP_SD_Init(10) == MSD_OK)
     {
       Stat &= ~STA_NOINIT;
     }
@@ -170,7 +170,7 @@ DRESULT USER_read (
   /* USER CODE BEGIN READ */
 
     DRESULT res = RES_OK;
-    
+     __disable_irq();
     if(BSP_SD_ReadBlocks((uint32_t*)buff, 
                          (uint64_t)(sector * BLOCK_SIZE), 
                          BLOCK_SIZE, 
@@ -178,7 +178,7 @@ DRESULT USER_read (
     {
       res = RES_ERROR;
     }
-    
+    __enable_irq();
     return res;
   /* USER CODE END READ */
 }
@@ -203,14 +203,14 @@ DRESULT USER_write (
   /* USER CODE HERE */
 
     DRESULT res = RES_OK;
-    
+    __disable_irq();
     if(BSP_SD_WriteBlocks((uint32_t*)buff, 
                           (uint64_t)(sector * BLOCK_SIZE), 
                           BLOCK_SIZE, count) != MSD_OK)
     {
       res = RES_ERROR;
     }
-    
+    __enable_irq();
     return res;
   /* USER CODE END WRITE */
 }
@@ -248,16 +248,16 @@ DRESULT USER_ioctl (
     case GET_SECTOR_COUNT :
       BSP_SD_GetCardInfo(&CardInfo);
       *(DWORD*)buff = CardInfo.CardCapacity / BLOCK_SIZE;
-  	printf("GET_SECTOR_COUNT :%d \r\n",*(DWORD*)buff);
+  	  print_usart1("GET_SECTOR_COUNT :%d \r\n",*(DWORD*)buff);
   
       res = RES_OK;
       break;
     
     /* Get R/W sector size (WORD) */
     case GET_SECTOR_SIZE :
-  	BSP_SD_GetCardInfo(&CardInfo);
+      BSP_SD_GetCardInfo(&CardInfo);
       *(WORD*)buff = CardInfo.CardBlockSize;
-  	printf("GET_SECTOR_SIZE :%d \r\n",*(WORD*)buff);
+  	  print_usart1("GET_SECTOR_SIZE :%d \r\n",*(WORD*)buff);
       res = RES_OK;
       break;
     
@@ -265,7 +265,7 @@ DRESULT USER_ioctl (
     case GET_BLOCK_SIZE :
       BSP_SD_GetCardInfo(&CardInfo);
       *(DWORD*)buff = CardInfo.CardBlockSize;
-  	printf("GET_BLOCK_SIZE :%d \r\n",*(DWORD*)buff);
+  	  print_usart1("GET_BLOCK_SIZE :%d \r\n",*(DWORD*)buff);
       break;
     
     default:
