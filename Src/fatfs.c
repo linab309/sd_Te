@@ -193,6 +193,19 @@ void configfs_set(FIL *update_config_fp)
     print_usart1("%s\r\n", GetIniKeyString("RECORD", "SpeedMask", "config.ini"));
     print_usart1("%d\r\n", GetIniKeyInt("RECORD", "SpyModeTimer", "config.ini")); 
     print_usart1("%s\r\n", GetIniKeyString("RECORD", "OneTrackPerDay", "config.ini")); 
+    print_usart1("%s\r\n", GetIniKeyString("Unit", "Speed", "config.ini")); 
+
+    string = GetIniKeyString("Unit", "Speed", "config.ini");
+
+    if(strcmp("km/h",string) == 0)
+    {
+       system_flag_table->unit = 0; 
+    }
+    else if(strcmp("mi/h",string) == 0)    
+    {
+       system_flag_table->unit = 1;             
+    }
+    stm_write_eerpom(12,system_flag_table->unit);
 
     string = GetIniKeyString("SETTINGS", "TimeZone", "config.ini");
     /*TimeZone*/
@@ -232,6 +245,16 @@ void configfs_set(FIL *update_config_fp)
     else
     {
        system_flag_table->wanng_speed_vaule = GetIniKeyInt("SETTINGS", "SpeedAlert", "config.ini"); 
+       if(system_flag_table->wanng_speed_vaule < 1 || system_flag_table->wanng_speed_vaule>200)
+        system_flag_table->wanng_speed_vaule = 0;
+       else
+       {
+           if(system_flag_table->unit == 1)
+            {
+                system_flag_table->wanng_speed_vaule = (system_flag_table->wanng_speed_vaule*3048/10000);   
+            }
+       }
+
     }
 
     stm_write_eerpom(2,system_flag_table->wanng_speed_vaule);
@@ -333,6 +356,38 @@ void configfs_set(FIL *update_config_fp)
         system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
 
     } 
+    else if(strcmp("20ft",string) == 0)    
+    {
+        system_flag_table->guji_record.by_distance_vaule   = (20*3048/10000); /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
+
+    } 
+    else if(strcmp("50ft",string) == 0)    
+    {
+        system_flag_table->guji_record.by_distance_vaule   = (50*3048/10000); /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
+
+    } 
+    else if(strcmp("100ft",string) == 0)    
+    {
+        system_flag_table->guji_record.by_distance_vaule   = (100*3048/10000); /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
+
+    } 
+    else if(strcmp("200ft",string) == 0)    
+    {
+        system_flag_table->guji_record.by_distance_vaule   = (200*3048/10000); /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
+
+    } 
+    else if(strcmp("500ft",string) == 0)    
+    {
+        system_flag_table->guji_record.by_distance_vaule   = (500*3048/10000); /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
+
+    } 
+
+    
     stm_write_eerpom(5,system_flag_table->guji_record.by_time_vaule);
     stm_write_eerpom(6,system_flag_table->guji_record.by_distance_vaule);
     stm_write_eerpom(7,system_flag_table->guji_record.recoed_formats);    
@@ -350,6 +405,14 @@ void configfs_set(FIL *update_config_fp)
        system_flag_table->guji_record.by_speed_vaule = GetIniKeyInt("RECORD", "SpeedMask", "config.ini");
        if(system_flag_table->guji_record.by_speed_vaule < 1 || system_flag_table->guji_record.by_speed_vaule>200)
         system_flag_table->guji_record.by_speed_vaule = 0;
+       else
+       {
+           if(system_flag_table->unit == 1)
+           {
+               system_flag_table->guji_record.by_speed_vaule = (system_flag_table->guji_record.by_speed_vaule*3048/10000);   
+           }
+       }
+       
     }
     stm_write_eerpom(8,system_flag_table->guji_record.by_speed_vaule);  
 
@@ -377,10 +440,12 @@ void configfs_set(FIL *update_config_fp)
     stm_write_eerpom(0xff,0x12345677);
     f_close(update_config_fp);
 
+
           
     BSP_LED_On(LED_GPS);  
     BSP_LED_On(LED_SD);	
     BSP_LED_On(LED_SURPORT);
+
 
     osDelay(300);
 

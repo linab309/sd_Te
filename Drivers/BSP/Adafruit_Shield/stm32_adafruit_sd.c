@@ -292,16 +292,10 @@ uint8_t BSP_SD_ITConfig(void)
   /* Configure Interrupt mode for SD detection pin */ 
   gpioinitstruct.Mode      = GPIO_MODE_INPUT;
   gpioinitstruct.Pull      = GPIO_PULLDOWN;
-  gpioinitstruct.Speed     = GPIO_SPEED_FREQ_HIGH;
+  gpioinitstruct.Speed     = GPIO_SPEED_FREQ_MEDIUM;
   gpioinitstruct.Pin       = SD_DETECT_PIN;
   HAL_GPIO_Init(SD_DETECT_GPIO_PORT, &gpioinitstruct);
 
-  /* Configure Interrupt mode for SD detection pin */ 
-  gpioinitstruct.Pin = SD_POWER_Pin;
-  gpioinitstruct.Mode = GPIO_MODE_OUTPUT_PP;
-  gpioinitstruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(SD_POWER_GPIO_Port, &gpioinitstruct);    
-  HAL_GPIO_WritePin(SD_POWER_GPIO_Port, SD_POWER_Pin, GPIO_PIN_RESET); 
 
   
   return 0;

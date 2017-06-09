@@ -21,6 +21,8 @@
 #define RECORED_RESTART 4
 #define RECORED_STOP 5
 #define RECORED_SAVE 6
+#define RECORED_RESTART_2 7
+
 
 
 #define KEY_UP 0
@@ -204,6 +206,7 @@ typedef struct
     uint32_t grecord_timer_cnt;
     uint8_t sd_stats;
     uint8_t ODOR;
+    uint8_t unit;
 
 }system_flag;
 

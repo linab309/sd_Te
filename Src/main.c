@@ -330,6 +330,9 @@ int main(void)
 
       stm_read_eerpom(10,&eeprom_flag);
       system_flag_table->ODOR = eeprom_flag;
+
+      stm_read_eerpom(12,&eeprom_flag);
+      system_flag_table->unit = eeprom_flag;
       //stm_read_eerpom(12,&eeprom_flag);
       system_flag_table->frist_power = 0;
   }
@@ -347,6 +350,8 @@ int main(void)
       system_flag_table->auto_power                  = 0;
       system_flag_table->guji_record.by_speed_vaule  = 0;
       system_flag_table->wanng_speed_vaule = 0;
+      system_flag_table->unit = 0;
+      
       stm_write_eerpom(0,system_flag_table->time_zone);
       /*Buzzer*/
       stm_write_eerpom(1,system_flag_table->buzzer);    
@@ -362,6 +367,8 @@ int main(void)
       stm_write_eerpom(9,system_flag_table->lowpower_timer);             
       stm_write_eerpom(10,system_flag_table->ODOR);
       stm_write_eerpom(11,1);
+      stm_write_eerpom(12,system_flag_table->unit);
+
       /*一天一轨迹存储空间清零*/   
       stm_write_eerpom(20,0);
       stm_write_eerpom(21,0);
@@ -1305,7 +1312,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     {   
         support_cnt ++;
 
-        if(support_cnt > 30)
+        if(support_cnt > 40)
         {
             HAL_NVIC_DisableIRQ(EXTI1_IRQn);
         }
@@ -1318,7 +1325,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
          //HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);   
     }
 
-    print_usart1("exit :%d %d\r\n",GPIO_Pin,support_cnt);
+    //print_usart1("exit :%d %d\r\n",GPIO_Pin,support_cnt);
     
 }/* USER CODE HAL_GPIO_EXTI_Callback*/
 
@@ -1622,7 +1629,7 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                     osThreadSuspend(defaultTaskHandle);
                     //osThreadSuspend(Get_gps_info_Handle);
                     SystemClock_Config_msi();
-					sleep_power_config();
+					//sleep_power_config();
 
                     
                 }
@@ -1684,7 +1691,7 @@ static uint8_t get_key(void)
     {
         if(button_flag == WAKEUP_KEY_MARK)
         {
-            print_usart1("button_flag :%d %d \r\n",button_flag,button_press_cnt);
+            //print_usart1("button_flag :%d %d \r\n",button_flag,button_press_cnt);
 
             button_press_cnt++;
             if(button_press_cnt == 13)
@@ -1999,7 +2006,7 @@ void sd_led_config(uint16_t breath_on_timer, uint16_t breath_off_timer)
     static uint32_t gps_timer_cnt = 0 ;
     static uint8_t gps_led_flag = 0;
     
-    if(gpsx->gpssta >= 1)
+    if((gpsx->gpssta >= 1)&&(system_flag_table->Message_head_number > 0))
     {
         if((gps_led_flag == 0)&&(HAL_GetTick() >= (gps_timer_cnt + breath_on_timer)))
         {
@@ -2084,9 +2091,12 @@ void status_led_config(void)
         if((system_flag_table->power_status != POWER_STANBY)&&(system_flag_table->power_status != POWER_LRUN_SLEEP)\
           &&(system_flag_table->power_status != POWER_SURPORT_SLEEP))  
         {
-    
+		
+
             gps_led_config();
-        }		
+        }
+
+
     }
     else
     {
@@ -2259,7 +2269,8 @@ void StartDefaultTask(void const * argument)
         //ThreadResume(Get_gps_info_Handle);
     }
     
-    if(system_flag_table->power_status == POWER_STANBY)
+    if((system_flag_table->power_status == POWER_STANBY)
+        ||(system_flag_table->power_status == POWER_LRUN_SLEEP)||(system_flag_table->power_status == POWER_SURPORT_SLEEP))
     {
         if(system_flag_table->guji_mode  == RECORED_START_DOING)
         {
@@ -2323,11 +2334,11 @@ void Get_gps_info(void const * argument)
 
 			  //if(rxlen)
 
-			  memset(gpsx,0,sizeof(nmea_msg));
+			  //memset(gpsx,0,sizeof(nmea_msg));
 			  GPS_Analysis(gpsx,gps_data);
               if((gpsx->gpssta <1)&&(rxlen < 160))
               {
-                  //print_usart1("%s",gps_data); 
+
                   #ifdef TEST_WRITE_SD
                   memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],gps_data,rxlen);
                   system_flag_table->guji_buffer_Index_wp  += rxlen;        
@@ -2355,7 +2366,8 @@ void Get_gps_info(void const * argument)
 
       }
      
-      if((system_flag_table->power_status == POWER_STANBY)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
+      if((system_flag_table->power_status == POWER_STANBY)
+        ||(system_flag_table->power_status == POWER_LRUN_SLEEP)||(system_flag_table->power_status == POWER_SURPORT_SLEEP))
         osThreadSuspend(NULL);
       //print_usart1("3\r\n");
 	  //print_usart1("Get_gps_info go\r\n");
@@ -2398,11 +2410,12 @@ void MySystem(void const * argument)
 
 		  	    if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
 		  	    {			
-                    system_flag_table->power_status = POWER_SURPORT_RUN;
+                    system_flag_table->power_status = POWER_SURPORT_RUN;\
+                    BSP_SD_Init();
                     gps_power_mode(1);
                     sd_power_mode(1) ;
                     SystemClock_Config_resume();
-// 				    BSP_SD_Init();
+
                     HAL_NVIC_DisableIRQ(EXTI1_IRQn);
  				    MX_TIM10_Init();
                     osThreadResume(Get_gps_info_Handle);
@@ -2451,10 +2464,11 @@ void MySystem(void const * argument)
     			if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
     			{			
     				system_flag_table->power_status = POWER_SURPORT_RUN;
+                    BSP_SD_Init();
     				gps_power_mode(1);
     				sd_power_mode(1) ;
     				SystemClock_Config_resume();
-//    				BSP_SD_Init();
+
     				HAL_NVIC_DisableIRQ(EXTI1_IRQn);
     				MX_TIM10_Init();
     				osThreadResume(Get_gps_info_Handle);
@@ -2469,7 +2483,7 @@ void MySystem(void const * argument)
     			{
     			   BSP_LED_On(LED_BULE);	 
     			   system_flag_table->power_status = POWER_LRUN;
-    			
+    			   system_flag_table->guji_mode  = RECORED_RESTART_2;
     			   SystemClock_Config_resume();
 // 				   BSP_SD_Init();
  				   MX_TIM10_Init();                       
@@ -2729,7 +2743,7 @@ void update_info(void const * argument)
        usb_timer_cnt = 0;
        if(system_flag_table->power_status == POWER_SURPORT_RUN)
        {
-           if((gpsx->speed < 1)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
+           if((gpsx->speed < 2000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
            {
                support_timer_cnt ++;
                if(support_timer_cnt == 3000)
@@ -2750,15 +2764,20 @@ void update_info(void const * argument)
                    BSP_LED_Off(LED_SURPORT);
                    BSP_LED_Off(LED_SD);
 
+     
+                   system_flag_table->power_status = POWER_SURPORT_SLEEP;
+
+                   //osThreadSuspend(Get_gps_info_Handle);
+                   //osThreadSuspend(defaultTaskHandle);
+          		   while(osThreadGetState(Get_gps_info_Handle) != osThreadSuspended) { osDelay(1);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
+          		   while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(1);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
                    gps_power_mode(0);
                    sd_power_mode(0) ;
-                   system_flag_table->power_status = POWER_SURPORT_SLEEP;
+
                    SystemClock_Config_msi();
-                   osThreadSuspend(Get_gps_info_Handle);
-                   osThreadSuspend(defaultTaskHandle);
-				   sleep_power_config();				   
+				   //sleep_power_config();				   
                    //osThreadSuspend(SystemCallHandle);                                           
-                   HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+                   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
      
                }
                else
@@ -2774,7 +2793,10 @@ void update_info(void const * argument)
            else
            {
                support_timer_cnt = 0; 
-               surport_led_config(700,300);                  
+               if(system_flag_table->Message_head_number > 0)
+                   surport_led_config(300,700);    
+               else
+                    BSP_LED_On(LED_SURPORT);
            }
        } 
        else if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
@@ -2783,21 +2805,28 @@ void update_info(void const * argument)
            //print_usart1("--%d \r\n",(HAL_GetTick() - system_flag_table->grecord_timer_cnt));
            if( 2000 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
            {
-               if(support_cnt > 20)
+               if(support_cnt > 40)
                {
-                   system_flag_table->power_status = POWER_SURPORT_RUN;
+                   
                    support_timer_cnt = 0;
-                   gps_power_mode(1);
-                   sd_power_mode(1) ;
-                   SystemClock_Config_resume();
-//				   BSP_SD_Init();
+
+                   system_flag_table->guji_mode  = RECORED_RESTART_2;
+                   system_flag_table->power_status = POWER_SURPORT_RUN; 
+
                    HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+                   SystemClock_Config_resume();                 
+                   BSP_SD_ITConfig();
+                   SD_IO_Init();     
+                   gps_power_mode(1);
+                   sd_power_mode(1) ;                   
 				   MX_TIM10_Init();
+                                     
                    osThreadResume(Get_gps_info_Handle);
                    osThreadResume(defaultTaskHandle);
                    print_usart1("****************************** \r\n");
                    print_usart1("levef surport mode  resume \r\n");       
-                   print_usart1("****************************** \r\n");                    
+                   print_usart1("****************************** \r\n");     
+                  
                    //osThreadResume(SystemCallHandle); 
                }
                system_flag_table->grecord_timer_cnt = HAL_GetTick();
@@ -2826,9 +2855,9 @@ void update_info(void const * argument)
 	               if((gpsx->gpssta >= 1)&&(system_flag_table->guji_mode == RECORED_START_DOING))
 	               {
 	                   if((system_flag_table->guji_record.recoed_formats == BY_TIMES) && (system_flag_table->guji_record.by_time_vaule < 1000))     
-	                       sd_led_config(2700,300);     
+	                       sd_led_config(300,700);     
 	                   else
-	                       sd_led_config(700,300);     
+	                       sd_led_config(300,2700);     
 	               }
 	               else
 	               {
