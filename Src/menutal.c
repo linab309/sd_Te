@@ -1104,9 +1104,9 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 
                     sys_fr = open_append(sys_fp, track_file);
                     
-                    if(FR_OK  != sys_fr)
+                    if((FR_OK  != sys_fr)&&(FR_EXIST  != sys_fr))
                     {
-                        print_usart1("open append faild \n");
+                        print_usart1("open append faild :%d \n",sys_fr);
                         return; 
                     }
 
@@ -1198,9 +1198,9 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         sys_fr = open_append(sys_fp, track_file);
                         //print_usart1("\r\n track_file :%s\r\n ",track_file); 
          
-                        if(FR_OK  != sys_fr)
+                        if((FR_OK  != sys_fr)&&(FR_EXIST  != sys_fr))
                         {
-                            print_usart1("open append faild \n");
+                            print_usart1("open append faild :%d \n",sys_fr);
                             system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
                             system_flag_table->guji_mode = RECORED_STOP;    
                             return; 
@@ -1210,7 +1210,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                    {
                        system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
                        system_flag_table->guji_mode = RECORED_STOP;    
-                       print_usart1("open append faild \n");
+                       print_usart1("saev close faild :%d \n",fr);
     
                        return ; 
                    }

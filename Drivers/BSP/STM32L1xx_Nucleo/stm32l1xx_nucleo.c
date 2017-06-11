@@ -671,9 +671,9 @@ static bool IsBatteryPoweroff(uint16_t mv)
     return (mv<=3200)? TRUE:FALSE;
 }
 
-static bool IsBatteryLow(uint16_t mv) {return mv>3550 ? TRUE:FALSE;}
+static bool IsBatteryLow(uint16_t mv) {return mv<3550 ? TRUE:FALSE;}
 /* Check INTERNAL value for shut off battery level  - around 3.00V */
-static bool IsBatteryDead(uint16_t mv) {return mv>3200 ? TRUE:FALSE;}
+static bool IsBatteryDead(uint16_t mv) {return mv<3200 ? TRUE:FALSE;}
 /* battery full is indicated in firmware for this chip*/
 static bool IsBatteryMid(uint16_t mv) {return mv>3720 ? TRUE:FALSE;}
 static bool IsBatteryHIGH(uint16_t mv) {return mv>3850 ? TRUE:FALSE;}
