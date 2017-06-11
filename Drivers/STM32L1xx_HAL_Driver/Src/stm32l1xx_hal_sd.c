@@ -348,7 +348,7 @@ HAL_SD_ErrorTypedef HAL_SD_Init(SD_HandleTypeDef *hsd, HAL_SD_CardInfoTypedef *S
   
   /* Initialize the low level hardware (MSP) */
   HAL_SD_MspInit(hsd);
-  print_usart1("1\r\n");
+  //print_usart1("1\r\n");
   /* Default SDIO peripheral configuration for SD card initialization */
   tmpinit.ClockEdge           = SDIO_CLOCK_EDGE_RISING;
   tmpinit.ClockBypass         = SDIO_CLOCK_BYPASS_DISABLE;
@@ -2485,7 +2485,7 @@ static HAL_SD_ErrorTypedef SD_PowerON(SD_HandleTypeDef *hsd)
   {
      ;
   }
-  print_usart1("SD_PowerON \r\n");
+  //print_usart1("SD_PowerON \r\n");
   /* Enable SDIO Clock */
   __HAL_SD_SDIO_ENABLE();
   //print_usart1("10\r\n") ;           

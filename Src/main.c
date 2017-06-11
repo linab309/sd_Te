@@ -105,6 +105,7 @@ uint32_t gps_data_time = 0xffffffff;
 
 uint8_t uart3_buffer[MAX_UART3_LEN];
 uint8_t self_guiji_buffer[384];
+static uint16_t usb_timer_cnt = 0 ;
 
 
 /*GPS 数据接收标志位*/
@@ -381,8 +382,9 @@ int main(void)
       stm_write_eerpom(0xf0,0);   /*power mode save ! default is normal support mode*/
       system_flag_table->frist_power = 1;
   }
-
+  
   stm_read_eerpom(0xf0,&eeprom_flag);
+  //system_flag_table->gujiFormats				 = GUJI_FORMATS_MEA;
 
   if(eeprom_flag == 0)
   {
@@ -462,11 +464,11 @@ int main(void)
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of Get_gps_info_ */
-  osThreadDef(Get_gps_info_, Get_gps_info, osPriorityAboveNormal, 0, 256);
+  osThreadDef(Get_gps_info_, Get_gps_info, osPriorityAboveNormal, 0, 512);
   Get_gps_info_Handle = osThreadCreate(osThread(Get_gps_info_), NULL);
 
   /* definition and creation of SystemCall */
-  osThreadDef(SystemCall, MySystem, osPriorityHigh, 0, 512);
+  osThreadDef(SystemCall, MySystem, osPriorityHigh, 0, 256);
   SystemCallHandle = osThreadCreate(osThread(SystemCall), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -1548,7 +1550,7 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                    
             } 
 
-            if(ret == 1)
+           if(ret == 1)
             {
             #if 0
                 if((system_flag_table->power_status == POWER_SURPORT_RUN)
@@ -1560,11 +1562,20 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                 
                 if(system_flag_table->gujiFormats == GUJI_FORMATS_MEA)
                 {
-                    memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],buf,rxlen);
-                    system_flag_table->guji_buffer_Index_wp  += rxlen;        
-                    if(system_flag_table->guji_buffer_Index_wp >= MAX_GUJI_BUFFER_MAX_LEN)
+
+				    if(system_flag_table->guji_buffer_Index_wp + rxlen < MAX_GUJI_BUFFER_MAX_LEN)
+				    {
+                        memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],buf,rxlen);
+                        system_flag_table->guji_buffer_Index_wp  += rxlen;    
+				    }
+					else
                     {
-                        system_flag_table->guji_buffer_Index_wp = 0;
+                        memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],buf,MAX_GUJI_BUFFER_MAX_LEN-system_flag_table->guji_buffer_Index_wp);
+						memcpy(&system_flag_table->guji_buffer[0],(buf+MAX_GUJI_BUFFER_MAX_LEN-system_flag_table->guji_buffer_Index_wp),\
+							system_flag_table->guji_buffer_Index_wp+rxlen - MAX_GUJI_BUFFER_MAX_LEN);
+						
+						system_flag_table->guji_buffer_Index_wp  += rxlen;	  
+						system_flag_table->guji_buffer_Index_wp = (system_flag_table->guji_buffer_Index_wp - MAX_GUJI_BUFFER_MAX_LEN);
                     }              
                 }
                 else
@@ -1931,17 +1942,29 @@ uint8_t get_space(void)
     DWORD fre_clust, fre_sect, tot_sect;
     FRESULT res = FR_OK;
     float tp;
+	int i = 0;
 	
     /* Get volume information and free clusters of drive 1 */
     res = f_getfree("", &fre_clust, &fs);
     if (res) 
     {
         print_usart1("f_getfree faild :%d\r\n",res);
-        system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
+		for(i= 0;i<100;i++)
+	    {
+		    osDelay(100);
+		    res = f_getfree("", &fre_clust, &fs);
+			if(res == 0)
+				break;
+	    }
 
-        return 0;
+		if(i == 100)
+	    {
+           system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
+
+           return 0;
+	    }
     }
-    else
+
     {
         /* Get total sectors and free sectors */
         tot_sect = (fs->n_fatent - 2) * fs->csize;
@@ -2006,7 +2029,7 @@ void sd_led_config(uint16_t breath_on_timer, uint16_t breath_off_timer)
     static uint32_t gps_timer_cnt = 0 ;
     static uint8_t gps_led_flag = 0;
     
-    if((gpsx->gpssta >= 1)&&(system_flag_table->Message_head_number > 0))
+    if(((gpsx->gpssta >= 1)&&(system_flag_table->Message_head_number > 0))||(system_flag_table->gujiFormats == GUJI_FORMATS_MEA))
     {
         if((gps_led_flag == 0)&&(HAL_GetTick() >= (gps_timer_cnt + breath_on_timer)))
         {
@@ -2121,6 +2144,38 @@ void status_led_config(void)
                 BSP_LED_Off(LED_RED);
                 read_led_flag = 0;
             } 
+
+			if(system_flag_table->batt_Status == BATT_EMPTY)
+		    {
+		          system_flag_table->power_status = POWER_STANBY;   
+                              
+                  //print_usart1("POWER OFF \r\n");
+
+                  BSP_LED_Off(LED_GREEN);
+                  //USBD_Start(&hUsbDeviceFS);
+                  if(usb_init_flag == 0)
+                  {
+                      MX_USB_DEVICE_Init();
+                      usb_init_flag = 1;
+              	  }  
+                  
+                  sound_toggle_simple(1,500,150);  
+
+				  while(osThreadGetState(Get_gps_info_Handle) != osThreadSuspended) { osDelay(10);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
+				  while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(10);}
+
+                  gps_power_mode(0);
+                  sd_power_mode(0);
+
+				  print_usart1("************\r\n");
+				  print_usart1("goto stanby.\r\n");
+				  print_usart1("************\r\n");
+                  if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_RESET)
+                  {
+				      StopSequence_Config();                  
+                  }
+		    }
+			
 			return ; 
         }
 		else
@@ -2336,10 +2391,14 @@ void Get_gps_info(void const * argument)
 
 			  //memset(gpsx,0,sizeof(nmea_msg));
 			  GPS_Analysis(gpsx,gps_data);
+#ifdef TEST_WRITE_SD
+			  gpsx->gpssta = 2; /*for test*/
+#endif
+			  
               if((gpsx->gpssta <1)&&(rxlen < 160))
               {
 
-                  #ifdef TEST_WRITE_SD
+                  #if 0//def TEST_WRITE_SD
                   memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],gps_data,rxlen);
                   system_flag_table->guji_buffer_Index_wp  += rxlen;        
                   if(system_flag_table->guji_buffer_Index_wp >= MAX_GUJI_BUFFER_MAX_LEN)
@@ -2348,12 +2407,10 @@ void Get_gps_info(void const * argument)
                   }
                   #endif              
               } 
-			  
-			   
-		      free(gps_data);		  
-
+			  			   		      	
     	      surport_mode_config(system_flag_table->power_status,gps_data,rxlen);      
 
+			  free(gps_data); 
 
   
 
@@ -2402,6 +2459,7 @@ void MySystem(void const * argument)
       if(_user_key_  != 0x00)
       {
           print_usart1("_user_key_:%d \r\n",_user_key_);
+		  usb_timer_cnt = 0;
    
       }
       switch(_user_key_)
@@ -2411,7 +2469,7 @@ void MySystem(void const * argument)
 		  	    if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
 		  	    {			
                     system_flag_table->power_status = POWER_SURPORT_RUN;\
-                    BSP_SD_Init();
+                    //BSP_SD_Init();
                     gps_power_mode(1);
                     sd_power_mode(1) ;
                     SystemClock_Config_resume();
@@ -2464,7 +2522,7 @@ void MySystem(void const * argument)
     			if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
     			{			
     				system_flag_table->power_status = POWER_SURPORT_RUN;
-                    BSP_SD_Init();
+//                    BSP_SD_Init();
     				gps_power_mode(1);
     				sd_power_mode(1) ;
     				SystemClock_Config_resume();
@@ -2604,8 +2662,6 @@ void MySystem(void const * argument)
                   system_flag_table->power_status = POWER_STANBY;   
                               
                   //print_usart1("POWER OFF \r\n");
-                  gps_power_mode(0);
-                  sd_power_mode(0);
 
                   BSP_LED_Off(LED_GREEN);
                   //USBD_Start(&hUsbDeviceFS);
@@ -2617,7 +2673,12 @@ void MySystem(void const * argument)
                   
                   sound_toggle_simple(1,500,150);  
 
-				  while(osThreadGetState(Get_gps_info_Handle) != osThreadSuspended) { osDelay(1);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
+				  while(osThreadGetState(Get_gps_info_Handle) != osThreadSuspended) { osDelay(10);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
+				  while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(10);}
+
+                  gps_power_mode(0);
+                  sd_power_mode(0);
+
 				  print_usart1("************\r\n");
 				  print_usart1("goto stanby.\r\n");
 				  print_usart1("************\r\n");
@@ -2671,11 +2732,11 @@ void update_info(void const * argument)
   /* USER CODE BEGIN update_info */
 //  RTC_DateTypeDef sdatestructureget;
 //  RTC_TimeTypeDef stimestructureget;  
-  static uint16_t usb_timer_cnt = 0 ;
+
   static uint16_t sd_timer_cnt = 0 ;
   static uint16_t support_timer_cnt = 0 ;
   static uint32_t save_file_cnt = 0 ;
-  static uint8_t adc_cnt = 0 ;
+  static uint16_t adc_cnt = 0 ;
 
 #if 0
      /* Get the RTC current Time */
@@ -2816,7 +2877,7 @@ void update_info(void const * argument)
                    HAL_NVIC_DisableIRQ(EXTI1_IRQn);
                    SystemClock_Config_resume();                 
                    BSP_SD_ITConfig();
-                   SD_IO_Init();     
+//                   SD_IO_Init();     
                    gps_power_mode(1);
                    sd_power_mode(1) ;                   
 				   MX_TIM10_Init();
@@ -2853,6 +2914,7 @@ void update_info(void const * argument)
 	           if(system_flag_table->power_status == POWER_SURPORT_RUN ||system_flag_table->power_status == POWER_RUN ||system_flag_table->power_status == POWER_LRUN)
 	           {
 	               if((gpsx->gpssta >= 1)&&(system_flag_table->guji_mode == RECORED_START_DOING))
+	               //if((system_flag_table->guji_mode == RECORED_START_DOING))
 	               {
 	                   if((system_flag_table->guji_record.recoed_formats == BY_TIMES) && (system_flag_table->guji_record.by_time_vaule < 1000))     
 	                       sd_led_config(300,700);     

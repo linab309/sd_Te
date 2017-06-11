@@ -140,7 +140,7 @@ uint8_t BSP_SD_Init(uint32_t ClockDiv)
   //print_usart1("111\r\n");
   /* HAL SD initialization */
   SD_MspInit();
-  print_usart1("ClockDiv :%d \r\n",ClockDiv);  
+  //print_usart1("ClockDiv :%d \r\n",ClockDiv);  
   if(HAL_SD_Init(&uSdHandle, &uSdCardInfo) != SD_OK)
   {
     state = 2;
@@ -150,6 +150,7 @@ uint8_t BSP_SD_Init(uint32_t ClockDiv)
   if((state == MSD_OK)&&(ClockDiv <=4))
   {
     /* Enable wide operation */
+	// print_usart1("4 wide :%d \r\n",ClockDiv);
     if(HAL_SD_WideBusOperation_Config(&uSdHandle, SDIO_BUS_WIDE_4B) != SD_OK)
     {
       state = 3;

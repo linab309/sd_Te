@@ -154,6 +154,7 @@ __weak void PostSleepProcessing(uint32_t *ulExpectedIdleTime)
        }
        
     }
+	if((system_flag_table->power_status == POWER_SURPORT_SLEEP)||(system_flag_table->power_status == POWER_LRUN_SLEEP))	
     HAL_ResumeTick();    
 #endif
     
@@ -165,7 +166,7 @@ __weak void PostSleepProcessing(uint32_t *ulExpectedIdleTime)
 /* USER CODE BEGIN Application */
 void Begin_low_power(void)
 {
-    if((__HAL_TIM_GET_ENABLE(&htim10) == 0) && (__HAL_TIM_GET_ENABLE(&htim2) == 0) &&(__HAL_TIM_GET_ENABLE(&htim4) == 0))
+    //if((__HAL_TIM_GET_ENABLE(&htim10) == 0) && (__HAL_TIM_GET_ENABLE(&htim2) == 0) &&(__HAL_TIM_GET_ENABLE(&htim4) == 0))
     {
         //if((system_flag_table->power_status != POWER_SURPORT_SLEEP)&&(system_flag_table->power_status != POWER_LRUN_SLEEP))
            // SystemClock_Config_msi();
@@ -173,14 +174,15 @@ void Begin_low_power(void)
 #if configUSE_TICKLESS_IDLE == 1     
     ulTimerCountsForOneTick = ( configCPU_CLOCK_HZ / configTICK_RATE_HZ );
 #endif
-    HAL_SuspendTick();
+	if((system_flag_table->power_status == POWER_SURPORT_SLEEP)||(system_flag_table->power_status == POWER_LRUN_SLEEP))
+       HAL_SuspendTick();
     //print_usart1("start !\r\n");
 
 }
 
 void End_low_power(void)
 {
-    if((__HAL_TIM_GET_ENABLE(&htim10) == 0) && (__HAL_TIM_GET_ENABLE(&htim2) == 0) &&(__HAL_TIM_GET_ENABLE(&htim4) == 0))
+    //if((__HAL_TIM_GET_ENABLE(&htim10) == 0) && (__HAL_TIM_GET_ENABLE(&htim2) == 0) &&(__HAL_TIM_GET_ENABLE(&htim4) == 0))
     {
         //if((system_flag_table->power_status != POWER_SURPORT_SLEEP)&&(system_flag_table->power_status != POWER_LRUN_SLEEP))
            // SystemClock_Config_resume();

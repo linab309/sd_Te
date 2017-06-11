@@ -60,7 +60,7 @@
 #define USBD_DEBUG_LEVEL                      2
 
 /* MSC Class Config */
-#define MSC_MEDIA_PACKET                       8192   
+#define MSC_MEDIA_PACKET                       4096   
 
 /* CDC Class Config */
 #define USBD_CDC_INTERVAL                      2000  

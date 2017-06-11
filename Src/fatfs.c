@@ -57,7 +57,7 @@ extern char *GetIniKeyString(char *title,char *key,char *filename);
 extern int GetIniKeyInt(char *title,char *key,char *filename);
 
 //char* pDirectoryFiles[MAX_BMP_FILES];
-
+static uint8_t open_cnt = 0;
 /* USER CODE END Variables */    
 
 void MX_FATFS_Init(void) 
@@ -114,6 +114,12 @@ FRESULT open_append (
         if (fr != FR_OK)
             f_close(fp);
     }
+	open_cnt ++;
+	if((fr != FR_OK) &&(FR_EXIST != fr) && (open_cnt <10))
+		open_append(fp,path);
+    else
+		open_cnt = 0;
+	
     return fr;
 }
 

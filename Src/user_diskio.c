@@ -121,7 +121,7 @@ DSTATUS USER_initialize (
     Stat = STA_NOINIT;
     
     /* Configure the uSD device */
-    if(BSP_SD_Init(10) == MSD_OK)
+    if(BSP_SD_Init(5) == MSD_OK)
     {
       Stat &= ~STA_NOINIT;
     }
@@ -170,7 +170,7 @@ DRESULT USER_read (
   /* USER CODE BEGIN READ */
 
     DRESULT res = RES_OK;
-     __disable_irq();
+    __disable_irq();
     if(BSP_SD_ReadBlocks((uint32_t*)buff, 
                          (uint64_t)(sector * BLOCK_SIZE), 
                          BLOCK_SIZE, 
@@ -203,14 +203,17 @@ DRESULT USER_write (
   /* USER CODE HERE */
 
     DRESULT res = RES_OK;
-    __disable_irq();
+    //__disable_irq();
     if(BSP_SD_WriteBlocks((uint32_t*)buff, 
                           (uint64_t)(sector * BLOCK_SIZE), 
                           BLOCK_SIZE, count) != MSD_OK)
     {
       res = RES_ERROR;
     }
-    __enable_irq();
+
+    //print_usart1("l%d \r\n",sector);    
+   // print_usart1("w:%d \r\n",count);    	
+    //__enable_irq();
     return res;
   /* USER CODE END WRITE */
 }

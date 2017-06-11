@@ -726,12 +726,13 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
         {
             buffer_Analysis(sys_fp,system_flag_table,guji_buffer_,rxlen);
         }
-        else if(system_flag_table->gujiFormats == GUJI_FORMATS_GPS)
+        else if((system_flag_table->gujiFormats == GUJI_FORMATS_GPS)||(system_flag_table->gujiFormats == GUJI_FORMATS_MEA))
         {    
             fr = f_write(sys_fp,guji_buffer_,rxlen,&wb);
+			//print_usart1("-%d-\r\n",rxlen);
             if(debug_cnt > 1)
             {
-                //print_usart1("-");
+                //print_usart1("%s",guji_buffer_);
                 debug_cnt = 0;
             }
             else
@@ -970,7 +971,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 #endif                    
                 }
 	
-                print_usart1("gpsx->utc.year :%d \r\n",system_flag_table->sys_tm.w_year);
+                //print_usart1("gpsx->utc.year :%d \r\n",system_flag_table->sys_tm.w_year);
 
                 if(gpsx->utc.year >= 15)
                 {
@@ -1003,8 +1004,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         stm_read_eerpom(25,&eeprom_vaule);
                         eeprom_tm.sec     = eeprom_vaule;
 
-                        print_usart1("%04d-%02d/%02d%02d%02d%02d.CSV \r\n",eeprom_tm.w_year,eeprom_tm.w_month,
-                            eeprom_tm.w_date, eeprom_tm.hour,eeprom_tm.min,eeprom_tm.sec);    
+                        //print_usart1("%04d-%02d/%02d%02d%02d%02d.CSV \r\n",eeprom_tm.w_year,eeprom_tm.w_month,
+                        //    eeprom_tm.w_date, eeprom_tm.hour,eeprom_tm.min,eeprom_tm.sec);    
 
                         if((eeprom_tm.w_year != system_flag_table->sys_tm.w_year+2000)||
                           (eeprom_tm.w_month!= system_flag_table->sys_tm.w_month)||
@@ -1045,12 +1046,12 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         }
                         else if(system_flag_table->gujiFormats == GUJI_FORMATS_GPS)  
                         {
-                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CPS",eeprom_tm.w_year,eeprom_tm.w_month,
+                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.GPS",eeprom_tm.w_year,eeprom_tm.w_month,
                             eeprom_tm.w_date, eeprom_tm.hour,eeprom_tm.min,eeprom_tm.sec);
                         }
                         else if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)  
                         {
-                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CPX",eeprom_tm.w_year,eeprom_tm.w_month,
+                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.GPX",eeprom_tm.w_year,eeprom_tm.w_month,
                             eeprom_tm.w_date, eeprom_tm.hour,eeprom_tm.min,eeprom_tm.sec);
                         }                    
                         else if(system_flag_table->gujiFormats == GUJI_FORMATS_MEA)  
@@ -1083,7 +1084,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         }                    
                         else if(system_flag_table->gujiFormats == GUJI_FORMATS_MEA)  
                         {
-                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.NMEA",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
+                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.NME",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
                             system_flag_table->sys_tm.w_date, system_flag_table->sys_tm.hour,system_flag_table->sys_tm.min,system_flag_table->sys_tm.sec);
                         }   
                         print_usart1("\r\n create new file :%s \r\n ",track_file);
@@ -1155,8 +1156,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     print_usart1("track file dir fr %d\r\n",fr);
                     
 
-                    sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.GPS",2017,
-                        6,9,21,47,10);                
+                    sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.NMA",2017,
+                        6,11,11,11,10);                
                     print_usart1("\r\n track_file :%s \r\n ",track_file);
                     sys_fr = open_append(sys_fp, track_file);
                     
@@ -1190,12 +1191,12 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                 if(sys_fp != NULL)
                 {
                    fr = f_close(sys_fp); 
-                   print_usart1("\r\n close :%d\r\n ",fr);   
+                   //print_usart1("\r\n close :%d\r\n ",fr);   
     
                    if(FR_OK  != sys_fr)
                    {
                         sys_fr = open_append(sys_fp, track_file);
-                        print_usart1("\r\n track_file :%s\r\n ",track_file); 
+                        //print_usart1("\r\n track_file :%s\r\n ",track_file); 
          
                         if(FR_OK  != sys_fr)
                         {
@@ -1244,6 +1245,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                 fr = f_close(sys_fp);
                 print_usart1("\r\n close file :%d\r\n ",fr);
             }
+
+			print_usart1("\r\n close file-- :%d\r\n ",fr);
             system_flag_table->guji_mode = RECORED_IDLE;            
 
 			break;

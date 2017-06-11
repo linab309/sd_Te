@@ -190,7 +190,7 @@ int8_t STORAGE_Init_FS (uint8_t lun)
   /* USER CODE BEGIN 2 */ 
   int8_t ret = -1;
   
-  ret = BSP_SD_Init(1);
+  ret = BSP_SD_Init(4);
   if(ret != 0 )
   {
       print_usart1("STORAGE_Init_FS :%d\r\n",ret);
@@ -248,7 +248,7 @@ int8_t  STORAGE_IsReady_FS (uint8_t lun)
   {
     if(prev_status < 0)
     {
-      BSP_SD_Init(1);
+      BSP_SD_Init(4);
       prev_status = 0;
       
     }
@@ -299,13 +299,13 @@ int8_t STORAGE_Read_FS (uint8_t lun,
 
     if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
     {   
-        __disable_irq();
+        //__disable_irq();
         BSP_SD_ReadBlocks((uint32_t *)buf, (uint64_t)(blk_addr * STORAGE_BLK_SIZ), 
         STORAGE_BLK_SIZ, blk_len);
-		__enable_irq();
+		//__enable_irq();
         ret = 0;
     }
-    //print_usart1("*blk_len :%d \r\n",blk_len);    
+    //print_usart1("*l:%d \r\n",blk_len);    
     //print_usart1("*r :%d \r\n",blk_addr);    
 
     return ret;
@@ -330,14 +330,14 @@ int8_t STORAGE_Write_FS (uint8_t lun,
   
   if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
   { 
-      __disable_irq();
-      BSP_SD_WriteBlocks((uint32_t *)buf, (uint64_t)(blk_addr * STORAGE_BLK_SIZ), 
+      //__disable_irq();
+      BSP_SD_WriteBlocks_DMA((uint32_t *)buf, (uint64_t)(blk_addr * STORAGE_BLK_SIZ), 
       STORAGE_BLK_SIZ, blk_len);
-	  __enable_irq();
+	  //__enable_irq();
       ret = 0;
   }
-  //printf("* blk_len :%d \r\n",blk_len);    
-  //printf("*blk_addr :%d \r\n",blk_addr);    
+  //print_usart1("l%d \r\n",blk_len);    
+  //print_usart1("w:%d \r\n",blk_addr);    
   
   return ret; 
   /* USER CODE END 7 */ 
