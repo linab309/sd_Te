@@ -347,7 +347,7 @@ int main(void)
 
       system_flag_table->lowpower_timer              = 15;
       system_flag_table->ODOR                        = 0;
-      system_flag_table->buzzer                      = 0;
+      system_flag_table->buzzer                      = 1;
       system_flag_table->auto_power                  = 0;
       system_flag_table->guji_record.by_speed_vaule  = 0;
       system_flag_table->wanng_speed_vaule = 0;

@@ -147,7 +147,7 @@ uint8_t BSP_SD_Init(uint32_t ClockDiv)
   }
   //print_usart1("222\r\n");  
   /* Configure SD Bus width */
-  if((state == MSD_OK)&&(ClockDiv <=4))
+  if((state == MSD_OK)&&(ClockDiv <=10))
   {
     /* Enable wide operation */
 	// print_usart1("4 wide :%d \r\n",ClockDiv);

@@ -190,7 +190,7 @@ int8_t STORAGE_Init_FS (uint8_t lun)
   /* USER CODE BEGIN 2 */ 
   int8_t ret = -1;
   
-  ret = BSP_SD_Init(4);
+  ret = BSP_SD_Init(8);
   if(ret != 0 )
   {
       print_usart1("STORAGE_Init_FS :%d\r\n",ret);
@@ -248,7 +248,7 @@ int8_t  STORAGE_IsReady_FS (uint8_t lun)
   {
     if(prev_status < 0)
     {
-      BSP_SD_Init(4);
+      BSP_SD_Init(8);
       prev_status = 0;
       
     }

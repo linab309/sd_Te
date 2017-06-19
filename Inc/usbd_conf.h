@@ -82,7 +82,7 @@
 /*---------- -----------*/
 #define USBD_SELF_POWERED     1
 /*---------- -----------*/
-#define MSC_MEDIA_PACKET     4096
+#define MSC_MEDIA_PACKET     8192
 /****************************************/
 /* #define for FS and HS identification */
 #define DEVICE_FS 		0
