@@ -334,8 +334,8 @@ int main(void)
 
       stm_read_eerpom(12,&eeprom_flag);
       system_flag_table->unit = eeprom_flag;
-      //stm_read_eerpom(12,&eeprom_flag);
-      system_flag_table->frist_power = 0;
+      stm_read_eerpom(13,&eeprom_flag);
+      system_flag_table->frist_power = eeprom_flag;
   }
   else
   {
@@ -352,7 +352,6 @@ int main(void)
       system_flag_table->guji_record.by_speed_vaule  = 0;
       system_flag_table->wanng_speed_vaule = 0;
       system_flag_table->unit = 0;
-      
       stm_write_eerpom(0,system_flag_table->time_zone);
       /*Buzzer*/
       stm_write_eerpom(1,system_flag_table->buzzer);    
@@ -381,6 +380,7 @@ int main(void)
       stm_write_eerpom(0xff,0x12345678);
       stm_write_eerpom(0xf0,0);   /*power mode save ! default is normal support mode*/
       system_flag_table->frist_power = 1;
+      stm_write_eerpom(13,system_flag_table->frist_power);
   }
   
   stm_read_eerpom(0xf0,&eeprom_flag);
@@ -1259,8 +1259,8 @@ void RTC_TimeShow(DWORD* fattime)
     *fattime |= ((DWORD)(stimestructureget.Hours << 11) | (DWORD)(stimestructureget.Minutes<< 5)|((DWORD)(stimestructureget.Seconds)/2));  
   #endif
     check_time(gpsx,system_flag_table);
-    //print_usart1("time: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.w_year, system_flag_table->sys_tm.w_month,system_flag_table->sys_tm.w_date);
-    //print_usart1("date: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.hour, system_flag_table->sys_tm.min, system_flag_table->sys_tm.sec);
+    print_usart1("time: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.w_year, system_flag_table->sys_tm.w_month,system_flag_table->sys_tm.w_date);
+    print_usart1("date: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.hour, system_flag_table->sys_tm.min, system_flag_table->sys_tm.sec);
 
     *fattime =  ((DWORD)((system_flag_table->sys_tm.w_year + 20) << 25) | (DWORD)(system_flag_table->sys_tm.w_month<< 21)\
                | (DWORD)(system_flag_table->sys_tm.w_date < 16));
@@ -1327,7 +1327,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
          //HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);   
     }
 
-    //print_usart1("exit :%d %d\r\n",GPIO_Pin,support_cnt);
+    print_usart1("exit :%d %d\r\n",GPIO_Pin,support_cnt);
     
 }/* USER CODE HAL_GPIO_EXTI_Callback*/
 
@@ -2118,6 +2118,8 @@ void status_led_config(void)
 
             gps_led_config();
         }
+        else
+            BSP_LED_Off(LED_GPS);
 
 
     }
@@ -2165,7 +2167,7 @@ void status_led_config(void)
 				  while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(10);}
 
                   gps_power_mode(0);
-                  sd_power_mode(0);
+                  
 
 				  print_usart1("************\r\n");
 				  print_usart1("goto stanby.\r\n");
@@ -2174,6 +2176,11 @@ void status_led_config(void)
                   {
 				      StopSequence_Config();                  
                   }
+                  else
+                  {
+                      sd_power_mode(0);
+                  }
+                   
 		    }
 			
 			return ; 
@@ -2389,7 +2396,7 @@ void Get_gps_info(void const * argument)
 
 			  //if(rxlen)
 
-			  //memset(gpsx,0,sizeof(nmea_msg));
+			  memset(gpsx,0,sizeof(nmea_msg));
 			  GPS_Analysis(gpsx,gps_data);
 #ifdef TEST_WRITE_SD
 			  gpsx->gpssta = 2; /*for test*/
@@ -2490,7 +2497,7 @@ void MySystem(void const * argument)
                     system_flag_table->power_status = POWER_LRUN;
     
                     SystemClock_Config_resume();
-// 				    BSP_SD_Init();
+// 				       BSP_SD_Init();
  				    MX_TIM10_Init();                    
                     print_usart1("*********\r\n");
                     print_usart1("levef lprun mode  resume \r\n");       
@@ -2698,6 +2705,12 @@ void MySystem(void const * argument)
           	  }            
               sound_toggle_simple(3,50,50);
               entry_config_mode(system_flag_table);
+              sound_toggle_simple(1,500,150); 
+              if(usb_init_flag == 0)
+              {
+                  MX_USB_DEVICE_Init();
+                  usb_init_flag = 1;
+          	  }                
               break;
           default:break;
       }
@@ -2804,18 +2817,16 @@ void update_info(void const * argument)
        usb_timer_cnt = 0;
        if(system_flag_table->power_status == POWER_SURPORT_RUN)
        {
-           if((gpsx->speed < 2000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
+           if(1)//(gpsx->speed < 2000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
            {
                support_timer_cnt ++;
-               if(support_timer_cnt == 3000)
+               if(support_timer_cnt == 30)
                {
                    support_timer_cnt = 0;
                    //StopSequence_Config();
      
                    //HAL_NVIC_EnableIRQ(EXTI1_IRQn);              
-                   print_usart1("****************************** \r\n");
-                   print_usart1("entry surport mode  go to stop \r\n");       
-                   print_usart1("****************************** \r\n");
+
                    if(LED_SURPORT_FLAG == 1)
                    {
                        //Pwm_Breathing(SPRORT_LED,0);
@@ -2839,7 +2850,9 @@ void update_info(void const * argument)
 				   //sleep_power_config();				   
                    //osThreadSuspend(SystemCallHandle);                                           
                    HAL_NVIC_EnableIRQ(EXTI1_IRQn);
-     
+                   print_usart1("****************************** \r\n");
+                   print_usart1("entry surport mode  go to stop \r\n");       
+                   print_usart1("****************************** \r\n");   
                }
                else
                {

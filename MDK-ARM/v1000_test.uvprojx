@@ -145,6 +145,7 @@
             <RestoreToolbox>1</RestoreToolbox>
             <RestoreTracepoints>1</RestoreTracepoints>
             <RestoreSysVw>1</RestoreSysVw>
+            <UsePdscDebugDescription>1</UsePdscDebugDescription>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
           <TargetSelection>11</TargetSelection>
@@ -309,8 +310,8 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x8000000</StartAddress>
-                <Size>0x60000</Size>
+                <StartAddress>0x8005000</StartAddress>
+                <Size>0x5b000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -719,9 +720,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>startup_stm32l152xd.s</FileName>
+              <FileName>startup_stm32l151xd.s</FileName>
               <FileType>2</FileType>
-              <FilePath>.\startup_stm32l152xd.s</FilePath>
+              <FilePath>.\startup_stm32l151xd.s</FilePath>
             </File>
           </Files>
         </Group>

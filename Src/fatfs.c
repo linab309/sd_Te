@@ -186,9 +186,16 @@ void configfs_set(FIL *update_config_fp)
     uint8_t flash_cnt = 0;
     uint8_t i = 0;
 
-    //BSP_LED_Init(LED_GPS);  
-    //BSP_LED_Init(LED_SD);  
-    //BSP_LED_Init(LED_SURPORT); 
+    BSP_LED_Init(LED_GPS);  
+    BSP_LED_Init(LED_SD);  
+    BSP_LED_Init(LED_SURPORT); 
+
+
+    BSP_LED_On(LED_GPS);  
+    BSP_LED_On(LED_SD);	
+    BSP_LED_On(LED_SURPORT);
+
+    
     print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "TimeZone", "config.ini"));
     print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "SpeedAlert", "config.ini")); 
     print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "AutoPowerOn", "config.ini"));
@@ -448,9 +455,7 @@ void configfs_set(FIL *update_config_fp)
 
 
           
-    BSP_LED_On(LED_GPS);  
-    BSP_LED_On(LED_SD);	
-    BSP_LED_On(LED_SURPORT);
+
 
 
     osDelay(300);
@@ -505,20 +510,31 @@ void entry_config_mode(system_flag *system_flag_table)
         fr = f_open(&update_config_fp, "INFO.TXT",FA_WRITE | FA_OPEN_ALWAYS);
         f_printf(&update_config_fp,"%s\r\n",timer_zone_Aarry[system_flag_table->time_zone]);
         f_printf(&update_config_fp,"%s\r\n",format_Aarry[system_flag_table->gujiFormats]);
-        f_printf(&update_config_fp,"%dHz\r\n",system_flag_table->guji_record.by_time_vaule);
-        f_printf(&update_config_fp,"%d\r\n",system_flag_table->guji_record.by_speed_vaule);
-        f_printf(&update_config_fp,"%d\r\n",system_flag_table->wanng_speed_vaule);
-        f_printf(&update_config_fp,"%d\r\n",system_flag_table->lowpower_timer);
+        f_printf(&update_config_fp,"%dHz\r\n",1000/(system_flag_table->guji_record.by_time_vaule));
+        if(system_flag_table->unit == 1)
+        {
+            f_printf(&update_config_fp,"%d mi/h\r\n",system_flag_table->guji_record.by_speed_vaule);
+            f_printf(&update_config_fp,"%d mi/h\r\n",system_flag_table->wanng_speed_vaule);
+        }
+        else
+        {
+            f_printf(&update_config_fp,"%d km/h\r\n",system_flag_table->guji_record.by_speed_vaule);
+            f_printf(&update_config_fp,"%d km/h\r\n",system_flag_table->wanng_speed_vaule);
+
+        }
+        f_printf(&update_config_fp,"%d\r\n",(system_flag_table->lowpower_timer/600));
         f_printf(&update_config_fp,"%s\r\n", system_flag_table->auto_new_guji ? "ON" : "OFF");
         f_printf(&update_config_fp,"%s\r\n",system_flag_table->auto_power ? "ON" : "OFF");
         f_printf(&update_config_fp,"%s\r\n",system_flag_table->buzzer? "ON" : "OFF");
-        f_printf(&update_config_fp,"Firmware: V0.01 \r\n");
+        f_printf(&update_config_fp,"Firmware: V 0.01 \r\n");
         stm_read_eerpom(11,&eeprom_flag);
         f_printf(&update_config_fp,"PowerOn: %d\r\n",eeprom_flag);
         stm_read_eerpom(12,&eeprom_flag);
-        if(eeprom_flag == 0xaaaaaaaa)
+
+        // stm_read_eerpom(13,&eeprom_flag);
+        if(system_flag_table->frist_power == 0)
         {
-            stm_read_eerpom(12,&eeprom_flag);
+            stm_read_eerpom(14,&eeprom_flag);
             f_printf(&update_config_fp,"First Use: %02d-%02d-%02d\r\n",(eeprom_flag>>16)&0xff,(eeprom_flag>>8)&0xff,(eeprom_flag)&0xff);
         }
 

@@ -106,6 +106,7 @@ static SD_CardInfo uSdCardInfo;
 static void SD_MspInit(void);
 HAL_SD_ErrorTypedef SD_DMAConfigRx(SD_HandleTypeDef *hsd);
 HAL_SD_ErrorTypedef SD_DMAConfigTx(SD_HandleTypeDef *hsd);
+extern void sd_power_mode(uint8_t mode);
 
 /**
   * @}
@@ -139,6 +140,7 @@ uint8_t BSP_SD_Init(uint32_t ClockDiv)
   }
   //print_usart1("111\r\n");
   /* HAL SD initialization */
+  sd_power_mode(1);
   SD_MspInit();
   //print_usart1("ClockDiv :%d \r\n",ClockDiv);  
   if(HAL_SD_Init(&uSdHandle, &uSdCardInfo) != SD_OK)

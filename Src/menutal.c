@@ -304,6 +304,7 @@ void check_time(nmea_msg *gpsx ,system_flag *system_flag_table)
         gpsx_utc = (gpsx->utc.hour*60+gpsx->utc.min);
         my_timer->sec = gpsx->utc.sec;
 
+        
 	    if(timer_zone_Aarry[system_flag_table->time_zone][0] == '+')
 		{
     		hour_timer = ((timer_zone_Aarry[system_flag_table->time_zone][1]-'0')*10)+(timer_zone_Aarry[system_flag_table->time_zone][2]-'0');
@@ -353,7 +354,8 @@ void check_time(nmea_msg *gpsx ,system_flag *system_flag_table)
 
          if(system_flag_table->frist_power == 1)
          {
-             stm_write_eerpom(12,(my_timer->w_year<<16)|(my_timer->w_month<<8)|my_timer->w_date);   
+             stm_write_eerpom(13,0);
+             stm_write_eerpom(14,(my_timer->w_year<<16)|(my_timer->w_month<<8)|my_timer->w_date);   
              system_flag_table->frist_power = 0;
          }
     }
@@ -629,7 +631,7 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
     
             f_printf(sys_fp,"%s",(char *)dtbuf);
             sprintf((char *)dtbuf,"%.6f%c,%d,%.1f,%d",tp_lon/1000000,lon_flag,attiautl/10,(speed/10),angle);	
-            f_printf(sys_fp,"%s \n",(char *)dtbuf);
+            f_printf(sys_fp,"%s\n",(char *)dtbuf);
 			
             //print_usart1("index :%d \r\n",message_number_index);
             
