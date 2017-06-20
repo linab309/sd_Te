@@ -191,9 +191,7 @@ void configfs_set(FIL *update_config_fp)
     BSP_LED_Init(LED_SURPORT); 
 
 
-    BSP_LED_On(LED_GPS);  
-    BSP_LED_On(LED_SD);	
-    BSP_LED_On(LED_SURPORT);
+
 
     
     print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "TimeZone", "config.ini"));
@@ -456,30 +454,33 @@ void configfs_set(FIL *update_config_fp)
 
           
 
+    BSP_LED_On(LED_GPS);  
+    BSP_LED_On(LED_SD);	
+    BSP_LED_On(LED_SURPORT);
 
 
-    osDelay(300);
+    HAL_Delay(300);
 
     BSP_LED_Off(LED_GPS);  
     BSP_LED_Off(LED_SD);  
     BSP_LED_Off(LED_SURPORT); 
  
-    osDelay(300);
+    HAL_Delay(300);
     BSP_LED_On(LED_GPS);  
     BSP_LED_On(LED_SD);	
     BSP_LED_On(LED_SURPORT);
 
-    osDelay(300);
+    HAL_Delay(300);
     BSP_LED_Off(LED_GPS);  
     BSP_LED_Off(LED_SD);  
     BSP_LED_Off(LED_SURPORT); 
 
-    osDelay(300);
+    HAL_Delay(300);
     BSP_LED_On(LED_GPS);  
     BSP_LED_On(LED_SD); 
     BSP_LED_On(LED_SURPORT);
     
-    osDelay(300);
+    HAL_Delay(300);
     BSP_LED_Off(LED_GPS);  
     BSP_LED_Off(LED_SD);  
     BSP_LED_Off(LED_SURPORT); 

@@ -1314,7 +1314,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     {   
         support_cnt ++;
 
-        if(support_cnt > 40)
+        if(support_cnt > 150)
         {
             HAL_NVIC_DisableIRQ(EXTI1_IRQn);
         }
@@ -1327,7 +1327,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
          //HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);   
     }
 
-    print_usart1("exit :%d %d\r\n",GPIO_Pin,support_cnt);
+    //print_usart1("exit :%d %d\r\n",GPIO_Pin,support_cnt);
     
 }/* USER CODE HAL_GPIO_EXTI_Callback*/
 
@@ -2817,7 +2817,7 @@ void update_info(void const * argument)
        usb_timer_cnt = 0;
        if(system_flag_table->power_status == POWER_SURPORT_RUN)
        {
-           if(1)//(gpsx->speed < 2000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
+           if((gpsx->speed < 2000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
            {
                support_timer_cnt ++;
                if(support_timer_cnt == 30)
@@ -2879,7 +2879,7 @@ void update_info(void const * argument)
            //print_usart1("--%d \r\n",(HAL_GetTick() - system_flag_table->grecord_timer_cnt));
            if( 2000 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
            {
-               if(support_cnt > 40)
+               if(support_cnt > 150)
                {
                    
                    support_timer_cnt = 0;
