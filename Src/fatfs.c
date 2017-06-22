@@ -87,6 +87,7 @@ DWORD get_fattime(void)
 	DWORD fattime = 0;
 
 	RTC_TimeShow(&fattime);
+    //print_usart1("fattime :%x \r\n",fattime);
 
 	return fattime;
 

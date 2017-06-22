@@ -1040,6 +1040,7 @@ void gps_power_mode(uint8_t mode)
 		HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);	  
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); 
         memset(gpsx,0,sizeof(nmea_msg));
+        HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1); 
 		
     }            
     else
@@ -1259,11 +1260,11 @@ void RTC_TimeShow(DWORD* fattime)
     *fattime |= ((DWORD)(stimestructureget.Hours << 11) | (DWORD)(stimestructureget.Minutes<< 5)|((DWORD)(stimestructureget.Seconds)/2));  
   #endif
     check_time(gpsx,system_flag_table);
-    print_usart1("time: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.w_year, system_flag_table->sys_tm.w_month,system_flag_table->sys_tm.w_date);
-    print_usart1("date: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.hour, system_flag_table->sys_tm.min, system_flag_table->sys_tm.sec);
+    //print_usart1("time: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.w_year, system_flag_table->sys_tm.w_month,system_flag_table->sys_tm.w_date);
+    //print_usart1("date: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.hour, system_flag_table->sys_tm.min, system_flag_table->sys_tm.sec);
 
     *fattime =  ((DWORD)((system_flag_table->sys_tm.w_year + 20) << 25) | (DWORD)(system_flag_table->sys_tm.w_month<< 21)\
-               | (DWORD)(system_flag_table->sys_tm.w_date < 16));
+               | (DWORD)(system_flag_table->sys_tm.w_date << 16));
     *fattime |= ((DWORD)(system_flag_table->sys_tm.hour << 11) | (DWORD)(system_flag_table->sys_tm.min<< 5)\
                |((DWORD)(system_flag_table->sys_tm.sec)/2));  
  
@@ -2890,7 +2891,7 @@ void update_info(void const * argument)
                    HAL_NVIC_DisableIRQ(EXTI1_IRQn);
                    SystemClock_Config_resume();                 
                    BSP_SD_ITConfig();
-//                   SD_IO_Init();     
+//                           SD_IO_Init();     
                    gps_power_mode(1);
                    sd_power_mode(1) ;                   
 				   MX_TIM10_Init();
