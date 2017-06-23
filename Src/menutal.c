@@ -1230,7 +1230,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
     		    {
                   	if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
                     { 
-                        save_guiji_message(gpsx,system_flag_table,'T');              
+                        //save_guiji_message(gpsx,system_flag_table,'T');              
                         write_flash(sys_fp,system_flag_table);              
                         print_usart1("\r\n close file \r\n ");
                      }

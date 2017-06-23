@@ -269,7 +269,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   //sd_power_mode(1)
 
-  print_usart1("P-1 running !!TIME:%s sb_flag :%x  wu_flag:%x\r\n",__DATE__,__HAL_PWR_GET_FLAG(PWR_FLAG_SB),__HAL_PWR_GET_FLAG(PWR_FLAG_WU));
+  print_usart1("P-1 running !!build:%s %s sb_flag :%x  wu_flag:%x\r\n",__DATE__,__TIME__,__HAL_PWR_GET_FLAG(PWR_FLAG_SB),__HAL_PWR_GET_FLAG(PWR_FLAG_WU));
   //RTC_AlarmConfig();
 
   gpsx = &gpsx_1;    
@@ -2370,7 +2370,7 @@ void Get_gps_info(void const * argument)
   for(;;)
   {
    
-      if(USART2_RX_STA == 1)
+      if((USART2_RX_STA == 1)&&(USART2_RX_STA_RP != USART2_RX_STA_WP))
       {
 		  
           //(osMutexWait(gpsMutexHandle, 0) == osOK)
@@ -2397,7 +2397,9 @@ void Get_gps_info(void const * argument)
 
 			  //if(rxlen)
 
-			  memset(gpsx,0,sizeof(nmea_msg));
+			  //memset(gpsx,0,sizeof(nmea_msg));
+                
+                
 			  GPS_Analysis(gpsx,gps_data);
 #ifdef TEST_WRITE_SD
 			  gpsx->gpssta = 2; /*for test*/
