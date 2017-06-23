@@ -1293,8 +1293,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     	{
     		USART2_RX_STA_WP = 0;
     	} 
-		
-		gps_data_time = HAL_GetTick(); 
+
+        if(USART2_RX_STA == 0)
+		    gps_data_time = HAL_GetTick(); 
 
         if((system_flag_table->guji_mode != RECORED_IDLE)&&(system_flag_table->guji_mode != RECORED_STOP))
         {
@@ -2375,8 +2376,7 @@ void Get_gps_info(void const * argument)
 		  
           //(osMutexWait(gpsMutexHandle, 0) == osOK)
           {
-			  USART2_RX_STA = 0;		   //启动下一次接收
-
+			  
 			  if(USART2_RX_STA_RP > USART2_RX_STA_WP)
 			  {
                   gps_data = malloc(USART2_RX_STA_WP+MAX_UART3_LEN -USART2_RX_STA_RP+1);
@@ -2394,6 +2394,7 @@ void Get_gps_info(void const * argument)
 			  }
               gps_data[rxlen] = 0;
               USART2_RX_STA_RP = USART2_RX_STA_WP;	 //得到数据长度  
+              USART2_RX_STA = 0;         //启动下一次接收
 
 			  //if(rxlen)
 
@@ -2823,7 +2824,7 @@ void update_info(void const * argument)
            if((gpsx->speed < 2000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
            {
                support_timer_cnt ++;
-               if(support_timer_cnt == 30)
+               if(support_timer_cnt == 3000)
                {
                    support_timer_cnt = 0;
                    //StopSequence_Config();
@@ -3056,7 +3057,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM7) {
   	if(HAL_GetTick() > (gps_data_time + 10))
   	{
-  	    if(USART2_RX_STA_RP != USART2_RX_STA_WP)
+  	    if((USART2_RX_STA_RP != USART2_RX_STA_WP)&&(USART2_RX_STA == 0))
         { 
   	        USART2_RX_STA = 1;
             
