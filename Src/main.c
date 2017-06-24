@@ -1297,7 +1297,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         if(USART2_RX_STA == 0)
 		    gps_data_time = HAL_GetTick(); 
 
-        if((system_flag_table->guji_mode != RECORED_IDLE)&&(system_flag_table->guji_mode != RECORED_STOP))
+        //if((system_flag_table->guji_mode != RECORED_IDLE)&&(system_flag_table->guji_mode != RECORED_STOP))
         {
 	        HAL_UART_Receive_IT(&huart3, (uint8_t *)(uart3_buffer + USART2_RX_STA_WP), 1); 		
         }

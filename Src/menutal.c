@@ -370,7 +370,8 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
     GUJI_TAG flag ;
     GUJI_DATE guji_data ;
     uint8_t error = 0;
-
+    static uint8_t svae_nshemi = 0;
+    static uint8_t save_ewhemi = 0;
 
     //RTC_DateTypeDef RTC_DateStructure;
     //RTC_TimeTypeDef RTC_TimeStructure;
@@ -404,18 +405,34 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
         {
             flag.bitc.tag = 1;  
         }
+        else
+        {
+            flag.bitc.tag = 0;
+        }
     
         if(gpsx->nshemi == 'N')
         {
-            flag.bitc.ns = 0;    
+            flag.bitc.ns = 0; 
+            svae_nshemi = gpsx->nshemi;
         }
         else if(gpsx->nshemi == 'S')
         {
             flag.bitc.ns = 1;     
+            svae_nshemi = gpsx->nshemi;
+
         }
         else
         {
-            //error = 1;
+            if(svae_nshemi == 'N')
+            {
+                flag.bitc.ns = 0; 
+            }
+            else if(svae_nshemi == 'S')
+            {
+                flag.bitc.ns = 1;     
+            
+            }
+
             print_usart1("error :%x \r\n",gpsx->nshemi);
         }
     
@@ -423,14 +440,24 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
         if(gpsx->ewhemi== 'E')
         {
             flag.bitc.ew = 0;    
+            save_ewhemi = gpsx->ewhemi;
         }
         else if(gpsx->ewhemi== 'W')
         {
-            flag.bitc.ew = 1;    
+            flag.bitc.ew = 1;  
+            save_ewhemi = gpsx->ewhemi;
         }
         else
         {
-            error = 1;
+            if(save_ewhemi== 'E')
+            {
+                flag.bitc.ew = 0;    
+            }
+            else if(save_ewhemi== 'W')
+            {
+                flag.bitc.ew = 1;    
+            }
+
             print_usart1("error :%x \r\n",gpsx->ewhemi);
         }
     

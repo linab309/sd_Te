@@ -63,7 +63,7 @@
 /* USER CODE BEGIN Private defines */
 #define  MAX_BMP_FILES  25
 #define  MAX_BMP_FILE_NAME 11
-#define  MAX_UART3_LEN 0x200
+#define  MAX_UART3_LEN 0x400
 #define  MAX_GUJI_BUFFER_MAX_LEN (250)
 
 
