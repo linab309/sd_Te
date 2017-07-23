@@ -1316,7 +1316,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     {   
         support_cnt ++;
 
-        if(support_cnt > 150)
+        if(support_cnt > 120)
         {
             HAL_NVIC_DisableIRQ(EXTI1_IRQn);
         }
@@ -2399,7 +2399,7 @@ void Get_gps_info(void const * argument)
 			  //if(rxlen)
 
 			  //memset(gpsx,0,sizeof(nmea_msg));
-                
+              gpsx->gpssta = 0;  
                 
 			  GPS_Analysis(gpsx,gps_data);
 #ifdef TEST_WRITE_SD
@@ -2710,12 +2710,14 @@ void MySystem(void const * argument)
               sound_toggle_simple(3,50,50);
               entry_config_mode(system_flag_table);
               sound_toggle_simple(1,500,150); 
-              if(usb_init_flag == 0)
+              
+			  print_usart1("************\r\n");
+			  print_usart1("goto stanby.\r\n");
+			  print_usart1("************\r\n");
+              if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_RESET)
               {
-                  MX_USB_DEVICE_Init();
-                  usb_init_flag = 1;
-          	  }                
-              break;
+			      StopSequence_Config();                  
+              };
           default:break;
       }
 
@@ -2767,7 +2769,7 @@ void update_info(void const * argument)
 
   status_led_config();
 
-  if(adc_cnt >500)
+  if(adc_cnt > 600)
   {
       vddmv_adc_proess(system_flag_table); /*¸üÐÂµç³Ø×´Ì¬*/   
 	  adc_cnt = 0; 
@@ -2883,7 +2885,7 @@ void update_info(void const * argument)
            //print_usart1("--%d \r\n",(HAL_GetTick() - system_flag_table->grecord_timer_cnt));
            if( 2000 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
            {
-               if(support_cnt > 150)
+               if(support_cnt > 120)
                {
                    
                    support_timer_cnt = 0;
