@@ -58,6 +58,7 @@ typedef union { /* FPC_Reg6964_Dat6 */
 } GUJI_DATE;
 #endif
 
+#if 1
 const char format_Aarry[][7]=
 {
     "CSV",
@@ -66,6 +67,14 @@ const char format_Aarry[][7]=
     "KML",
 
 };
+const char functionkey_Aarry[][7]=
+{
+    "Pause",
+    "POI",
+
+};
+
+#endif
 
 const char timer_zone_Aarry[][7]=
 {
@@ -1085,10 +1094,13 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         }                    
                         else if(system_flag_table->gujiFormats == GUJI_FORMATS_MEA)  
                         {
-                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.NMEA",eeprom_tm.w_year,eeprom_tm.w_month,
+                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.TXT",eeprom_tm.w_year,eeprom_tm.w_month,
                             eeprom_tm.w_date, eeprom_tm.hour,eeprom_tm.min,eeprom_tm.sec);
                         }   
                         print_usart1("\r\n open old file :%s \r\n ",track_file);
+                        
+                        stm_read_eerpom(100,&eeprom_vaule);
+                        system_flag_table->Message_head_number = eeprom_vaule ;
 
                     }                                      
                     else
@@ -1113,7 +1125,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         }                    
                         else if(system_flag_table->gujiFormats == GUJI_FORMATS_MEA)  
                         {
-                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.NME",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
+                            sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.TXT",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
                             system_flag_table->sys_tm.w_date, system_flag_table->sys_tm.hour,system_flag_table->sys_tm.min,system_flag_table->sys_tm.sec);
                         }   
                         print_usart1("\r\n create new file :%s \r\n ",track_file);
@@ -1273,6 +1285,9 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                 }
                 fr = f_close(sys_fp);
                 print_usart1("\r\n close file :%d\r\n ",fr);
+
+                stm_write_eerpom(100,system_flag_table->Message_head_number);
+                
             }
 
 			print_usart1("\r\n close file-- :%d\r\n ",fr);

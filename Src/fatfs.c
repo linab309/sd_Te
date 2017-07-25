@@ -195,19 +195,19 @@ void configfs_set(FIL *update_config_fp)
 
 
     
-    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "TimeZone", "config.ini"));
-    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "SpeedAlert", "config.ini")); 
-    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "AutoPowerOn", "config.ini"));
-    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "Beeper", "config.ini")); 
-    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "FunctionKey", "config.ini")); 
-    print_usart1("%s\r\n", GetIniKeyString("RECORD", "Format", "config.ini"));
-    print_usart1("%s\r\n", GetIniKeyString("RECORD", "LogMode", "config.ini")); 
-    print_usart1("%s\r\n", GetIniKeyString("RECORD", "SpeedMask", "config.ini"));
-    print_usart1("%d\r\n", GetIniKeyInt("RECORD", "SpyModeTimer", "config.ini")); 
-    print_usart1("%s\r\n", GetIniKeyString("RECORD", "OneTrackPerDay", "config.ini")); 
-    print_usart1("%s\r\n", GetIniKeyString("Unit", "Speed", "config.ini")); 
+    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "TimeZone", "config.txt"));
+    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "SpeedAlert", "config.txt")); 
+    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "AutoPowerOn", "config.txt"));
+    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "Beeper", "config.txt")); 
+    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "FunctionKey", "config.txt")); 
+    print_usart1("%s\r\n", GetIniKeyString("RECORD", "Format", "config.txt"));
+    print_usart1("%s\r\n", GetIniKeyString("RECORD", "LogMode", "config.txt")); 
+    print_usart1("%s\r\n", GetIniKeyString("RECORD", "SpeedMask", "config.txt"));
+    print_usart1("%d\r\n", GetIniKeyInt("RECORD", "SpyModeTimer", "config.txt")); 
+    print_usart1("%s\r\n", GetIniKeyString("RECORD", "OneTrackPerDay", "config.txt")); 
+    print_usart1("%s\r\n", GetIniKeyString("Unit", "Speed", "config.txt")); 
 
-    string = GetIniKeyString("Unit", "Speed", "config.ini");
+    string = GetIniKeyString("Unit", "Speed", "config.txt");
 
     if(strcmp("km/h",string) == 0)
     {
@@ -219,7 +219,7 @@ void configfs_set(FIL *update_config_fp)
     }
     stm_write_eerpom(12,system_flag_table->unit);
 
-    string = GetIniKeyString("SETTINGS", "TimeZone", "config.ini");
+    string = GetIniKeyString("SETTINGS", "TimeZone", "config.txt");
     /*TimeZone*/
     i = 0;
     while(timer_zone_Aarry[i] != NULL)
@@ -234,7 +234,7 @@ void configfs_set(FIL *update_config_fp)
     stm_write_eerpom(0,system_flag_table->time_zone);
     /*Buzzer*/
 
-    string = GetIniKeyString("SETTINGS", "Beeper", "config.ini");
+    string = GetIniKeyString("SETTINGS", "Beeper", "config.txt");
 
     if(strcmp("ON",string) == 0)
     {
@@ -246,9 +246,23 @@ void configfs_set(FIL *update_config_fp)
     }
     stm_write_eerpom(1,system_flag_table->buzzer);
 
+    /*function*/
+
+    string = GetIniKeyString("SETTINGS", "FunctionKey", "config.txt");
+
+    if(strcmp("Pause",string) == 0)
+    {
+       system_flag_table->function_index = 0; 
+    }
+    else if(strcmp("POI",string) == 0)    
+    {
+       system_flag_table->function_index = 1;             
+    }
+    stm_write_eerpom(30,system_flag_table->function_index);
+
     /*SpeedWarning*/
 
-    string = GetIniKeyString("SETTINGS", "SpeedAlert", "config.ini");
+    string = GetIniKeyString("SETTINGS", "SpeedAlert", "config.txt");
 
     if(strcmp("OFF",string) == 0)    
     {
@@ -256,14 +270,14 @@ void configfs_set(FIL *update_config_fp)
     }
     else
     {
-       system_flag_table->wanng_speed_vaule = GetIniKeyInt("SETTINGS", "SpeedAlert", "config.ini"); 
+       system_flag_table->wanng_speed_vaule = GetIniKeyInt("SETTINGS", "SpeedAlert", "config.txt"); 
        if(system_flag_table->wanng_speed_vaule < 1 || system_flag_table->wanng_speed_vaule>200)
         system_flag_table->wanng_speed_vaule = 0;
        else
        {
            if(system_flag_table->unit == 1)
             {
-                system_flag_table->wanng_speed_vaule = (system_flag_table->wanng_speed_vaule*3048/10000);   
+                system_flag_table->wanng_speed_vaule = (system_flag_table->wanng_speed_vaule*3048);   
             }
        }
 
@@ -273,7 +287,7 @@ void configfs_set(FIL *update_config_fp)
 
     /*AutoPower*/
 
-    string = GetIniKeyString("SETTINGS", "AutoPowerOn", "config.ini");
+    string = GetIniKeyString("SETTINGS", "AutoPowerOn", "config.txt");
 
     if(strcmp("ON",string) == 0)
     {
@@ -293,7 +307,7 @@ void configfs_set(FIL *update_config_fp)
 #define GUJI_FORMATS_MEA 3
 #define GUJI_FORMATS_KML 4    
         */
-    string = GetIniKeyString("RECORD", "Format", "config.ini");
+    string = GetIniKeyString("RECORD", "Format", "config.txt");
     //CSV, GPX, NMEA, KML
     if(strcmp("CSV",string) == 0)
     {
@@ -319,7 +333,7 @@ void configfs_set(FIL *update_config_fp)
     1Hz, 5Hz, 10Hz, 5m, 10m, 20m, 50m, 100m
 
         */
-    string = GetIniKeyString("RECORD", "LogMode", "config.ini");
+    string = GetIniKeyString("RECORD", "LogMode", "config.txt");
     //CSV, GPX, NMEA, KML
     if(strcmp("1Hz",string) == 0)
     {
@@ -405,7 +419,7 @@ void configfs_set(FIL *update_config_fp)
     stm_write_eerpom(7,system_flag_table->guji_record.recoed_formats);    
 
 
-    string = GetIniKeyString("RECORD", "SpeedMask", "config.ini");
+    string = GetIniKeyString("RECORD", "SpeedMask", "config.txt");
     //CSV, GPX, NMEA, KML
 
     if(strcmp("OFF",string) == 0)    
@@ -414,21 +428,21 @@ void configfs_set(FIL *update_config_fp)
     }
     else
     {
-       system_flag_table->guji_record.by_speed_vaule = GetIniKeyInt("RECORD", "SpeedMask", "config.ini");
+       system_flag_table->guji_record.by_speed_vaule = GetIniKeyInt("RECORD", "SpeedMask", "config.txt");
        if(system_flag_table->guji_record.by_speed_vaule < 1 || system_flag_table->guji_record.by_speed_vaule>200)
         system_flag_table->guji_record.by_speed_vaule = 0;
        else
        {
            if(system_flag_table->unit == 1)
            {
-               system_flag_table->guji_record.by_speed_vaule = (system_flag_table->guji_record.by_speed_vaule*3048/10000);   
+               system_flag_table->guji_record.by_speed_vaule = (system_flag_table->guji_record.by_speed_vaule*3048);   
            }
        }
        
     }
     stm_write_eerpom(8,system_flag_table->guji_record.by_speed_vaule);  
 
-    system_flag_table->lowpower_timer = GetIniKeyInt("RECORD", "SpyModeTimer", "config.ini");
+    system_flag_table->lowpower_timer = GetIniKeyInt("RECORD", "SpyModeTimer", "config.txt");
     if(system_flag_table->lowpower_timer < 5 || system_flag_table->lowpower_timer>60)
      system_flag_table->lowpower_timer = 15;
 
@@ -437,7 +451,7 @@ void configfs_set(FIL *update_config_fp)
 
     /*AutoPower*/
 
-    string = GetIniKeyString("RECORD", "OneTrackPerDay", "config.ini");
+    string = GetIniKeyString("RECORD", "OneTrackPerDay", "config.txt");
 
     if(strcmp("ON",string) == 0)
     {
@@ -501,33 +515,70 @@ void entry_config_mode(system_flag *system_flag_table)
         __set_FAULTMASK(1);      // 关闭所有中端
         HAL_NVIC_SystemReset();
     }
-    else if(f_open(&update_config_fp,(TCHAR const*)"config.ini",FA_READ) == FR_OK)
+    else if(f_open(&update_config_fp,(TCHAR const*)"config.txt",FA_READ) == FR_OK)
     {
     
         configfs_set(&update_config_fp);
-        print_usart1("\r\n read config.ini \r\n");
+        print_usart1("\r\n read config.txt \r\n");
     }
     else
     {
         fr = f_open(&update_config_fp, "INFO.TXT",FA_WRITE | FA_OPEN_ALWAYS);
-        f_printf(&update_config_fp,"%s\r\n",timer_zone_Aarry[system_flag_table->time_zone]);
-        f_printf(&update_config_fp,"%s\r\n",format_Aarry[system_flag_table->gujiFormats]);
-        f_printf(&update_config_fp,"%dHz\r\n",1000/(system_flag_table->guji_record.by_time_vaule));
-        if(system_flag_table->unit == 1)
+        f_printf(&update_config_fp,"[SETTINGS]\r\n");
+        f_printf(&update_config_fp,"TimeZone=%s\r\n",timer_zone_Aarry[system_flag_table->time_zone]);
+        if(system_flag_table->wanng_speed_vaule == 0)
         {
-            f_printf(&update_config_fp,"%d mi/h\r\n",system_flag_table->guji_record.by_speed_vaule);
-            f_printf(&update_config_fp,"%d mi/h\r\n",system_flag_table->wanng_speed_vaule);
+            f_printf(&update_config_fp,"SpeedAlert=OFF\r\n");
         }
         else
         {
-            f_printf(&update_config_fp,"%d km/h\r\n",system_flag_table->guji_record.by_speed_vaule);
-            f_printf(&update_config_fp,"%d km/h\r\n",system_flag_table->wanng_speed_vaule);
-
+            if(system_flag_table->unit == 1)
+                f_printf(&update_config_fp,"SpeedAlert=%d\r\n",system_flag_table->wanng_speed_vaule/3048);
+            else
+                f_printf(&update_config_fp,"SpeedAlert=%d\r\n",system_flag_table->wanng_speed_vaule);
         }
-        f_printf(&update_config_fp,"%d\r\n",(system_flag_table->lowpower_timer/600));
-        f_printf(&update_config_fp,"%s\r\n", system_flag_table->auto_new_guji ? "ON" : "OFF");
-        f_printf(&update_config_fp,"%s\r\n",system_flag_table->auto_power ? "ON" : "OFF");
-        f_printf(&update_config_fp,"%s\r\n",system_flag_table->buzzer? "ON" : "OFF");
+        f_printf(&update_config_fp,"AutoPowerOn=%s\r\n",system_flag_table->auto_power ? "ON" : "OFF");
+        f_printf(&update_config_fp,"Beeper=%s\r\n",system_flag_table->buzzer? "ON" : "OFF");
+        f_printf(&update_config_fp,"FunctionKey=%s\r\n",functionkey_Aarry[system_flag_table->function_index]);
+        f_printf(&update_config_fp,"[RECORD]\r\n");
+        f_printf(&update_config_fp,"Format=%s\r\n",format_Aarry[system_flag_table->gujiFormats]);
+        if( system_flag_table->guji_record.recoed_formats  == BY_TIMES)
+            f_printf(&update_config_fp,"LogMode=%dHz\r\n",1000/(system_flag_table->guji_record.by_time_vaule));
+        else
+        {
+            if(system_flag_table->unit == 1)
+                f_printf(&update_config_fp,"LogMode=%fft\r\n",(system_flag_table->guji_record.by_distance_vaule)/0.3048); 
+            else
+                f_printf(&update_config_fp,"LogMode=%dm\r\n",(system_flag_table->guji_record.by_distance_vaule)); 
+        }
+            
+        if(system_flag_table->guji_record.by_speed_vaule == 0)
+        {
+            f_printf(&update_config_fp,"SpeedMask=OFF\r\n");    
+        }
+        else
+        {
+            if(system_flag_table->unit == 1)
+                f_printf(&update_config_fp,"SpeedAlert=%d\r\n",system_flag_table->guji_record.by_speed_vaule/3048);
+            else        
+                f_printf(&update_config_fp,"SpeedMask=%d\r\n",system_flag_table->guji_record.by_speed_vaule);
+        }
+        f_printf(&update_config_fp,"SpyModeTimer=%d\r\n",(system_flag_table->lowpower_timer/60000));
+        f_printf(&update_config_fp,"OneTrackPerDay=%s\r\n", system_flag_table->auto_new_guji ? "ON" : "OFF");       
+        f_printf(&update_config_fp,"[Unit]\r\n");
+
+        if(system_flag_table->unit == 1)
+        {
+            f_printf(&update_config_fp,"Speed=mi/h\r\n");  
+        }
+        else
+        {
+            f_printf(&update_config_fp,"Speed=km/h\r\n");  
+        }
+
+
+        
+
         f_printf(&update_config_fp,"Firmware: V 0.01 \r\n");
         stm_read_eerpom(11,&eeprom_flag);
         f_printf(&update_config_fp,"PowerOn: %d\r\n",eeprom_flag);

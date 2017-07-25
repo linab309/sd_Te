@@ -361,7 +361,7 @@ uint8_t NMEA_GPRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
         if(dx<3)
         {
             gpsx->speed*=NMEA_Pow(10,3-dx);             //确保扩大1000倍
-            gpsx->speed = gpsx->speed*1000/1852;             //确保扩大1000倍
+            gpsx->speed = gpsx->speed*1852/1000;             //确保扩大1000倍
 
         }
     }

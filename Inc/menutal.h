@@ -47,9 +47,9 @@
 
 #define GUJI_FORMATS_CSV 0
 #define GUJI_FORMATS_GPX 1
-#define GUJI_FORMATS_GPS 2
-#define GUJI_FORMATS_MEA 3
-#define GUJI_FORMATS_KML 4
+#define GUJI_FORMATS_MEA 2
+#define GUJI_FORMATS_KML 3
+#define GUJI_FORMATS_GPS 4
 
 
 #define MESSAGE_NUMBER_OFFSET 0
@@ -168,9 +168,9 @@ typedef struct
 
 typedef struct  
 {		
-	uint16_t   by_distance_vaule;
+	float   by_distance_vaule;
 	uint16_t   by_time_vaule;  /*ms*/
-	uint16_t   by_speed_vaule;
+	uint32_t   by_speed_vaule;
     uint8_t    recoed_formats;
 	uint8_t    recoed_meth;  /*自动覆盖或是记满停止*/
 }GUJI_RECOCE_TABLE; 
@@ -180,10 +180,11 @@ typedef struct
 {
     GUJI_RECOCE_TABLE guji_record;
     uint32_t lowpower_timer;
-    uint16_t wanng_speed_vaule;
+    uint32_t wanng_speed_vaule;
     uint8_t  guji_mode;
     uint8_t  auto_new_guji;
     uint8_t  auto_power;
+    uint8_t  auto_power_Status;
     uint8_t  power_status ;
     uint8_t  power_mode ;
     uint8_t  *guji_buffer;
@@ -207,6 +208,7 @@ typedef struct
     uint8_t sd_stats;
     uint8_t ODOR;
     uint8_t unit;
+    uint8_t function_index;
 
 }system_flag;
 
@@ -214,7 +216,7 @@ typedef struct
 
 extern const char format_Aarry[][7];
 extern const char timer_zone_Aarry[][7];
-
+extern const char functionkey_Aarry[][7];
 
 extern uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_t guji_record_type);
 extern void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx);

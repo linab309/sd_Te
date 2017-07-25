@@ -127,6 +127,7 @@ static uint8_t LED_Sd_FLAG = 0;
 static uint8_t Wang_FLAG = 0;
 //static uint8_t key_status = 0;
 uint8_t sound_flag = 0;
+static uint8_t start_hotplug  = 0;
 
 /* Private function prototypes 
 -----------------------------------------------*/
@@ -208,6 +209,7 @@ void print_usart1(char *format, ...)
 {
 #if 1
     char buf[160];
+    uint32_t timer_out = 0;
     
     if(inHandlerMode() != 0)
     {
@@ -218,6 +220,9 @@ void print_usart1(char *format, ...)
     	while(HAL_UART_GetState(&huart1) == HAL_UART_STATE_BUSY_TX)
         {   
     	    osThreadYield();
+            timer_out++;
+            if(timer_out > 1000)
+                break;
         }
     }
     
@@ -397,7 +402,8 @@ int main(void)
 
   system_flag_table->batt_Status = BATT_HIGH;
   sd_power_mode(1);
-#if 1
+  system_flag_table->power_status                = POWER_STANBY;
+#if 0
   if(system_flag_table->auto_power == 0)
   {
       system_flag_table->power_status                = POWER_STANBY;
@@ -1362,7 +1368,6 @@ static void StopSequence_Config(void)
 {
    GPIO_InitTypeDef      GPIO_InitStruct;
 
-
    if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_RESET)
    {
        print_usart1("StopSequence_Config! \r\n");
@@ -1505,7 +1510,8 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                                                    gpsx->ewhemi, gpsx->latitude, gpsx->nshemi, gpsx->longitude,gpsx->ewhemi);
                      if(system_flag_table->guji_record.recoed_formats == BY_DISTANCE)
                      {
-                         if(tp_distance >= system_flag_table->guji_record.by_distance_vaule)
+                         print_usart1("tp_distance :%.f \r\n",tp_distance); /*´òÓ¡ĞĞÊ»¾àÀë*/
+                         if((tp_distance*1000) >= system_flag_table->guji_record.by_distance_vaule)
                          {
                              if(gpsx->speed >= (system_flag_table->guji_record.by_speed_vaule*1000))
                              {
@@ -2085,7 +2091,108 @@ void surport_led_config(uint16_t breath_on_timer, uint16_t breath_off_timer)
     }
 
 }
+void auto_power_off(void)
+{
+    static uint8_t auto_power_timer = 0;  
+    uint32_t eeprom_flag = 0;  
+ 
 
+    
+    if(system_flag_table->charger_connected  == 1)
+    {
+        auto_power_timer = 0;
+        return ;
+    }
+
+    if((system_flag_table->auto_power_Status == 1)&&(system_flag_table->power_status != POWER_STANBY))
+    {
+        auto_power_timer++;
+        if(auto_power_timer == 10)
+        {
+           system_flag_table->power_status = POWER_STANBY;   
+           system_flag_table->auto_power_Status = 0;
+           print_usart1("AUTO POWER OFF \r\n");
+ 
+           BSP_LED_Off(LED_GREEN);
+           //USBD_Start(&hUsbDeviceFS);
+           if(usb_init_flag == 0)
+           {
+               MX_USB_DEVICE_Init();
+               usb_init_flag = 1;
+       	  }  
+           
+           sound_toggle_simple(1,500,150);  
+ 
+ 		  while(osThreadGetState(Get_gps_info_Handle) != osThreadSuspended) { osDelay(10);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
+ 		  while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(10);}
+ 
+          gps_power_mode(0);
+          sd_power_mode(0);
+ 
+ 		  print_usart1("************\r\n");
+ 		  print_usart1("goto stanby.\r\n");
+ 		  print_usart1("************\r\n");
+ 		  StopSequence_Config();                  
+
+           
+       }
+    }
+      else
+          auto_power_timer = 0;
+      
+
+}
+
+void auto_power_on(void)
+{
+    static uint8_t auto_power_timer = 0;  
+    uint32_t eeprom_flag = 0;  
+ 
+
+    
+    if((system_flag_table->charger_connected  == 0)||(start_hotplug == 0))
+    {
+        auto_power_timer = 0;
+        return ;
+    }
+
+    if((system_flag_table->auto_power == 1)&&(system_flag_table->power_status == POWER_STANBY))
+    {
+        auto_power_timer++;
+        if(auto_power_timer == 10)
+        {
+                    
+            print_usart1("AUTO POWER ON \r\n");
+            sound_flag = 1 ;
+            start_hotplug = 0 ;
+            stm_read_eerpom(11,&eeprom_flag);
+            stm_write_eerpom(11,(eeprom_flag+1));                      
+            sound_toggle_simple(2,50,50);                                    
+            system_flag_table->power_status = system_flag_table->power_mode;  
+            system_flag_table->auto_power_Status = 1;
+            gps_power_mode(1);
+            sd_power_mode(1);
+            system_flag_table->guji_mode = RECORED_START;
+  #if 1
+            if(usb_init_flag == 1)
+            {
+                USBD_DeInit(&hUsbDeviceFS);
+                USBD_Stop(&hUsbDeviceFS);
+                usb_init_flag = 0;
+            }
+  #endif
+            osThreadResume(defaultTaskHandle);
+            osThreadResume(Get_gps_info_Handle);
+            auto_power_timer = 0;
+  
+              
+        }
+    }
+      else
+          auto_power_timer = 0;
+      
+
+}
 void status_led_config(void)
 {
     static uint32_t read_timer_cnt = 0 ;
@@ -2093,9 +2200,9 @@ void status_led_config(void)
     static uint32_t green_timer_cnt = 0 ;
     static uint8_t green_led_flag = 0;    
 
-
     if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) != GPIO_PIN_RESET)
     {
+
         if(system_flag_table->batt_Status == BATT_CHARG_OK)
         {
             BSP_LED_On(LED_GREEN);
@@ -2106,18 +2213,21 @@ void status_led_config(void)
 
             BSP_LED_On(LED_RED);
 
-           if(system_flag_table->charger_connected  == 0)
-           {
-               BSP_LED_Off(LED_GREEN);
-           }
         }
+
+
+        if(system_flag_table->charger_connected  == 0)
+        {
+           BSP_LED_Off(LED_GREEN);
+           start_hotplug = 1 ;
+        }
+        
 
         system_flag_table->charger_connected = 1;
         if((system_flag_table->power_status != POWER_STANBY)&&(system_flag_table->power_status != POWER_LRUN_SLEEP)\
           &&(system_flag_table->power_status != POWER_SURPORT_SLEEP))  
         {
 		
-
             gps_led_config();
         }
         else
@@ -2130,6 +2240,7 @@ void status_led_config(void)
 
 
         system_flag_table->charger_connected = 0;
+        start_hotplug = 0 ;
 
         if(system_flag_table->batt_Status <= BATT_LOW)
         {
@@ -2341,7 +2452,7 @@ void StartDefaultTask(void const * argument)
             system_flag_table->guji_mode = RECORED_STOP;
             Recording_guji(&gps_fp,system_flag_table,gpsx);
         }
-        
+        print_usart1("default suspend \r\n");
         osThreadSuspend(NULL);
     }
    
@@ -2436,7 +2547,10 @@ void Get_gps_info(void const * argument)
      
       if((system_flag_table->power_status == POWER_STANBY)
         ||(system_flag_table->power_status == POWER_LRUN_SLEEP)||(system_flag_table->power_status == POWER_SURPORT_SLEEP))
-        osThreadSuspend(NULL);
+      {
+          print_usart1("gps_info suspend \r\n");
+          osThreadSuspend(NULL);
+      }
       //print_usart1("3\r\n");
 	  //print_usart1("Get_gps_info go\r\n");
       osDelay(10);
@@ -2646,6 +2760,7 @@ void MySystem(void const * argument)
                   //if(HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET)
                   {                    
                       print_usart1("POWER ON \r\n");
+                      system_flag_table->auto_power_Status = 0;
                       sound_flag = 1 ;
                       stm_read_eerpom(11,&eeprom_flag);
                       stm_write_eerpom(11,(eeprom_flag+1));                      
@@ -2710,7 +2825,12 @@ void MySystem(void const * argument)
               sound_toggle_simple(3,50,50);
               entry_config_mode(system_flag_table);
               sound_toggle_simple(1,500,150); 
-              
+
+              if(usb_init_flag == 0)
+              {
+                  MX_USB_DEVICE_Init();
+                  usb_init_flag = 1;
+          	  }   
 			  print_usart1("************\r\n");
 			  print_usart1("goto stanby.\r\n");
 			  print_usart1("************\r\n");
@@ -2767,6 +2887,8 @@ void update_info(void const * argument)
   system_flag_table->RTC_TimeStructure = stimestructureget;
 #endif
 
+  auto_power_on();
+  auto_power_off();
   status_led_config();
 
   if(adc_cnt > 600)
