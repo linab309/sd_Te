@@ -22,6 +22,8 @@
 #define RECORED_STOP 5
 #define RECORED_SAVE 6
 #define RECORED_RESTART_2 7
+#define RECORED_PAUSE 8
+#define RECORED_D 9
 
 
 

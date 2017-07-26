@@ -276,9 +276,13 @@ void configfs_set(FIL *update_config_fp)
        else
        {
            if(system_flag_table->unit == 1)
-            {
-                system_flag_table->wanng_speed_vaule = (system_flag_table->wanng_speed_vaule*3048);   
-            }
+           {
+               system_flag_table->wanng_speed_vaule = (system_flag_table->wanng_speed_vaule*1609);   
+           }
+           else
+           {
+               system_flag_table->wanng_speed_vaule = (system_flag_table->wanng_speed_vaule*1000);                  
+           }
        }
 
     }
@@ -384,31 +388,31 @@ void configfs_set(FIL *update_config_fp)
     } 
     else if(strcmp("20ft",string) == 0)    
     {
-        system_flag_table->guji_record.by_distance_vaule   = (20*3048/10000); /*ms*/
+        system_flag_table->guji_record.by_distance_vaule   = (20*0.3048); /*ms*/
         system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
 
     } 
     else if(strcmp("50ft",string) == 0)    
     {
-        system_flag_table->guji_record.by_distance_vaule   = (50*3048/10000); /*ms*/
+        system_flag_table->guji_record.by_distance_vaule   = (50*0.3048); /*ms*/
         system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
 
     } 
     else if(strcmp("100ft",string) == 0)    
     {
-        system_flag_table->guji_record.by_distance_vaule   = (100*3048/10000); /*ms*/
+        system_flag_table->guji_record.by_distance_vaule   = (100*0.3048); /*ms*/
         system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
 
     } 
     else if(strcmp("200ft",string) == 0)    
     {
-        system_flag_table->guji_record.by_distance_vaule   = (200*3048/10000); /*ms*/
+        system_flag_table->guji_record.by_distance_vaule   = (200*0.3048); /*ms*/
         system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
 
     } 
     else if(strcmp("500ft",string) == 0)    
     {
-        system_flag_table->guji_record.by_distance_vaule   = (500*3048/10000); /*ms*/
+        system_flag_table->guji_record.by_distance_vaule   = (500*0.3048); /*ms*/
         system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
 
     } 
@@ -435,7 +439,11 @@ void configfs_set(FIL *update_config_fp)
        {
            if(system_flag_table->unit == 1)
            {
-               system_flag_table->guji_record.by_speed_vaule = (system_flag_table->guji_record.by_speed_vaule*3048);   
+               system_flag_table->guji_record.by_speed_vaule = (system_flag_table->guji_record.by_speed_vaule*1609);   
+           }
+           else
+           {
+               system_flag_table->guji_record.by_speed_vaule = (system_flag_table->guji_record.by_speed_vaule*1000);   
            }
        }
        
@@ -533,9 +541,9 @@ void entry_config_mode(system_flag *system_flag_table)
         else
         {
             if(system_flag_table->unit == 1)
-                f_printf(&update_config_fp,"SpeedAlert=%d\r\n",system_flag_table->wanng_speed_vaule/3048);
+                f_printf(&update_config_fp,"SpeedAlert=%d\r\n",system_flag_table->wanng_speed_vaule/1609);
             else
-                f_printf(&update_config_fp,"SpeedAlert=%d\r\n",system_flag_table->wanng_speed_vaule);
+                f_printf(&update_config_fp,"SpeedAlert=%d\r\n",system_flag_table->wanng_speed_vaule/1000);
         }
         f_printf(&update_config_fp,"AutoPowerOn=%s\r\n",system_flag_table->auto_power ? "ON" : "OFF");
         f_printf(&update_config_fp,"Beeper=%s\r\n",system_flag_table->buzzer? "ON" : "OFF");
@@ -547,9 +555,9 @@ void entry_config_mode(system_flag *system_flag_table)
         else
         {
             if(system_flag_table->unit == 1)
-                f_printf(&update_config_fp,"LogMode=%fft\r\n",(system_flag_table->guji_record.by_distance_vaule)/0.3048); 
+                f_printf(&update_config_fp,"LogMode=%dft\r\n",(uint32_t)(system_flag_table->guji_record.by_distance_vaule/0.3048)); 
             else
-                f_printf(&update_config_fp,"LogMode=%dm\r\n",(system_flag_table->guji_record.by_distance_vaule)); 
+                f_printf(&update_config_fp,"LogMode=%dm\r\n",(uint32_t)(system_flag_table->guji_record.by_distance_vaule)); 
         }
             
         if(system_flag_table->guji_record.by_speed_vaule == 0)
@@ -559,9 +567,9 @@ void entry_config_mode(system_flag *system_flag_table)
         else
         {
             if(system_flag_table->unit == 1)
-                f_printf(&update_config_fp,"SpeedAlert=%d\r\n",system_flag_table->guji_record.by_speed_vaule/3048);
+                f_printf(&update_config_fp,"SpeedAlert=%d\r\n",system_flag_table->guji_record.by_speed_vaule/1609);
             else        
-                f_printf(&update_config_fp,"SpeedMask=%d\r\n",system_flag_table->guji_record.by_speed_vaule);
+                f_printf(&update_config_fp,"SpeedMask=%d\r\n",system_flag_table->guji_record.by_speed_vaule/1000);
         }
         f_printf(&update_config_fp,"SpyModeTimer=%d\r\n",(system_flag_table->lowpower_timer/60000));
         f_printf(&update_config_fp,"OneTrackPerDay=%s\r\n", system_flag_table->auto_new_guji ? "ON" : "OFF");       

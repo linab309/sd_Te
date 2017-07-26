@@ -1224,6 +1224,12 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 			//interst_pos_number++;
 			system_flag_table->guji_mode = RECORED_START_DOING;
 			break;
+        case RECORED_D:
+            save_guiji_message(gpsx,system_flag_table,'D');
+            //interst_pos_number++;
+            system_flag_table->guji_mode = RECORED_START_DOING;
+            break;
+
         case RECORED_SAVE:
             if((system_flag_table->power_status != POWER_STANBY)&&(system_flag_table->power_status != POWER_LRUN_SLEEP)\
             &&(system_flag_table->power_status != POWER_SURPORT_SLEEP))  
@@ -1294,7 +1300,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
             system_flag_table->guji_mode = RECORED_IDLE;            
 
 			break;
-
+       case RECORED_PAUSE:
+            break;
 	}
 }
 

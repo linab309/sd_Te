@@ -78,9 +78,10 @@ typedef enum
 {  
   BUTTON_USER   = 0,
   BUTTON_WAKEUP = 1,
+  BUTTON_FUNCTION = 2,
 
   /* Alias */
-  BUTTON_KEY  = BUTTON_WAKEUP
+  BUTTON_KEY  = BUTTON_FUNCTION
 } Button_TypeDef;
 
 typedef enum 
@@ -168,7 +169,7 @@ bool;
 /** @defgroup STM32L1XX_NUCLEO_BUTTON BUTTON Constants
   * @{
   */  
-#define BUTTONn                          2  
+#define BUTTONn                          3  
 
 /**
   * @brief User push-button
@@ -206,6 +207,26 @@ bool;
 
 #define WAKEUP_BUTTONx_GPIO_CLK_ENABLE(__INDEX__)    do { if((__INDEX__) == 1) WAKEUP_BUTTON_GPIO_CLK_ENABLE();} while(0)
 #define WAKEUP_BUTTONx_GPIO_CLK_DISABLE(__INDEX__)   (((__INDEX__) == 1) ? WAKEUP_BUTTON_GPIO_CLK_DISABLE() : 0)
+
+
+
+/**
+  * @brief User push-button
+ */
+#define FUNCTION_BUTTON_PIN                  GPIO_PIN_7
+#define FUNCTION_BUTTON_GPIO_PORT            GPIOB
+#define FUNCTION_BUTTON_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOB_CLK_ENABLE()
+#define FUNCTION_BUTTON_GPIO_CLK_DISABLE()   __HAL_RCC_GPIOB_CLK_DISABLE()
+#define FUNCTION_BUTTON_EXTI_IRQn            EXTI15_10_IRQn
+/* Aliases */
+#define FUNCTION_KEY_BUTTON_PIN                   FUNCTION_BUTTON_PIN
+#define FUNCTION_KEY_BUTTON_GPIO_PORT             FUNCTION_BUTTON_GPIO_PORT
+#define FUNCTION_KEY_BUTTON_GPIO_CLK_ENABLE()     FUNCTION_BUTTON_GPIO_CLK_ENABLE()
+#define FUNCTION_KEY_BUTTON_GPIO_CLK_DISABLE()    FUNCTION_BUTTON_GPIO_CLK_DISABLE()
+#define FUNCTION_KEY_BUTTON_EXTI_IRQn             FUNCTION_BUTTON_EXTI_IRQn
+
+#define FUNCTION_BUTTONx_GPIO_CLK_ENABLE(__INDEX__)    do { if((__INDEX__) == 2) FUNCTION_BUTTON_GPIO_CLK_ENABLE();} while(0)
+#define FUNCTION_BUTTONx_GPIO_CLK_DISABLE(__INDEX__)   (((__INDEX__) == 2) ? FUNCTION_BUTTON_GPIO_CLK_DISABLE() : 0)
 
 /**
   * @}

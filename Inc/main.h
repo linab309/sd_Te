@@ -94,6 +94,7 @@
 /*button release flag*/
 #define USER_KEY_MARK     0x01
 #define WAKEUP_KEY_MARK   0x02
+#define FUNCTION_KEY_MARK   0x04
 
 
 #define USER_KEY          0x01
@@ -103,6 +104,8 @@
 #define POWER_KEY_LONG    0x04
 #define POWER_USER_KEY_LONG    0x05
 #define POWER_KEY_LONG_5S    0x06
+#define FUNCTION_KEY    0x07
+#define FUNCTION_KEY_LONG 0x08
 
 //#define OLD 
 

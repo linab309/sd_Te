@@ -287,6 +287,7 @@ int main(void)
 
   BSP_PB_Init(BUTTON_USER,BUTTON_MODE_GPIO);  
   BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_GPIO);
+  BSP_PB_Init(BUTTON_FUNCTION,BUTTON_MODE_GPIO);
 
   BSP_LED_Init(LED_GREEN);
   BSP_LED_Init(LED_RED);
@@ -1504,7 +1505,7 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
              if(gpsx->gpssta >= 1)
              {   
 				if((system_flag_table->guji_mode == RECORED_START_DOING)||(system_flag_table->guji_mode == RECORED_SAVE)\
-				||(system_flag_table->guji_mode == RECORED_T))
+				||(system_flag_table->guji_mode == RECORED_T)||(system_flag_table->guji_mode == RECORED_D))
                  {  
                      tp_distance = getDistanceVer2( system_flag_table->tp_lati,gpsx->nshemi,system_flag_table->tp_long,
                                                    gpsx->ewhemi, gpsx->latitude, gpsx->nshemi, gpsx->longitude,gpsx->ewhemi);
@@ -1513,7 +1514,7 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                          print_usart1("tp_distance :%.f \r\n",tp_distance); /*´òÓ¡ÐÐÊ»¾àÀë*/
                          if((tp_distance*1000) >= system_flag_table->guji_record.by_distance_vaule)
                          {
-                             if(gpsx->speed >= (system_flag_table->guji_record.by_speed_vaule*1000))
+                             if((gpsx->speed) >= (system_flag_table->guji_record.by_speed_vaule))
                              {
                                  ret = 1;    
                              }
@@ -1776,6 +1777,34 @@ static uint8_t get_key(void)
            button_flag = USER_KEY_MARK;
     
     }
+    else if(BSP_PB_GetState(BUTTON_FUNCTION) == 1)
+    {
+
+        if(button_flag == FUNCTION_KEY_MARK)
+        {
+
+            button_press_cnt++;
+            if(button_press_cnt >= 13)
+            {
+                button_key = FUNCTION_KEY_LONG;
+                
+                button_press_cnt = 6;  
+                button_flag = 0xff;
+                
+            }
+
+
+        }
+        else
+        {
+            button_press_cnt = 0;
+        }
+        
+        if(button_flag == 0)        
+           button_flag = FUNCTION_KEY_MARK;
+    
+    }
+
     else
     {
        if(button_key == 0)
@@ -1788,6 +1817,9 @@ static uint8_t get_key(void)
                         break;
                     case USER_KEY_MARK:    button_key = USER_KEY;
                         break;
+                    case FUNCTION_KEY_MARK:    button_key = FUNCTION_KEY;
+                        break;
+
                     default :break;
                 }
             }
@@ -1825,8 +1857,8 @@ uint8_t sound_toggle_config(uint16_t sound_on_timer, uint16_t sound_off_timer)
     if((sound_flag == 0)&&(HAL_GetTick() >= (sound_toggle_cnt + sound_off_timer)))
     {
         sound_toggle_cnt = HAL_GetTick();
-
-        HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+        if(system_flag_table->buzzer == 1)
+            HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
         sound_flag = 1;
     }
     
@@ -2147,9 +2179,7 @@ void auto_power_on(void)
 {
     static uint8_t auto_power_timer = 0;  
     uint32_t eeprom_flag = 0;  
- 
-
-    
+     
     if((system_flag_table->charger_connected  == 0)||(start_hotplug == 0))
     {
         auto_power_timer = 0;
@@ -2788,6 +2818,10 @@ void MySystem(void const * argument)
                   system_flag_table->power_status = POWER_STANBY;   
                               
                   //print_usart1("POWER OFF \r\n");
+                  SystemClock_Config_resume();
+                  
+                  HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+                  MX_TIM10_Init();
 
                   BSP_LED_Off(LED_GREEN);
                   //USBD_Start(&hUsbDeviceFS);
@@ -2838,6 +2872,66 @@ void MySystem(void const * argument)
               {
 			      StopSequence_Config();                  
               };
+          case FUNCTION_KEY:
+
+ 		  	    if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
+		  	    {			
+                    system_flag_table->power_status = POWER_SURPORT_RUN;\
+                    //BSP_SD_Init();
+                    gps_power_mode(1);
+                    sd_power_mode(1) ;
+                    SystemClock_Config_resume();
+
+                    HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+ 				    MX_TIM10_Init();
+                    osThreadResume(Get_gps_info_Handle);
+                    osThreadResume(defaultTaskHandle);
+                    print_usart1("****************************** \r\n");
+                    print_usart1("levef surport mode  resume \r\n");       
+                    print_usart1("****************************** \r\n");                    
+                    sound_toggle_simple(1,50,50);
+                    break; 
+		  	    }
+				else if(system_flag_table->power_status == POWER_LRUN_SLEEP)
+				{
+                    BSP_LED_On(LED_BULE);     
+                    system_flag_table->power_status = POWER_LRUN;
+    
+                    SystemClock_Config_resume();
+// 				       BSP_SD_Init();
+ 				    MX_TIM10_Init();                    
+                    print_usart1("*********\r\n");
+                    print_usart1("levef lprun mode  resume \r\n");       
+                    print_usart1("******** \r\n");           
+                    gps_power_mode(1);
+                    sd_power_mode(1);
+                    HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
+                    osThreadResume(Get_gps_info_Handle);
+                    osThreadResume(defaultTaskHandle);                 
+                    sound_toggle_simple(1,50,50);
+                    system_flag_table->grecord_timer_cnt = HAL_GetTick();				
+                    break; 				
+				}
+                
+                if(system_flag_table->guji_mode == RECORED_START_DOING)
+                {
+                    if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
+                    {
+                        if(system_flag_table->function_index == 0)/*pause*/
+                        {
+                            system_flag_table->guji_mode = RECORED_PAUSE; 
+                        }
+                        else if(system_flag_table->function_index == 1)
+                        {
+                            system_flag_table->guji_mode = RECORED_D; 
+    
+                        }
+                        sound_toggle_simple(1,50,50);
+    
+                    }
+                 }             
+                           
+              break;
           default:break;
       }
 
@@ -3108,7 +3202,7 @@ void update_info(void const * argument)
 	   
 	            BSP_LED_Toggle(LED_SD);                
 	   
-	            if(sd_timer_cnt == 1000)
+	            if(sd_timer_cnt == 100)
 	            {
 	                sd_timer_cnt = 0;    
 	                HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
@@ -3142,9 +3236,9 @@ void update_info(void const * argument)
         save_file_cnt  = HAL_GetTick();
     }
 
-    if(system_flag_table->wanng_speed_vaule >0)
+    if(system_flag_table->wanng_speed_vaule > 0)
     {
-        if(gpsx->speed > (system_flag_table->wanng_speed_vaule *1000))
+        if((gpsx->speed) > (system_flag_table->wanng_speed_vaule))
         {
            HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
            Wang_FLAG = 1;
