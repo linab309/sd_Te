@@ -1496,7 +1496,7 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
     float tp_distance = 0;
     uint8_t ret = 0 ; 
     static uint8_t lp_number = 0;
-//    static uint16_t test_cnt = 0;
+    //static uint16_t test_cnt = 0;
 
     switch(mode)
     {
@@ -1511,7 +1511,7 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                                                    gpsx->ewhemi, gpsx->latitude, gpsx->nshemi, gpsx->longitude,gpsx->ewhemi);
                      if(system_flag_table->guji_record.recoed_formats == BY_DISTANCE)
                      {
-                         print_usart1("tp_distance :%.f \r\n",tp_distance); /*´òÓ¡ÐÐÊ»¾àÀë*/
+                         //print_usart1("tp_distance :%.f \r\n",tp_distance); /*´òÓ¡ÐÐÊ»¾àÀë*/
                          if((tp_distance*1000) >= system_flag_table->guji_record.by_distance_vaule)
                          {
                              if((gpsx->speed) >= (system_flag_table->guji_record.by_speed_vaule))
@@ -2929,7 +2929,18 @@ void MySystem(void const * argument)
                         sound_toggle_simple(1,50,50);
     
                     }
-                 }             
+                }
+                else if(system_flag_table->guji_mode == RECORED_PAUSE)
+                {
+
+                    if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
+                    {
+                        if(system_flag_table->function_index == 0)/*pause*/
+                        {
+                            system_flag_table->guji_mode = RECORED_START_DOING; 
+                        }
+                    }
+                }
                            
               break;
           default:break;
@@ -3039,7 +3050,7 @@ void update_info(void const * argument)
        usb_timer_cnt = 0;
        if(system_flag_table->power_status == POWER_SURPORT_RUN)
        {
-           if((gpsx->speed < 2000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
+           if((gpsx->speed < 3000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
            {
                support_timer_cnt ++;
                if(support_timer_cnt == 3000)
