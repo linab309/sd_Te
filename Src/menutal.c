@@ -767,7 +767,7 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
         else if((system_flag_table->gujiFormats == GUJI_FORMATS_GPS)||(system_flag_table->gujiFormats == GUJI_FORMATS_MEA))
         {    
             fr = f_write(sys_fp,guji_buffer_,rxlen,&wb);
-			//print_usart1("-%d-\r\n",rxlen);
+			f_printf(sys_fp,"-%d-",rxlen);
             if(debug_cnt > 1)
             {
                 //print_usart1("%s",guji_buffer_);

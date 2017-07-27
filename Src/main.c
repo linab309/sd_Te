@@ -113,6 +113,9 @@ uint16_t USART2_RX_STA_RP = 0;
 uint16_t USART2_RX_STA_WP = 0; 
 uint8_t USART2_RX_STA = 0; 
 
+uint16_t save_usart2_wp = 0; 
+
+
 uint16_t support_cnt = 0; 
 
 #if 0
@@ -1301,8 +1304,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     		USART2_RX_STA_WP = 0;
     	} 
 
-        if(USART2_RX_STA == 0)
-		    gps_data_time = HAL_GetTick(); 
+        //if(USART2_RX_STA == 0)
+		gps_data_time = HAL_GetTick(); 
 
         //if((system_flag_table->guji_mode != RECORED_IDLE)&&(system_flag_table->guji_mode != RECORED_STOP))
         {
@@ -2355,6 +2358,9 @@ void status_led_config(void)
         {
     
             BSP_LED_Off(LED_GPS);
+            if(system_flag_table->power_status == POWER_STANBY)
+                BSP_LED_Off(LED_GREEN);
+
             if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
             {
                 //print_usart1("%d,%d,%d\r\n",green_led_flag,HAL_GetTick(),(green_timer_cnt + 2700));
@@ -2512,30 +2518,29 @@ void Get_gps_info(void const * argument)
   for(;;)
   {
    
-      if((USART2_RX_STA == 1)&&(USART2_RX_STA_RP != USART2_RX_STA_WP))
+      if((USART2_RX_STA == 1)&&(USART2_RX_STA_RP != save_usart2_wp))
       {
 		  
           //(osMutexWait(gpsMutexHandle, 0) == osOK)
           {
 			  
-			  if(USART2_RX_STA_RP > USART2_RX_STA_WP)
+			  if(USART2_RX_STA_RP > save_usart2_wp)
 			  {
-                  gps_data = malloc(USART2_RX_STA_WP+MAX_UART3_LEN -USART2_RX_STA_RP+1);
+                  gps_data = malloc(save_usart2_wp+MAX_UART3_LEN -USART2_RX_STA_RP+1);
 			      memcpy(gps_data,uart3_buffer+USART2_RX_STA_RP,(MAX_UART3_LEN-USART2_RX_STA_RP));
-			      memcpy(gps_data + (MAX_UART3_LEN-USART2_RX_STA_RP),uart3_buffer,USART2_RX_STA_WP);
-                  rxlen = USART2_RX_STA_WP+MAX_UART3_LEN -USART2_RX_STA_RP;
+			      memcpy(gps_data + (MAX_UART3_LEN-USART2_RX_STA_RP),uart3_buffer,save_usart2_wp);
+                  rxlen = save_usart2_wp+MAX_UART3_LEN -USART2_RX_STA_RP;
 
 			  }
 			  else
 			  {
-			      gps_data = malloc((USART2_RX_STA_WP - USART2_RX_STA_RP)+1);
-			      memcpy(gps_data,uart3_buffer + USART2_RX_STA_RP,(USART2_RX_STA_WP - USART2_RX_STA_RP));
-                  rxlen = (USART2_RX_STA_WP - USART2_RX_STA_RP);
+			      gps_data = malloc((save_usart2_wp - USART2_RX_STA_RP)+1);
+			      memcpy(gps_data,uart3_buffer + USART2_RX_STA_RP,(save_usart2_wp - USART2_RX_STA_RP));
+                  rxlen = (save_usart2_wp - USART2_RX_STA_RP);
 
 			  }
               gps_data[rxlen] = 0;
-              USART2_RX_STA_RP = USART2_RX_STA_WP;	 //得到数据长度  
-              USART2_RX_STA = 0;         //启动下一次接收
+
 
 			  //if(rxlen)
 
@@ -2543,6 +2548,9 @@ void Get_gps_info(void const * argument)
               gpsx->gpssta = 0;  
                 
 			  GPS_Analysis(gpsx,gps_data);
+              
+              USART2_RX_STA_RP = save_usart2_wp;	 //得到数据长度  
+              USART2_RX_STA = 0;         //启动下一次接收              
 #ifdef TEST_WRITE_SD
 			  gpsx->gpssta = 2; /*for test*/
 #endif
@@ -3289,6 +3297,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   	    if((USART2_RX_STA_RP != USART2_RX_STA_WP)&&(USART2_RX_STA == 0))
         { 
   	        USART2_RX_STA = 1;
+            save_usart2_wp = USART2_RX_STA_WP;
             
         }
 		gps_data_time = 0xffffffff;
