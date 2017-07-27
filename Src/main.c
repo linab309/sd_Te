@@ -1505,6 +1505,7 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
     {
         case POWER_RUN:
         case POWER_SURPORT_RUN:
+            //print_usart1("gpsx->gpssta :%d \r\n",gpsx->gpssta); /*打印行驶距离*/
              if(gpsx->gpssta >= 1)
              {   
 				if((system_flag_table->guji_mode == RECORED_START_DOING)||(system_flag_table->guji_mode == RECORED_SAVE)\
@@ -1514,7 +1515,7 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                                                    gpsx->ewhemi, gpsx->latitude, gpsx->nshemi, gpsx->longitude,gpsx->ewhemi);
                      if(system_flag_table->guji_record.recoed_formats == BY_DISTANCE)
                      {
-                         //print_usart1("tp_distance :%.f \r\n",tp_distance); /*打印行驶距离*/
+                         print_usart1("tp_distance :%.f \r\n",tp_distance); /*打印行驶距离*/
                          if((tp_distance*1000) >= system_flag_table->guji_record.by_distance_vaule)
                          {
                              if((gpsx->speed) >= (system_flag_table->guji_record.by_speed_vaule))
@@ -2523,7 +2524,7 @@ void Get_gps_info(void const * argument)
 		  
           //(osMutexWait(gpsMutexHandle, 0) == osOK)
           {
-		      USART2_RX_STA = 0;         //启动下一次接收
+		     
               //print_usart1("gps_1: %x\r\n",uart3_buffer[save_usart2_wp - 1]);
 
               
@@ -2547,7 +2548,7 @@ void Get_gps_info(void const * argument)
 
 			  //if(rxlen)
               //print_usart1("%s",gps_data);
-              //print_usart1("---");
+              //print_usart1("%d---",rxlen);
 
 			  //memset(gpsx,0,sizeof(nmea_msg));
               gpsx->gpssta = 0;  
@@ -2555,6 +2556,7 @@ void Get_gps_info(void const * argument)
 			  GPS_Analysis(gpsx,gps_data);
               
               USART2_RX_STA_RP = save_usart2_wp;	 //得到数据长度  
+              USART2_RX_STA = 0;         //启动下一次接收
   
 #ifdef TEST_WRITE_SD
 			  gpsx->gpssta = 2; /*for test*/
