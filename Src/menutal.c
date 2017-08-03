@@ -767,7 +767,7 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
         else if((system_flag_table->gujiFormats == GUJI_FORMATS_GPS)||(system_flag_table->gujiFormats == GUJI_FORMATS_MEA))
         {    
             fr = f_write(sys_fp,guji_buffer_,rxlen,&wb);
-			f_printf(sys_fp,"-%d-",rxlen);
+			//print_usart1("%s",guji_buffer_);
             if(debug_cnt > 1)
             {
                 //print_usart1("%s",guji_buffer_);
@@ -979,6 +979,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 			     system_flag_table->Message_head_number = 0;
             
 			if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
+            //if(gpsx->gpssta >= 1)
 			{
 				system_flag_table->guji_buffer_Index_rp = 0;
 				system_flag_table->guji_buffer_Index_wp = 0;

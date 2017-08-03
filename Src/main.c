@@ -1307,9 +1307,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         //if(USART2_RX_STA == 0)
 		gps_data_time = HAL_GetTick(); 
 
-        //if((system_flag_table->guji_mode != RECORED_IDLE)&&(system_flag_table->guji_mode != RECORED_STOP))
+        while(HAL_UART_Receive_IT(&huart3, (uint8_t *)(uart3_buffer + USART2_RX_STA_WP), 1) != HAL_OK)
         {
-	        HAL_UART_Receive_IT(&huart3, (uint8_t *)(uart3_buffer + USART2_RX_STA_WP), 1); 		
+	        print_usart1("err\r\n");
         }
     }
 }
@@ -2548,13 +2548,13 @@ void Get_gps_info(void const * argument)
 
 			  //if(rxlen)
               //print_usart1("%s",gps_data);
-              //print_usart1("%d---",rxlen);
+              //print_usart1("-%d-%d-",save_usart2_wp,USART2_RX_STA_RP);
 
 			  //memset(gpsx,0,sizeof(nmea_msg));
-              gpsx->gpssta = 0;  
+
                 
 			  GPS_Analysis(gpsx,gps_data);
-              
+              //gpsx->gpssta = 2;                
               USART2_RX_STA_RP = save_usart2_wp;	 //得到数据长度  
               USART2_RX_STA = 0;         //启动下一次接收
   
@@ -3303,10 +3303,21 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   	{
   	    if((USART2_RX_STA_RP != USART2_RX_STA_WP)&&(USART2_RX_STA == 0))
         { 
-            if(uart3_buffer[USART2_RX_STA_WP-1] == 0x0a)
+            if(USART2_RX_STA_WP >= 1)
             {
-                USART2_RX_STA = 1;
-                save_usart2_wp = USART2_RX_STA_WP;
+                if(uart3_buffer[USART2_RX_STA_WP-1] == 0x0a)
+                {
+                    USART2_RX_STA = 1;
+                    save_usart2_wp = USART2_RX_STA_WP;
+                }
+            }
+            else
+            {
+                if(uart3_buffer[MAX_UART3_LEN-1] == 0x0a)
+                {
+                    USART2_RX_STA = 1;
+                    save_usart2_wp = USART2_RX_STA_WP;
+                }   
             }
             
         }
