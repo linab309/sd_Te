@@ -104,7 +104,7 @@ FIL gps_fp ;
 uint32_t gps_data_time = 0xffffffff;
 
 uint8_t uart3_buffer[MAX_UART3_LEN];
-uint8_t self_guiji_buffer[384];
+uint8_t self_guiji_buffer[MAX_GUJI_BUFFER_MAX_LEN];
 static uint16_t usb_timer_cnt = 0 ;
 
 
@@ -286,7 +286,7 @@ int main(void)
 
   memset(&system_flag_table_1,0,sizeof(system_flag));
   system_flag_table->guji_buffer = self_guiji_buffer;    
-  memset( self_guiji_buffer,0,384);
+  memset( self_guiji_buffer,0,MAX_GUJI_BUFFER_MAX_LEN);
 
   BSP_PB_Init(BUTTON_USER,BUTTON_MODE_GPIO);  
   BSP_PB_Init(BUTTON_WAKEUP,BUTTON_MODE_GPIO);
@@ -1314,6 +1314,19 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     }
 }
 
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+    if(huart->Instance == USART1)
+    {
+	    print_usart1("huar1t->ErrorCode :%x \r\n",huart->ErrorCode);    
+
+    }
+    else if(huart->Instance == USART3) 
+    {
+	    print_usart1("huart3->ErrorCode :%x \r\n",huart->ErrorCode);    
+    }
+
+}
 
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
@@ -2495,7 +2508,7 @@ void StartDefaultTask(void const * argument)
    
    //print_usart1("4\r\n");
 
-    osDelay(10);
+    osDelay(1);
 
   }
   /* USER CODE END 5 */ 
@@ -2547,14 +2560,11 @@ void Get_gps_info(void const * argument)
 
 
 			  //if(rxlen)
-              //print_usart1("%s",gps_data);
-              //print_usart1("-%d-%d-",save_usart2_wp,USART2_RX_STA_RP);
+              print_usart1("%s",gps_data);
+              //print_usart1("-%d-%d-%d\r\n",save_usart2_wp,USART2_RX_STA_RP,rxlen);
 
-			  //memset(gpsx,0,sizeof(nmea_msg));
-
-                
-			  GPS_Analysis(gpsx,gps_data);
-              //gpsx->gpssta = 2;                
+			  memset(gpsx,0,sizeof(nmea_msg));                
+			  GPS_Analysis(gpsx,gps_data);                
               USART2_RX_STA_RP = save_usart2_wp;	 //得到数据长度  
               USART2_RX_STA = 0;         //启动下一次接收
   
@@ -2598,7 +2608,7 @@ void Get_gps_info(void const * argument)
       }
       //print_usart1("3\r\n");
 	  //print_usart1("Get_gps_info go\r\n");
-      osDelay(10);
+      osDelay(1);
 
       /* Suspend ourselves to the medium priority thread can execute */
       //ThreadSuspend(NULL);

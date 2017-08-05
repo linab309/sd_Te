@@ -1807,6 +1807,7 @@ static HAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef *huart)
   uint32_t tmp_state = 0;
   
   tmp_state = huart->State; 
+
   if((tmp_state == HAL_UART_STATE_BUSY_RX) || (tmp_state == HAL_UART_STATE_BUSY_TX_RX))
   {
     if(huart->Init.WordLength == UART_WORDLENGTH_9B)
@@ -1858,10 +1859,13 @@ static HAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef *huart)
 
       return HAL_OK;
     }
+    else
+           print_usart1("huart->RxXferCount:%d\r\n",huart->RxXferCount);
     return HAL_OK;
   }
   else
   {
+    print_usart1("tmp_state:%x\r\n",tmp_state);
     return HAL_BUSY; 
   }
 }
