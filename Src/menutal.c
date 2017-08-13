@@ -21,6 +21,8 @@
 
 extern osMutexId SaveGpsMessHandle;
 extern uint8_t get_space(void);
+static char   track_file[26] ={0};
+    
 
 typedef union { /* PMU_IRQ_CLR_RTC */
     uint8_t all;
@@ -953,12 +955,12 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 {
 
 	DIR* dp = NULL;
-    static char   track_file[26] ={0};
     FRESULT fr;
     FRESULT sys_fr;
     uint32_t eeprom_vaule = 0;
     UINT wb;
     tm       eeprom_tm;  
+    int cnt_read = 0;
     uint8_t ret = 0 ;
 
     
@@ -1242,16 +1244,26 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                    //print_usart1("\r\n close :%d\r\n ",fr);   
     
                    if(FR_OK  != sys_fr)
-                   {
-                        sys_fr = open_append(sys_fp, track_file);
+                   {                   
                         //print_usart1("\r\n track_file :%s\r\n ",track_file); 
-         
+                        for(cnt_read = 0; cnt_read<5; cnt_read++)
+                        {
+                            sys_fr = open_append(sys_fp, track_file);
+                            if((FR_OK  == sys_fr)||(FR_EXIST  == sys_fr))
+                            {
+                                break;
+                            }
+
+                        }
+                        
                         if((FR_OK  != sys_fr)&&(FR_EXIST  != sys_fr))
                         {
-                            print_usart1("open append faild :%d \n",sys_fr);
-                            system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
-                            system_flag_table->guji_mode = RECORED_STOP;    
-                            return; 
+
+                           print_usart1("open append faild(save) :%d :%s\n",sys_fr,track_file);
+                           system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
+                           system_flag_table->guji_mode = RECORED_STOP;    
+                           return; 
+                           
                         }
                    }
                    else

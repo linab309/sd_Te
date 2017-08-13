@@ -2560,11 +2560,13 @@ void Get_gps_info(void const * argument)
 
 
 			  //if(rxlen)
-              print_usart1("%s",gps_data);
+              //print_usart1("%s",gps_data);
               //print_usart1("-%d-%d-%d\r\n",save_usart2_wp,USART2_RX_STA_RP,rxlen);
 
-			  memset(gpsx,0,sizeof(nmea_msg));                
+			  memset(gpsx,0,sizeof(nmea_msg));  
 			  GPS_Analysis(gpsx,gps_data);                
+              //gpsx->gpssta = 2; /*for test*/
+
               USART2_RX_STA_RP = save_usart2_wp;	 //得到数据长度  
               USART2_RX_STA = 0;         //启动下一次接收
   
