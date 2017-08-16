@@ -980,8 +980,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
             if((system_flag_table->ODOR == 0)||(mode == RECORED_RESTART ))
 			     system_flag_table->Message_head_number = 0;
             
-			if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
-            //if(gpsx->gpssta >= 1)
+			//if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
+            if(gpsx->gpssta >= 1)
 			{
 				system_flag_table->guji_buffer_Index_rp = 0;
 				system_flag_table->guji_buffer_Index_wp = 0;
@@ -1153,6 +1153,10 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         print_usart1("open append faild :%d \n",sys_fr);
                         return; 
                     }
+                    else
+                    {
+                        system_flag_table->File_status = 1;
+                    }
 
                     system_flag_table->guji_mode = 2;
                     if(ret == 1)
@@ -1220,11 +1224,10 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 
 			break;
 		case RECORED_START_DOING:
-            write_flash(sys_fp,system_flag_table);   
+            write_flash(sys_fp,system_flag_table);              
 			break;
 		case RECORED_T:
 			save_guiji_message(gpsx,system_flag_table,'C');
-			//interst_pos_number++;
 			system_flag_table->guji_mode = RECORED_START_DOING;
 			break;
         case RECORED_D:
@@ -1238,46 +1241,52 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
             &&(system_flag_table->power_status != POWER_SURPORT_SLEEP))  
             {
               
-                if(sys_fp != NULL)
+                if(system_flag_table->File_status == 1)
                 {
-                   fr = f_close(sys_fp); 
-                   //print_usart1("\r\n close :%d\r\n ",fr);   
-    
-                   if(FR_OK  != sys_fr)
+#if 1
+
+                   sys_fr = f_sync(sys_fp);					/* Flush cached data */
+                   //print_usart1("=%d=\r\n",HAL_GetTick());
+
+#else                   
+                   sys_fr = f_close(sys_fp); 
+                   print_usart1("\r\n close :%d\r\n ",sys_fr);   
+#endif    
+                   if(FR_OK  == sys_fr)
                    {                   
-                        //print_usart1("\r\n track_file :%s\r\n ",track_file); 
-                        for(cnt_read = 0; cnt_read<5; cnt_read++)
-                        {
-                            sys_fr = open_append(sys_fp, track_file);
-                            if((FR_OK  == sys_fr)||(FR_EXIST  == sys_fr))
-                            {
-                                break;
-                            }
-
-                        }
-                        
-                        if((FR_OK  != sys_fr)&&(FR_EXIST  != sys_fr))
-                        {
-
-                           print_usart1("open append faild(save) :%d :%s\n",sys_fr,track_file);
-                           system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
-                           system_flag_table->guji_mode = RECORED_STOP;    
-                           return; 
-                           
-                        }
+                        print_usart1("\r\n sync \r\n "); 
+                        system_flag_table->File_status = 1;
                    }
                    else
                    {
-                       system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
-                       system_flag_table->guji_mode = RECORED_STOP;    
-                       print_usart1("saev close faild :%d \n",fr);
-    
-                       return ; 
+
+                        print_usart1("\r\n sync err :%d \r\n ",sys_fr); 
+
+                        #if 0
+                        sys_fr = open_append(sys_fp, track_file);
+                        if((FR_OK  != sys_fr)&&(FR_EXIST  != sys_fr))
+                        {
+
+                            print_usart1("open append faild(save) :%d :%s\n",sys_fr,track_file);
+                            system_flag_table->sd_stats = SD_STATS_ERROR_CARD;
+                            system_flag_table->guji_mode = RECORED_STOP;    
+                            return; 
+                           
+                        }
+                        else
+                        {
+                            system_flag_table->File_status = 1;
+                        }
+                        #endif
+
+                        system_flag_table->File_status = 1;
+ 
                    }
                           
                 }
             }
             system_flag_table->guji_mode = 2;   
+       
 
             break;
 		case RECORED_STOP:

@@ -107,6 +107,8 @@ FRESULT open_append (
 {
     FRESULT fr;
 
+//    __disable_irq();
+
     /* Opens an existing file. If not exist, creates a new file. */
     fr = f_open(fp, path, FA_WRITE | FA_OPEN_ALWAYS);
     if (fr == FR_OK) {
@@ -120,7 +122,7 @@ FRESULT open_append (
 		open_append(fp,path);
     else
 		open_cnt = 0;
-	
+//	__enable_irq();
     return fr;
 }
 

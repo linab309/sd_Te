@@ -210,6 +210,7 @@ typedef struct
     uint8_t sd_stats;
     uint8_t ODOR;
     uint8_t unit;
+    uint8_t File_status;
     uint8_t function_index;
 
 }system_flag;

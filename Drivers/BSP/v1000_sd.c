@@ -260,8 +260,14 @@ uint8_t BSP_SD_ReadBlocks(uint32_t *pData, uint64_t ReadAddr, uint32_t BlockSize
   */
 uint8_t BSP_SD_WriteBlocks(uint32_t *pData, uint64_t WriteAddr, uint32_t BlockSize, uint32_t NumOfBlocks)
 {
-  if(HAL_SD_WriteBlocks(&uSdHandle, pData, WriteAddr, BlockSize, NumOfBlocks) != SD_OK)
+
+  HAL_SD_ErrorTypedef err;
+
+  err = HAL_SD_WriteBlocks(&uSdHandle, pData, WriteAddr, BlockSize, NumOfBlocks);
+
+  if(err != SD_OK)
   {
+    print_usart1("Werr :%d \r\n",err);
     return MSD_ERROR;
   }
   else
@@ -457,7 +463,7 @@ static void SD_MspInit(void)
   HAL_GPIO_Init(SD_DETECT_GPIO_PORT, &gpioinitstruct);
     
   /* NVIC configuration for SDIO interrupts */
-  HAL_NVIC_SetPriority(SDIO_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(SDIO_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(SDIO_IRQn);
   
   /* DMA initialization should be done here but , as there is only one channel for RX and TX it is configured and done directly when required*/
@@ -498,7 +504,7 @@ HAL_SD_ErrorTypedef SD_DMAConfigRx(SD_HandleTypeDef *hsd)
   status = HAL_DMA_Init(&hdma_rx);
   
   /* NVIC configuration for DMA transfer complete interrupt */
-  HAL_NVIC_SetPriority(DMA2_Channel4_IRQn, 3, 0);
+  HAL_NVIC_SetPriority(DMA2_Channel4_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA2_Channel4_IRQn);
   
   return (status != HAL_OK? SD_ERROR : SD_OK);
@@ -539,7 +545,7 @@ HAL_SD_ErrorTypedef SD_DMAConfigTx(SD_HandleTypeDef *hsd)
   status = HAL_DMA_Init(&hdma_tx); 
   
   /* NVIC configuration for DMA transfer complete interrupt */
-  HAL_NVIC_SetPriority(DMA2_Channel4_IRQn, 3, 0);
+  HAL_NVIC_SetPriority(DMA2_Channel4_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA2_Channel4_IRQn);  
 
   return (status != HAL_OK? SD_ERROR : SD_OK);

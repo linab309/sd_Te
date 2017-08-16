@@ -70,7 +70,7 @@ ADC_HandleTypeDef hadc;
 
 RTC_HandleTypeDef hrtc;
 
-SPI_HandleTypeDef hspi1;
+//SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim4;
@@ -668,6 +668,8 @@ static void MX_RTC_Init(void)
 
 }
 #endif
+
+#if 0
 /* SPI1 init function */
 static void MX_SPI1_Init(void)
 {
@@ -690,6 +692,8 @@ static void MX_SPI1_Init(void)
   }
 
 }
+
+#endif
 #if 0
 /* TIM2 init function */
 static void MX_TIM2_Init(void)
@@ -2002,7 +2006,9 @@ uint8_t get_space(void)
 	int i = 0;
 	
     /* Get volume information and free clusters of drive 1 */
+    //__disable_irq();    
     res = f_getfree("", &fre_clust, &fs);
+    //__enable_irq();
     if (res) 
     {
         print_usart1("f_getfree faild :%d\r\n",res);
@@ -2539,6 +2545,7 @@ void Get_gps_info(void const * argument)
           {
 		     
               //print_usart1("gps_1: %x\r\n",uart3_buffer[save_usart2_wp - 1]);
+              //print_usart1("+%d+\r\n",HAL_GetTick());
 
               
 			  if(USART2_RX_STA_RP > save_usart2_wp)
@@ -2565,7 +2572,10 @@ void Get_gps_info(void const * argument)
 
 			  memset(gpsx,0,sizeof(nmea_msg));  
 			  GPS_Analysis(gpsx,gps_data);                
-              //gpsx->gpssta = 2; /*for test*/
+              gpsx->gpssta = 2; /*for test*/
+              gpsx->posslnum = 5 ;
+              gpsx->utc.year = 2016;
+              gpsx->utc.month= 3;
 
               USART2_RX_STA_RP = save_usart2_wp;	 //得到数据长度  
               USART2_RX_STA = 0;         //启动下一次接收
@@ -3262,7 +3272,7 @@ void update_info(void const * argument)
 
     if(system_flag_table->guji_mode == RECORED_START_DOING)
     {
-        if(HAL_GetTick() > (save_file_cnt + 60000))
+        if(HAL_GetTick() > (save_file_cnt + 6000))
         {
            system_flag_table->guji_mode = RECORED_SAVE; 
            save_file_cnt  = HAL_GetTick();
@@ -3321,6 +3331,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 {
                     USART2_RX_STA = 1;
                     save_usart2_wp = USART2_RX_STA_WP;
+                   // print_usart1("-%d- \r\n",HAL_GetTick());
                 }
             }
             else
@@ -3329,6 +3340,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 {
                     USART2_RX_STA = 1;
                     save_usart2_wp = USART2_RX_STA_WP;
+                    //print_usart1("-%d-\r\n",HAL_GetTick());
+
                 }   
             }
             

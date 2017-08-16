@@ -121,7 +121,7 @@ DSTATUS USER_initialize (
     Stat = STA_NOINIT;
     
     /* Configure the uSD device */
-    if(BSP_SD_Init(15) == MSD_OK)
+    if(BSP_SD_Init(20) == MSD_OK)
     {
       Stat &= ~STA_NOINIT;
     }
@@ -179,6 +179,7 @@ DRESULT USER_read (
       res = RES_ERROR;
     }
     //__enable_irq();
+
     return res;
   /* USER CODE END READ */
 }
@@ -210,10 +211,9 @@ DRESULT USER_write (
     {
       res = RES_ERROR;
     }
-
-    //print_usart1("l%d \r\n",sector);    
-   // print_usart1("w:%d \r\n",count);    	
+  	
     //__enable_irq();
+
     return res;
   /* USER CODE END WRITE */
 }
