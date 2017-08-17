@@ -808,7 +808,7 @@ static void MX_USART1_UART_Init(void)
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.Mode = UART_MODE_TX;
   huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart1) != HAL_OK)
@@ -2572,11 +2572,12 @@ void Get_gps_info(void const * argument)
 
 			  memset(gpsx,0,sizeof(nmea_msg));  
 			  GPS_Analysis(gpsx,gps_data);                
+#if 0
               gpsx->gpssta = 2; /*for test*/
               gpsx->posslnum = 5 ;
               gpsx->utc.year = 2016;
               gpsx->utc.month= 3;
-
+#endif
               USART2_RX_STA_RP = save_usart2_wp;	 //得到数据长度  
               USART2_RX_STA = 0;         //启动下一次接收
   

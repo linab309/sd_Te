@@ -280,6 +280,7 @@
   */
 #define SD_SDIO_SEND_IF_COND            ((uint32_t)SD_CMD_HS_SEND_EXT_CSD)
 
+extern UART_HandleTypeDef huart3;
 /**
   * @}
   */
@@ -534,10 +535,13 @@ HAL_SD_ErrorTypedef HAL_SD_ReadBlocks(SD_HandleTypeDef *hsd, uint32_t *pReadBuff
     {
       return errorstate;
     }
-    
+
+    __disable_irq();
+        
     /* Poll on SDIO flags */
     while(!__HAL_SD_SDIO_GET_FLAG(hsd, SDIO_FLAG_RXOVERR | SDIO_FLAG_DCRCFAIL | SDIO_FLAG_DTIMEOUT | SDIO_FLAG_DATAEND | SDIO_FLAG_STBITERR))
     {
+      //HAL_UART_IRQHandler(&huart3);
       if (__HAL_SD_SDIO_GET_FLAG(hsd, SDIO_FLAG_RXFIFOHF))
       {
         /* Read data from SDIO Rx FIFO */
@@ -548,7 +552,9 @@ HAL_SD_ErrorTypedef HAL_SD_ReadBlocks(SD_HandleTypeDef *hsd, uint32_t *pReadBuff
         
         tempbuff += 8;
       }
-    }      
+    }     
+
+    __enable_irq();
   }
   else
   {
@@ -563,6 +569,8 @@ HAL_SD_ErrorTypedef HAL_SD_ReadBlocks(SD_HandleTypeDef *hsd, uint32_t *pReadBuff
     /* In case of single block transfer, no need of stop transfer at all */
     while(!__HAL_SD_SDIO_GET_FLAG(hsd, SDIO_FLAG_RXOVERR | SDIO_FLAG_DCRCFAIL | SDIO_FLAG_DTIMEOUT | SDIO_FLAG_DBCKEND | SDIO_FLAG_STBITERR))
     {
+      //HAL_UART_IRQHandler(&huart3);
+      __disable_irq();
       if (__HAL_SD_SDIO_GET_FLAG(hsd, SDIO_FLAG_RXFIFOHF))
       {
         /* Read data from SDIO Rx FIFO */
@@ -573,6 +581,7 @@ HAL_SD_ErrorTypedef HAL_SD_ReadBlocks(SD_HandleTypeDef *hsd, uint32_t *pReadBuff
         
         tempbuff += 8;
       }
+      __enable_irq();
     }
   }
   
@@ -733,6 +742,7 @@ HAL_SD_ErrorTypedef HAL_SD_WriteBlocks(SD_HandleTypeDef *hsd, uint32_t *pWriteBu
   {
     while(!__HAL_SD_SDIO_GET_FLAG(hsd, SDIO_FLAG_TXUNDERR | SDIO_FLAG_DCRCFAIL | SDIO_FLAG_DTIMEOUT | SDIO_FLAG_DATAEND | SDIO_FLAG_STBITERR))
     {
+      //HAL_UART_IRQHandler(&huart3);
       if (__HAL_SD_SDIO_GET_FLAG(hsd, SDIO_FLAG_TXFIFOHE))
       {
         if ((totalnumberofbytes - bytestransferred) < 32)
@@ -766,6 +776,7 @@ HAL_SD_ErrorTypedef HAL_SD_WriteBlocks(SD_HandleTypeDef *hsd, uint32_t *pWriteBu
     /* In case of single data block transfer no need of stop command at all */ 
     while(!__HAL_SD_SDIO_GET_FLAG(hsd, SDIO_FLAG_TXUNDERR | SDIO_FLAG_DCRCFAIL | SDIO_FLAG_DTIMEOUT | SDIO_FLAG_DBCKEND | SDIO_FLAG_STBITERR))
     {
+      //HAL_UART_IRQHandler(&huart3);
       if (__HAL_SD_SDIO_GET_FLAG(hsd, SDIO_FLAG_TXFIFOHE))
       {
         if ((totalnumberofbytes - bytestransferred) < 32)
@@ -3316,6 +3327,7 @@ static HAL_SD_ErrorTypedef SD_IsCardProgramming(SD_HandleTypeDef *hsd, uint8_t *
   
   while(!__HAL_SD_SDIO_GET_FLAG(hsd, SDIO_FLAG_CCRCFAIL | SDIO_FLAG_CMDREND | SDIO_FLAG_CTIMEOUT))
   {
+      ;//HAL_UART_IRQHandler(&huart3);
   }
   
   if(__HAL_SD_SDIO_GET_FLAG(hsd, SDIO_FLAG_CTIMEOUT))
