@@ -2313,7 +2313,7 @@ void status_led_config(void)
                 read_led_flag = 0;
             } 
 
-			if(system_flag_table->batt_Status == BATT_EMPTY)
+			if((system_flag_table->batt_Status == BATT_EMPTY  || system_flag_table->batt_Status == 0xff))
 		    {
 		          system_flag_table->power_status = POWER_STANBY;   
                               
@@ -2572,7 +2572,7 @@ void Get_gps_info(void const * argument)
 
 			  memset(gpsx,0,sizeof(nmea_msg));  
 			  GPS_Analysis(gpsx,gps_data);                
-#if 0
+#if 1
               gpsx->gpssta = 2; /*for test*/
               gpsx->posslnum = 5 ;
               gpsx->utc.year = 2016;
@@ -3273,7 +3273,7 @@ void update_info(void const * argument)
 
     if(system_flag_table->guji_mode == RECORED_START_DOING)
     {
-        if(HAL_GetTick() > (save_file_cnt + 6000))
+        if(HAL_GetTick() > (save_file_cnt + 60000))
         {
            system_flag_table->guji_mode = RECORED_SAVE; 
            save_file_cnt  = HAL_GetTick();

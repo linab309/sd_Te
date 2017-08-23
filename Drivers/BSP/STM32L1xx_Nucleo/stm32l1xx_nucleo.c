@@ -672,11 +672,11 @@ static bool IsBatteryPoweroff(uint16_t mv)
     return (mv<=3200)? TRUE:FALSE;
 }
 
-static bool IsBatteryLow(uint16_t mv) {return mv<3550 ? TRUE:FALSE;}
+static bool IsBatteryLow(uint16_t mv) {return mv>3400 ? TRUE:FALSE;}
 /* Check INTERNAL value for shut off battery level  - around 3.00V */
-static bool IsBatteryDead(uint16_t mv) {return mv<3200 ? TRUE:FALSE;}
+static bool IsBatteryDead(uint16_t mv) {return mv>3200 ? TRUE:FALSE;}
 /* battery full is indicated in firmware for this chip*/
-static bool IsBatteryMid(uint16_t mv) {return mv>3720 ? TRUE:FALSE;}
+static bool IsBatteryMid(uint16_t mv) {return mv>3550 ? TRUE:FALSE;}
 static bool IsBatteryHIGH(uint16_t mv) {return mv>3850 ? TRUE:FALSE;}
 static bool IsBatteryFull(uint16_t mv) {return mv>=4100 ? TRUE:FALSE;}
     
@@ -728,7 +728,7 @@ void DisplayIDDrunmV(system_flag *system_flag_table,uint32_t IDDmeas)
             {
                 if(system_flag_table->batt_change_ok_cnt == 0)
                 {
-                    system_flag_table->batt_change_ok_cnt = 5;//ms
+                    system_flag_table->batt_change_ok_cnt = 30;//ms
                     //system_flag_table->batt_Status  =  BATT_CHARG_OK;
                 }
             }

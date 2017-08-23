@@ -980,8 +980,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
             if((system_flag_table->ODOR == 0)||(mode == RECORED_RESTART ))
 			     system_flag_table->Message_head_number = 0;
             
-			if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
-            //if(gpsx->gpssta >= 1)
+			//if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
+            if(gpsx->gpssta >= 1)
 			{
 				system_flag_table->guji_buffer_Index_rp = 0;
 				system_flag_table->guji_buffer_Index_wp = 0;
@@ -1254,13 +1254,13 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 #endif    
                    if(FR_OK  == sys_fr)
                    {                   
-                        //print_usart1("\r\n sync \r\n "); 
+                        print_usart1("\r\n sync \r\n "); 
                         system_flag_table->File_status = 1;
                    }
                    else
                    {
 
-                        //print_usart1("\r\n sync err :%d \r\n ",sys_fr); 
+                        print_usart1("\r\n sync err :%d \r\n ",sys_fr); 
 
                         #if 0
                         sys_fr = open_append(sys_fp, track_file);
