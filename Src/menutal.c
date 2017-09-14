@@ -960,7 +960,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
     uint32_t eeprom_vaule = 0;
     UINT wb;
     tm       eeprom_tm;  
-    int cnt_read = 0;
+//    int cnt_read = 0;
     uint8_t ret = 0 ;
 
     
@@ -980,8 +980,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
             if((system_flag_table->ODOR == 0)||(mode == RECORED_RESTART ))
 			     system_flag_table->Message_head_number = 0;
             
-			//if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
-            if(gpsx->gpssta >= 1)
+			if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
+            //if(gpsx->gpssta >= 1)
 			{
 				system_flag_table->guji_buffer_Index_rp = 0;
 				system_flag_table->guji_buffer_Index_wp = 0;
