@@ -347,6 +347,10 @@ int main(void)
       system_flag_table->unit = eeprom_flag;
       stm_read_eerpom(13,&eeprom_flag);
       system_flag_table->frist_power = eeprom_flag;
+      stm_read_eerpom(30,&eeprom_flag);
+      system_flag_table->function_index = eeprom_flag;
+
+
   }
   else
   {
@@ -387,6 +391,8 @@ int main(void)
       stm_write_eerpom(23,0);
       stm_write_eerpom(24,0);
       stm_write_eerpom(25,0);
+      stm_write_eerpom(30,0);
+
       /*标记EERPOM表示已初始化*/
       stm_write_eerpom(0xff,0x12345678);
       stm_write_eerpom(0xf0,0);   /*power mode save ! default is normal support mode*/
@@ -1527,6 +1533,8 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
     uint8_t ret = 0 ; 
     static uint8_t lp_number = 0;
     //static uint16_t test_cnt = 0;
+    float tp_lati = 0.0,tp_long = 0.0,latitude = 0.0,longitude = 0.0;
+   
 
     switch(mode)
     {
@@ -1538,12 +1546,24 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
 				if((system_flag_table->guji_mode == RECORED_START_DOING)||(system_flag_table->guji_mode == RECORED_SAVE)\
 				||(system_flag_table->guji_mode == RECORED_T)||(system_flag_table->guji_mode == RECORED_D))
                  {  
-                     tp_distance = getDistanceVer2( system_flag_table->tp_lati,gpsx->nshemi,system_flag_table->tp_long,
-                                                   gpsx->ewhemi, gpsx->latitude, gpsx->nshemi, gpsx->longitude,gpsx->ewhemi);
+                     tp_lati = system_flag_table->tp_lati;
+                     tp_long = system_flag_table->tp_long;
+                     latitude = gpsx->latitude;
+                     longitude = gpsx->longitude;                     
+                     tp_lati /=1000000;
+                     tp_long /=1000000;
+                     latitude /=1000000;
+                     longitude /=1000000;
+
+                     tp_distance = getDistanceVer2( tp_lati,gpsx->nshemi,tp_long,
+                                                   gpsx->ewhemi, latitude, gpsx->nshemi, longitude,gpsx->ewhemi);
                      if(system_flag_table->guji_record.recoed_formats == BY_DISTANCE)
                      {
-                         print_usart1("tp_distance :%.f \r\n",tp_distance); /*打印行驶距离*/
-                         if((tp_distance*1000) >= system_flag_table->guji_record.by_distance_vaule)
+
+                         tp_distance = (tp_distance*1000);
+                         print_usart1("tp_distance :%.3f \r\n",tp_distance); /*打印行驶距离*/
+
+                         if((tp_distance) >= system_flag_table->guji_record.by_distance_vaule)
                          {
                              if((gpsx->speed) >= (system_flag_table->guji_record.by_speed_vaule))
                              {
@@ -1641,7 +1661,7 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
             break;
         case POWER_LRUN:
 
-            //if(system_flag_table->guji_record.lowpower_timer <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
+            if(system_flag_table->guji_mode == RECORED_START_DOING)
             {
                 if(gpsx->gpssta == 0 )
                 {
@@ -1683,6 +1703,8 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
                     system_flag_table->power_status = POWER_LRUN_SLEEP;
                     write_flash(&gps_fp,system_flag_table);     
+                    system_flag_table->guji_mode = RECORED_SAVE;
+                    Recording_guji(&gps_fp,system_flag_table,gpsx);
                     osThreadSuspend(defaultTaskHandle);
                     //osThreadSuspend(Get_gps_info_Handle);
                     SystemClock_Config_msi();
@@ -2552,7 +2574,7 @@ void Get_gps_info(void const * argument)
   gps_init();  
   HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1); 
   //print_usart1("Get_gps_info start !\r\n");
-
+  
   for(;;)
   {
    
@@ -2978,11 +3000,12 @@ void MySystem(void const * argument)
                         if(system_flag_table->function_index == 0)/*pause*/
                         {
                             system_flag_table->guji_mode = RECORED_PAUSE; 
+                            print_usart1("pause\r\n");
                         }
                         else if(system_flag_table->function_index == 1)
                         {
                             system_flag_table->guji_mode = RECORED_D; 
-    
+                            print_usart1("RECORED_D\r\n");    
                         }
                         sound_toggle_simple(1,50,50);
     

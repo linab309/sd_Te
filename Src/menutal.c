@@ -414,7 +414,11 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
         }
         else if(guji_record_type == 'C')
         {
-            flag.bitc.tag = 1;  
+            flag.bitc.tag = 1;              
+        }
+        else if(guji_record_type == 'D')
+        {
+            flag.bitc.tag = 2;   
         }
         else
         {
@@ -607,6 +611,22 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
 
 
         record_type = flag.bitc.tag ? 'C':'T';
+        if(flag.bitc.tag == 0)
+        {
+            record_type = 'T';
+
+        }
+        else if(flag.bitc.tag == 1)
+        {
+            record_type = 'C';
+
+        }
+        else if(flag.bitc.tag == 2)
+        {
+            record_type = 'D';
+
+        }
+
         lat_flag    = flag.bitc.ns ? 'S':'N';
         lon_flag    = flag.bitc.ew ? 'W':'E';
 
