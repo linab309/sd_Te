@@ -1696,17 +1696,19 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                     BSP_LED_Off(LED_SD);
                     BSP_LED_Off(LED_GPS);
                     BSP_LED_Off(LED_SURPORT);
-                    gps_power_mode(0);
-                    sd_power_mode(0);
+ 
                     //Recording_guji(&gps_fp,system_flag_table,gpsx);
                     print_usart1("go to lrun sleep \r\n");
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
                     system_flag_table->power_status = POWER_LRUN_SLEEP;
                     write_flash(&gps_fp,system_flag_table);     
-                    system_flag_table->guji_mode = RECORED_SAVE;
-                    Recording_guji(&gps_fp,system_flag_table,gpsx);
-                    osThreadSuspend(defaultTaskHandle);
+                    //system_flag_table->guji_mode = RECORED_SAVE;
+                    //Recording_guji(&gps_fp,system_flag_table,gpsx);
+                    while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(10);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
                     //osThreadSuspend(Get_gps_info_Handle);
+                    gps_power_mode(0);
+                    sd_power_mode(0);
+
                     SystemClock_Config_msi();
 					//sleep_power_config();
 
@@ -2617,6 +2619,8 @@ void Get_gps_info(void const * argument)
               gpsx->posslnum = 5 ;
               gpsx->utc.year = 2016;
               gpsx->utc.month= 3;
+              gpsx->hdop = 20;
+
 #endif
               USART2_RX_STA_RP = save_usart2_wp;	 //得到数据长度  
               USART2_RX_STA = 0;         //启动下一次接收
@@ -2701,7 +2705,7 @@ void MySystem(void const * argument)
 
 		  	    if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
 		  	    {			
-                    system_flag_table->power_status = POWER_SURPORT_RUN;\
+                    system_flag_table->power_status = POWER_SURPORT_RUN;
                     //BSP_SD_Init();
                     gps_power_mode(1);
                     sd_power_mode(1) ;
