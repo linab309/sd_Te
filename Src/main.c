@@ -2480,8 +2480,8 @@ void status_led_config(void)
                      HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
                      osThreadResume(Get_gps_info_Handle);
                      osThreadResume(defaultTaskHandle);                 
-    
-                    system_flag_table->grecord_timer_cnt = HAL_GetTick();
+                     system_flag_table->guji_mode = RECORED_START_DOING;
+                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
                      
                 }
         
@@ -2719,6 +2719,7 @@ void MySystem(void const * argument)
                     print_usart1("levef surport mode  resume \r\n");       
                     print_usart1("****************************** \r\n");                    
                     sound_toggle_simple(1,50,50);
+                    system_flag_table->guji_mode = RECORED_START_DOING;
                     break; 
 		  	    }
 				else if(system_flag_table->power_status == POWER_LRUN_SLEEP)
@@ -2738,6 +2739,7 @@ void MySystem(void const * argument)
                     osThreadResume(Get_gps_info_Handle);
                     osThreadResume(defaultTaskHandle);                 
                     sound_toggle_simple(1,50,50);
+                    system_flag_table->guji_mode = RECORED_START_DOING;
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();				
                     break; 				
 				}
@@ -2772,6 +2774,7 @@ void MySystem(void const * argument)
     				print_usart1("levef surport mode  resume \r\n");	   
     				print_usart1("****************************** \r\n");					
     			    sound_toggle_simple(1,50,50);
+                    system_flag_table->guji_mode = RECORED_START_DOING;
     				break; 
     			}
     			else if(system_flag_table->power_status == POWER_LRUN_SLEEP)
@@ -2791,7 +2794,8 @@ void MySystem(void const * argument)
     			   osThreadResume(Get_gps_info_Handle);
     			   osThreadResume(defaultTaskHandle);				  
     			   sound_toggle_simple(1,50,50);
-    			   system_flag_table->grecord_timer_cnt = HAL_GetTick();				
+    			   system_flag_table->grecord_timer_cnt = HAL_GetTick();	
+                   system_flag_table->guji_mode = RECORED_START_DOING;
     			   break;				
     			}
 
@@ -2974,6 +2978,7 @@ void MySystem(void const * argument)
                     print_usart1("levef surport mode  resume \r\n");       
                     print_usart1("****************************** \r\n");                    
                     sound_toggle_simple(1,50,50);
+                    system_flag_table->guji_mode = RECORED_START_DOING;
                     break; 
 		  	    }
 				else if(system_flag_table->power_status == POWER_LRUN_SLEEP)
@@ -2993,6 +2998,7 @@ void MySystem(void const * argument)
                     osThreadResume(Get_gps_info_Handle);
                     osThreadResume(defaultTaskHandle);                 
                     sound_toggle_simple(1,50,50);
+                    system_flag_table->guji_mode = RECORED_START_DOING;
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();				
                     break; 				
 				}
@@ -3219,7 +3225,7 @@ void update_info(void const * argument)
                    print_usart1("****************************** \r\n");
                    print_usart1("levef surport mode  resume \r\n");       
                    print_usart1("****************************** \r\n");     
-                  
+                   system_flag_table->guji_mode = RECORED_START_DOING;
                    //osThreadResume(SystemCallHandle); 
                }
                system_flag_table->grecord_timer_cnt = HAL_GetTick();

@@ -219,12 +219,18 @@ void configfs_set(FIL *update_config_fp)
     {
        system_flag_table->unit = 1;             
     }
+    else
+    {
+        system_flag_table->unit = 0; 
+
+    }
+    
     stm_write_eerpom(12,system_flag_table->unit);
 
     string = GetIniKeyString("SETTINGS", "TimeZone", "config.txt");
     /*TimeZone*/
     i = 0;
-    while(timer_zone_Aarry[i] != NULL)
+    while((timer_zone_Aarry[i] != NULL) && (i < 42))
     { 
 
         if(strcmp(timer_zone_Aarry[i],string) == 0)
@@ -246,6 +252,11 @@ void configfs_set(FIL *update_config_fp)
     {
        system_flag_table->buzzer = 0;             
     }
+    else
+    {
+       system_flag_table->buzzer = 0;             
+    }
+    
     stm_write_eerpom(1,system_flag_table->buzzer);
 
     /*function*/
@@ -260,6 +271,12 @@ void configfs_set(FIL *update_config_fp)
     {
        system_flag_table->function_index = 1;             
     }
+    else
+    {
+        system_flag_table->function_index = 0;             
+
+    }
+    
     stm_write_eerpom(30,system_flag_table->function_index);
 
     /*SpeedWarning*/
@@ -303,6 +320,12 @@ void configfs_set(FIL *update_config_fp)
     {
        system_flag_table->auto_power = 0;             
     } 
+    else
+    {
+        system_flag_table->auto_power = 0;             
+
+    }
+    
     stm_write_eerpom(3,system_flag_table->auto_power);
 
     /*Format*/
@@ -331,6 +354,10 @@ void configfs_set(FIL *update_config_fp)
     {
        system_flag_table->gujiFormats = GUJI_FORMATS_KML;             
     } 
+    else
+    {
+       system_flag_table->gujiFormats = GUJI_FORMATS_CSV; 
+    }
 
     stm_write_eerpom(4,system_flag_table->gujiFormats);
 
@@ -418,6 +445,12 @@ void configfs_set(FIL *update_config_fp)
         system_flag_table->guji_record.recoed_formats  = BY_DISTANCE;
 
     } 
+    else
+    {
+    
+        system_flag_table->guji_record.by_time_vaule   = 1000; /*ms*/
+        system_flag_table->guji_record.recoed_formats  = BY_TIMES;
+    }
 
     
     stm_write_eerpom(5,system_flag_table->guji_record.by_time_vaule);
@@ -471,6 +504,12 @@ void configfs_set(FIL *update_config_fp)
     {
        system_flag_table->ODOR = 0;             
     } 
+    else
+    {
+        system_flag_table->ODOR = 0;             
+
+    }
+    
     stm_write_eerpom(10,system_flag_table->ODOR);
 
     stm_write_eerpom(0xff,0x12345677);
