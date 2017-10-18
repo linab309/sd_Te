@@ -181,13 +181,14 @@ uint8_t  My_Fs_Init(FATFS *SD_FatFs)
   
 }
 
-void configfs_set(FIL *update_config_fp)
+uint8_t configfs_set(FIL *update_config_fp)
 {
 
 
     char *string = NULL;
     uint8_t flash_cnt = 0;
     uint8_t i = 0;
+    uint8_t no_support_char = 0;
 
     BSP_LED_Init(LED_GPS);  
     BSP_LED_Init(LED_SD);  
@@ -222,6 +223,7 @@ void configfs_set(FIL *update_config_fp)
     else
     {
         system_flag_table->unit = 0; 
+        no_support_char = 1;
 
     }
     
@@ -238,6 +240,13 @@ void configfs_set(FIL *update_config_fp)
         
         i++;
     }
+
+    if(i >= 42)
+    {
+        i = 16;
+        no_support_char = 1;
+    }
+
     system_flag_table->time_zone = i;
     stm_write_eerpom(0,system_flag_table->time_zone);
     /*Buzzer*/
@@ -254,7 +263,8 @@ void configfs_set(FIL *update_config_fp)
     }
     else
     {
-       system_flag_table->buzzer = 0;             
+       system_flag_table->buzzer = 1;             
+       no_support_char = 1;
     }
     
     stm_write_eerpom(1,system_flag_table->buzzer);
@@ -274,6 +284,7 @@ void configfs_set(FIL *update_config_fp)
     else
     {
         system_flag_table->function_index = 0;             
+        no_support_char = 1;
 
     }
     
@@ -291,7 +302,11 @@ void configfs_set(FIL *update_config_fp)
     {
        system_flag_table->wanng_speed_vaule = GetIniKeyInt("SETTINGS", "SpeedAlert", "config.txt"); 
        if(system_flag_table->wanng_speed_vaule < 1 || system_flag_table->wanng_speed_vaule>200)
-        system_flag_table->wanng_speed_vaule = 0;
+       {
+          system_flag_table->wanng_speed_vaule = 0;
+          no_support_char = 1;
+
+       }
        else
        {
            if(system_flag_table->unit == 1)
@@ -305,6 +320,7 @@ void configfs_set(FIL *update_config_fp)
        }
 
     }
+
 
     stm_write_eerpom(2,system_flag_table->wanng_speed_vaule);
 
@@ -323,6 +339,7 @@ void configfs_set(FIL *update_config_fp)
     else
     {
         system_flag_table->auto_power = 0;             
+        no_support_char = 1;
 
     }
     
@@ -357,6 +374,7 @@ void configfs_set(FIL *update_config_fp)
     else
     {
        system_flag_table->gujiFormats = GUJI_FORMATS_CSV; 
+       no_support_char = 1;
     }
 
     stm_write_eerpom(4,system_flag_table->gujiFormats);
@@ -447,7 +465,7 @@ void configfs_set(FIL *update_config_fp)
     } 
     else
     {
-    
+        no_support_char = 1;
         system_flag_table->guji_record.by_time_vaule   = 1000; /*ms*/
         system_flag_table->guji_record.recoed_formats  = BY_TIMES;
     }
@@ -469,7 +487,11 @@ void configfs_set(FIL *update_config_fp)
     {
        system_flag_table->guji_record.by_speed_vaule = GetIniKeyInt("RECORD", "SpeedMask", "config.txt");
        if(system_flag_table->guji_record.by_speed_vaule < 1 || system_flag_table->guji_record.by_speed_vaule>200)
-        system_flag_table->guji_record.by_speed_vaule = 0;
+       {
+            system_flag_table->guji_record.by_speed_vaule = 0;
+            no_support_char = 1;
+
+       }
        else
        {
            if(system_flag_table->unit == 1)
@@ -487,7 +509,11 @@ void configfs_set(FIL *update_config_fp)
 
     system_flag_table->lowpower_timer = GetIniKeyInt("RECORD", "SpyModeTimer", "config.txt");
     if(system_flag_table->lowpower_timer < 5 || system_flag_table->lowpower_timer>60)
-     system_flag_table->lowpower_timer = 15;
+    {
+         system_flag_table->lowpower_timer = 15;
+         no_support_char = 1;
+
+    }
 
     stm_write_eerpom(9,system_flag_table->lowpower_timer);  
 
@@ -507,6 +533,7 @@ void configfs_set(FIL *update_config_fp)
     else
     {
         system_flag_table->ODOR = 0;             
+        no_support_char = 1;
 
     }
     
@@ -548,15 +575,16 @@ void configfs_set(FIL *update_config_fp)
     BSP_LED_Off(LED_GPS);  
     BSP_LED_Off(LED_SD);  
     BSP_LED_Off(LED_SURPORT); 
-
-
+    //print_usart1("\r\n no_support_char :%d \r\n",no_support_char); 
+    return no_support_char;
 }
 
-void entry_config_mode(system_flag *system_flag_table)
+uint8_t entry_config_mode(system_flag *system_flag_table)
 {
     FIL update_config_fp;
     FRESULT fr;
     uint32_t eeprom_flag = 0;
+    uint8_t ret  = 0; 
 
     if(f_open(&update_config_fp,(TCHAR const*)"P-1.BIN",FA_READ) == FR_OK)
     {
@@ -566,12 +594,13 @@ void entry_config_mode(system_flag *system_flag_table)
     }
     else if(f_open(&update_config_fp,(TCHAR const*)"config.txt",FA_READ) == FR_OK)
     {
-    
-        configfs_set(&update_config_fp);
+        sound_toggle_simple(3,50,50);
+        ret = configfs_set(&update_config_fp);
         print_usart1("\r\n read config.txt \r\n");
     }
     else
     {
+        sound_toggle_simple(3,50,50);
         fr = f_open(&update_config_fp, "INFO.TXT",FA_WRITE | FA_OPEN_ALWAYS);
         f_printf(&update_config_fp,"[SETTINGS]\r\n");
         f_printf(&update_config_fp,"TimeZone=%s\r\n",timer_zone_Aarry[system_flag_table->time_zone]);
@@ -628,7 +657,7 @@ void entry_config_mode(system_flag *system_flag_table)
 
         
 
-        f_printf(&update_config_fp,"Firmware: V 0.01 \r\n");
+        f_printf(&update_config_fp,"Firmware: V 0.02 \r\n");
         stm_read_eerpom(11,&eeprom_flag);
         f_printf(&update_config_fp,"PowerOn: %d\r\n",eeprom_flag);
         stm_read_eerpom(12,&eeprom_flag);
@@ -648,7 +677,8 @@ void entry_config_mode(system_flag *system_flag_table)
 
     }
 
-    
+
+    return ret ;
 
 
 }

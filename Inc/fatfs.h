@@ -69,7 +69,7 @@ extern FRESULT open_append (
     const char* path    /* [IN]  File name to be opened */
 );
 extern uint8_t  My_Fs_Init(FATFS *SD_FatFs);
-extern void entry_config_mode(system_flag *system_flag_table);
+extern uint8_t entry_config_mode(system_flag *system_flag_table);
 
 /* USER CODE END Prototypes */
 #ifdef __cplusplus

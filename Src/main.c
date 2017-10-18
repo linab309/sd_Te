@@ -1596,7 +1596,7 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
 						 	ret = 1;
 	
 						 }
-						 else  if(gpsx->speed >= (system_flag_table->guji_record.by_speed_vaule*1000))
+						 else  if(gpsx->speed >= (system_flag_table->guji_record.by_speed_vaule))
     					 {
     						ret = 1;
 									 
@@ -2295,7 +2295,7 @@ void status_led_config(void)
     static uint32_t green_timer_cnt = 0 ;
     static uint8_t green_led_flag = 0;    
 
-    if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) != GPIO_PIN_RESET)
+    if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) != GPIO_PIN_RESET) /*³äµçÖĞ*/
     {
 
         if(system_flag_table->batt_Status == BATT_CHARG_OK)
@@ -2341,14 +2341,14 @@ void status_led_config(void)
         {
             BSP_LED_Off(LED_GREEN);
             BSP_LED_Off(LED_BULE);				
-            if((read_led_flag == 0)&&(HAL_GetTick() >= (read_timer_cnt + 150)))
+            if((read_led_flag == 0)&&(HAL_GetTick() >= (read_timer_cnt + 1000)))
             {
                 read_timer_cnt = HAL_GetTick();
                 read_led_flag = 1;
                 BSP_LED_On(LED_RED);
             }
             
-            if((read_led_flag == 1)&&(HAL_GetTick() >= (read_timer_cnt + 150)))
+            if((read_led_flag == 1)&&(HAL_GetTick() >= (read_timer_cnt + 1000)))
             {
                 read_timer_cnt = HAL_GetTick();
                 BSP_LED_Off(LED_RED);
@@ -2404,14 +2404,26 @@ void status_led_config(void)
             if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_RESET)
             {
                 if((system_flag_table->power_status  == POWER_RUN) ||(system_flag_table->power_status  == POWER_SURPORT_RUN))
-                    BSP_LED_On(LED_GREEN);
+                {
+                    if(system_flag_table->batt_Status <= BATT_LOW)
+                    {
+                    }
+                    else
+                    {
+                        BSP_LED_On(LED_GREEN);
+                    }
+                }
 				else
 					BSP_LED_Off(LED_GREEN);
             }
              
             if(system_flag_table->power_status == POWER_LRUN)
             {
-                BSP_LED_On(LED_BULE);  
+                if(system_flag_table->batt_Status <= BATT_LOW)
+                {
+                }
+                else
+                    BSP_LED_On(LED_BULE);  
             }        
     
             gps_led_config();
@@ -2426,7 +2438,11 @@ void status_led_config(void)
             if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
             {
                 //print_usart1("%d,%d,%d\r\n",green_led_flag,HAL_GetTick(),(green_timer_cnt + 2700));
-    
+                if(system_flag_table->batt_Status <= BATT_LOW)
+                {
+                    BSP_LED_Off(LED_GREEN);
+                    return ; 
+                }   
                 if((green_led_flag == 0)&&(HAL_GetTick() >= (green_timer_cnt + 2700)))
                 {
                     green_timer_cnt = HAL_GetTick();
@@ -2944,9 +2960,8 @@ void MySystem(void const * argument)
                   USBD_Stop(&hUsbDeviceFS);
                   usb_init_flag = 0;
           	  }            
-              sound_toggle_simple(3,50,50);
-              entry_config_mode(system_flag_table);
-              sound_toggle_simple(1,500,150); 
+              if(entry_config_mode(system_flag_table) == 0)
+                  sound_toggle_simple(1,500,150); 
 
               if(usb_init_flag == 0)
               {
@@ -3225,7 +3240,7 @@ void update_info(void const * argument)
                    print_usart1("****************************** \r\n");
                    print_usart1("levef surport mode  resume \r\n");       
                    print_usart1("****************************** \r\n");     
-                   system_flag_table->guji_mode = RECORED_START_DOING;
+                   //system_flag_table->guji_mode = RECORED_START_DOING;
                    //osThreadResume(SystemCallHandle); 
                }
                system_flag_table->grecord_timer_cnt = HAL_GetTick();
