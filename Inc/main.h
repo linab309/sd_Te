@@ -106,6 +106,7 @@
 #define POWER_KEY_LONG_5S    0x06
 #define FUNCTION_KEY    0x07
 #define FUNCTION_KEY_LONG 0x08
+#define RESTORE_KEY_LONG 0x09
 
 //#define OLD 
 

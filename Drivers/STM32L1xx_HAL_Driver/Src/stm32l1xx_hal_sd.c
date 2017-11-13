@@ -1222,10 +1222,12 @@ HAL_SD_ErrorTypedef HAL_SD_CheckWriteOperation(SD_HandleTypeDef *hsd, uint32_t T
   {
     return (HAL_SD_ErrorTypedef)(hsd->SdTransferErr);
   }
-  
+
+  //timeout = Timeout;
   /* Wait until write is complete */
-  while(HAL_SD_GetStatus(hsd) != SD_TRANSFER_OK)
+  while((HAL_SD_GetStatus(hsd) != SD_TRANSFER_OK) && (timeout > 0))
   {    
+    //timeout--;  
   }
 
   return errorstate; 

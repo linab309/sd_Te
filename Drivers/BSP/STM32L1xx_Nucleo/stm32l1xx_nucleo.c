@@ -679,6 +679,43 @@ static bool IsBatteryDead(uint16_t mv) {return mv>3200 ? TRUE:FALSE;}
 static bool IsBatteryMid(uint16_t mv) {return mv>3550 ? TRUE:FALSE;}
 static bool IsBatteryHIGH(uint16_t mv) {return mv>3850 ? TRUE:FALSE;}
 static bool IsBatteryFull(uint16_t mv) {return mv>=4100 ? TRUE:FALSE;}
+
+
+/**
+  * @brief  Configures Interrupt mode for SD detection pin.
+  * @retval Returns 0
+  */
+uint8_t DDvm_ITConfig(void)
+{ 
+  GPIO_InitTypeDef gpioinitstruct = {0};
+  
+  /* Configure Interrupt mode for SD detection pin */ 
+  gpioinitstruct.Mode      = GPIO_MODE_IT_RISING_FALLING;
+  gpioinitstruct.Pull      = GPIO_PULLUP;
+  gpioinitstruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
+  gpioinitstruct.Pin       = DD_DETECT_PIN;
+  HAL_GPIO_Init(DD_DETECT_PORT, &gpioinitstruct);
+    
+  /* NVIC configuration for SDIO interrupts */
+  //HAL_NVIC_SetPriority(SD_DETECT_IRQn, 5, 0);
+  //HAL_NVIC_EnableIRQ(SD_DETECT_IRQn);
+  
+  return 0;
+}
+
+uint8_t DDW_IsDetected(void)
+{
+  __IO uint8_t status = 1;
+
+  /* Check SD card detect pin */
+  if(HAL_GPIO_ReadPin(DD_DETECT_PORT, DD_DETECT_PIN) != GPIO_PIN_SET) 
+  {
+    status = 0;
+  }
+  
+  return status;
+}
+
     
 /**
   * @brief  Display the IDD measured Value On the LCD Glass.
@@ -728,7 +765,7 @@ void DisplayIDDrunmV(system_flag *system_flag_table,uint32_t IDDmeas)
             {
                 if(system_flag_table->batt_change_ok_cnt == 0)
                 {
-                    system_flag_table->batt_change_ok_cnt = 30;//ms
+                    system_flag_table->batt_change_ok_cnt = 120;//ms
                     //system_flag_table->batt_Status  =  BATT_CHARG_OK;
                 }
             }
@@ -768,7 +805,7 @@ void DisplayIDDrunmV(system_flag *system_flag_table,uint32_t IDDmeas)
         if(system_flag_table->charger_connected == 1)
         {
             system_flag_table->batt_change_ok_cnt--;
-            if(system_flag_table->batt_change_ok_cnt == 0)
+            if((system_flag_table->batt_change_ok_cnt == 0)||(DDW_IsDetected() == 0))
             {
                 system_flag_table->batt_Status  =  BATT_CHARG_OK ;
             }

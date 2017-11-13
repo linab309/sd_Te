@@ -662,7 +662,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
         f_printf(&update_config_fp,"PowerOn: %d\r\n",eeprom_flag);
         stm_read_eerpom(12,&eeprom_flag);
 
-        // stm_read_eerpom(13,&eeprom_flag);
+        stm_read_eerpom(13,&eeprom_flag);
         if(system_flag_table->frist_power == 0)
         {
             stm_read_eerpom(14,&eeprom_flag);

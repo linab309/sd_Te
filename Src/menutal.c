@@ -782,7 +782,7 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
             return;
         }
     
-        if(system_flag_table->gujiFormats == GUJI_FORMATS_CSV)
+       if((system_flag_table->gujiFormats == GUJI_FORMATS_CSV) || (system_flag_table->power_status == POWER_LRUN))
         {
             buffer_Analysis(sys_fp,system_flag_table,guji_buffer_,rxlen);
         }
@@ -997,8 +997,11 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 
         case RECORED_RESTART_2:    
 
-            if((system_flag_table->ODOR == 0)||(mode == RECORED_RESTART ))
-			     system_flag_table->Message_head_number = 0;
+            if(mode != RECORED_RESTART_2)
+            {
+                if((system_flag_table->ODOR == 0)||(mode == RECORED_RESTART ))
+    			     system_flag_table->Message_head_number = 0;
+            }
             
 			if((gpsx->gpssta >= 1)&&(gpsx->latitude >0)&&(gpsx->longitude>0))
             //if(gpsx->gpssta >= 1)
@@ -1098,7 +1101,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     if(ret == 0)
                     {
 
-                        if(system_flag_table->gujiFormats == GUJI_FORMATS_CSV)
+                        if((system_flag_table->gujiFormats == GUJI_FORMATS_CSV) || (system_flag_table->power_status == POWER_LRUN))
                         {
                             //system_flag_table->gujiFormats = GUJI_FORMATS_CSV;
                             sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CSV",eeprom_tm.w_year,eeprom_tm.w_month,
@@ -1129,7 +1132,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     else
                     {
                     
-                        if(system_flag_table->gujiFormats == GUJI_FORMATS_CSV)
+                        if((system_flag_table->gujiFormats == GUJI_FORMATS_CSV) || (system_flag_table->power_status == POWER_LRUN))
                         {
                             //system_flag_table->gujiFormats = GUJI_FORMATS_CSV;
                             sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CSV",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
@@ -1179,7 +1182,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     }
 
                     system_flag_table->guji_mode = 2;
-                    if(ret == 1)
+                    if((ret == 1) && (system_flag_table->power_status != POWER_LRUN))
                     {
                         if(system_flag_table->gujiFormats == GUJI_FORMATS_GPS) 
                         {
@@ -1204,7 +1207,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 			}
             else
             {
-                #ifdef TEST_WRITE_SD
+                #if 0//def TEST_WRITE_SD
                     //RTC_DateStructure = system_flag_table->RTC_DateStructure;
                    // RTC_TimeStructure = system_flag_table->RTC_TimeStructure;   
                     

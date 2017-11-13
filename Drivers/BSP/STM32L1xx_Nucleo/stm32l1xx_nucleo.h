@@ -228,6 +228,14 @@ bool;
 #define FUNCTION_BUTTONx_GPIO_CLK_ENABLE(__INDEX__)    do { if((__INDEX__) == 2) FUNCTION_BUTTON_GPIO_CLK_ENABLE();} while(0)
 #define FUNCTION_BUTTONx_GPIO_CLK_DISABLE(__INDEX__)   (((__INDEX__) == 2) ? FUNCTION_BUTTON_GPIO_CLK_DISABLE() : 0)
 
+
+
+#define DD_DETECT_PIN                  GPIO_PIN_3
+#define DD_DETECT_PORT                 GPIOC
+#define DD_DETECT_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOC_CLK_ENABLE()
+#define DD_DETECT_GPIO_CLK_DISABLE()   __HAL_RCC_GPIOC_CLK_DISABLE()
+
+
 /**
   * @}
   */
