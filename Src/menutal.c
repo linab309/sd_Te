@@ -80,24 +80,24 @@ const char functionkey_Aarry[][7]=
 
 const char timer_zone_Aarry[][7]=
 {
-	"-12:00",   // 1
-	"-11:00",   // 2
+	"-12:00",   // 0
+	"-11:00",   // 1
 //	"-10:30",   // 3
-	"-10:00",   // 4
-	"-09:30",   //5
-	"-09:00",
+	"-10:00",   // 2
+	"-09:30",   // 3
+	"-09:00", // 4
 //	"-08:30",
-	"-08:00",
-	"-07:00",
-	"-06:00",
-	"-05:00",
-	"-04:30",
-	"-04:00",
-	"-03:30",
-	"-03:00",
-	"-02:30",
-	"-02:00",
-	"-01:00",
+	"-08:00", // 5
+	"-07:00",// 6
+	"-06:00",// 7
+	"-05:00",// 8
+	"-04:30",// 9
+	"-04:00",// 10
+	"-03:30",// 11
+	"-03:00",// 12
+	"-02:30",// 13
+	"-02:00",// 14
+	"-01:00",// 15
 //	"-00:44",
 //	"-00:25",
 	"+00:00",
@@ -420,6 +420,10 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
         {
             flag.bitc.tag = 2;   
         }
+        else if(guji_record_type == 'G')
+        {
+            flag.bitc.tag = 3;   
+        }
         else
         {
             flag.bitc.tag = 0;
@@ -624,6 +628,11 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
         else if(flag.bitc.tag == 2)
         {
             record_type = 'D';
+
+        }
+        else if(flag.bitc.tag == 3)
+        {
+            record_type = 'G';
 
         }
 
@@ -1103,7 +1112,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 
                         if((system_flag_table->gujiFormats == GUJI_FORMATS_CSV) || (system_flag_table->power_status == POWER_LRUN))
                         {
-                            //system_flag_table->gujiFormats = GUJI_FORMATS_CSV;
+                            system_flag_table->gujiFormats = GUJI_FORMATS_CSV;
                             sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CSV",eeprom_tm.w_year,eeprom_tm.w_month,
                             eeprom_tm.w_date, eeprom_tm.hour,eeprom_tm.min,eeprom_tm.sec);
                             
@@ -1168,8 +1177,12 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 
                     }
 
-
-                    sys_fr = open_append(sys_fp, track_file);
+                    if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX) 
+                    {
+                        sys_fr = open_append_sp(sys_fp, track_file);
+                    }
+                    else
+                        sys_fr = open_append(sys_fp, track_file);
                     
                     if((FR_OK  != sys_fr)&&(FR_EXIST  != sys_fr))
                     {
@@ -1327,12 +1340,14 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
     			}
     			
 
-                if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)
+                if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)                   
                 {
-                    f_printf(sys_fp,"</trkseg>\n");
-                    f_printf(sys_fp,"</trk>\n");
-                    f_printf(sys_fp,"</gpx>\n");
-
+                    //if(!((system_flag_table->power_status == POWER_LRUN_SLEEP)||(system_flag_table->power_status == POWER_SURPORT_SLEEP)))
+                    {
+                        f_printf(sys_fp,"</trkseg>\n");
+                        f_printf(sys_fp,"</trk>\n");
+                        f_printf(sys_fp,"</gpx>\n");
+                    }
                 }
                 fr = f_close(sys_fp);
                 print_usart1("\r\n close file :%d\r\n ",fr);

@@ -50,6 +50,8 @@
 /* USER CODE BEGIN Includes */
 #include "gps.h"
 #include <stdarg.h>
+#include <string.h>
+
 #include "menutal.h"
 #include "stm32l1xx_nucleo.h"
 
@@ -125,6 +127,7 @@ uint8_t sound_mode = 0 ;
 
 uint8_t usb_init_flag = 0 ;
 static uint8_t LED_SURPORT_FLAG = 0;
+static uint8_t LED_SURPORT_F_FLAG = 0;
 
 static uint8_t LED_Sd_FLAG = 0;
 static uint8_t Wang_FLAG = 0;
@@ -212,10 +215,11 @@ static int inHandlerMode (void)
 
 void print_usart1(char *format, ...)
 {
-#if 1
+
     char buf[160];
     uint32_t timer_out = 0;
-    
+    va_list ap;
+       
     if(inHandlerMode() != 0)
     {
         taskDISABLE_INTERRUPTS();
@@ -231,7 +235,7 @@ void print_usart1(char *format, ...)
         }
     }
     
-    va_list ap;
+
     va_start(ap, format);
     if(vsprintf(buf, format, ap) > 0)
     {
@@ -243,7 +247,7 @@ void print_usart1(char *format, ...)
     {
         taskENABLE_INTERRUPTS();
     }
-#endif    
+   
 }
 
 
@@ -1093,7 +1097,7 @@ void gps_power_mode(uint8_t mode)
     
         //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);    
         memset(gpsx,0,sizeof(nmea_msg));
-        is_locker  = 0;
+        //is_locker  = 0;
     }
 }
 
@@ -1652,8 +1656,14 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                 }
                 else
                 {
+                     if(LED_SURPORT_F_FLAG == 1)
+                     {
+                         LED_SURPORT_F_FLAG = 0;
+                         save_guiji_message(gpsx,system_flag_table,'G');
 
-                     save_guiji_message(gpsx,system_flag_table,'T');
+                     }
+                     else
+                         save_guiji_message(gpsx,system_flag_table,'T');
 					 //test_cnt++;
 					 //print_usart1("save :%d \r\n",test_cnt);
 
@@ -1673,11 +1683,11 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
             break;
         case POWER_LRUN:
 
-            if(system_flag_table->guji_mode == RECORED_START_DOING)
+            if((system_flag_table->guji_mode == RECORED_START_DOING)||(system_flag_table->guji_mode == RECORED_RESTART_2))
             {
                 if(gpsx->gpssta == 0 )
                 {
-                    if(300000 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
+                    if(180000 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
                     {
                         if(is_locker == 1)
                             lp_number = 8 ;
@@ -2005,6 +2015,24 @@ uint8_t sound_toggle_simple(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound
            osDelay(sound_on_timer);
            HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
            osDelay(sound_off_timer);
+       }
+   }
+	 
+   return 0;
+}
+
+uint8_t sound_toggle_simple_Force(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound_off_timer)
+{
+   uint8_t i = 0;
+
+
+   {
+       for(i = 0;i< cnt ; i++)
+       {
+           HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+           HAL_Delay(sound_on_timer);
+           HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);
+           HAL_Delay(sound_off_timer);
        }
    }
 	 
@@ -2391,7 +2419,7 @@ void status_led_config(void)
        if(system_flag_table->power_status == POWER_LRUN_SLEEP)
        {
   
-           if((system_flag_table->lowpower_timer) > (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
+           if((system_flag_table->lowpower_timer) > (HAL_GetTick() - (system_flag_table->grecord_timer_cnt + (system_flag_table->grecord_timer_cnt/120))))
            {
             ;
            }                   
@@ -2623,6 +2651,7 @@ void status_led_config(void)
 /* StartDefaultTask function */
 void StartDefaultTask(void const * argument)
 {
+  FIL test_fp ;
 
   //uint8_t save_temp = 0;  
   /* init code for FATFS */
@@ -2646,6 +2675,7 @@ void StartDefaultTask(void const * argument)
   BSP_LED_Off(LED_RED);
   BSP_LED_Off(LED_BULE);
 #endif
+//  open_append_sp(&test_fp,"2018-01/10053644.CSV");
 
   /*保存文件*/
   /* Infinite loop */
@@ -2761,6 +2791,7 @@ void Get_gps_info(void const * argument)
               gpsx->longitude = 29;
 
               gpsx->hdop = 20;
+              system_flag_table->gujiFormats = GUJI_FORMATS_MEA;
 
 #endif
               USART2_RX_STA_RP = save_usart2_wp;	 //得到数据长度  
@@ -2979,6 +3010,7 @@ void MySystem(void const * argument)
 				  sound_toggle_simple(3,50,50);
                   Recording_guji(&gps_fp,system_flag_table,gpsx);
                   system_flag_table->guji_mode = RECORED_RESTART;
+                  is_locker = 0;
                   HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
 				  osThreadResume(Get_gps_info_Handle);
  
@@ -3372,6 +3404,7 @@ void update_info(void const * argument)
                    print_usart1("****************************** \r\n");
                    print_usart1("entry surport mode  go to stop \r\n");       
                    print_usart1("****************************** \r\n");   
+             
                }
                else
                {
@@ -3420,6 +3453,7 @@ void update_info(void const * argument)
                    print_usart1("levef surport mode  resume \r\n");       
                    print_usart1("****************************** \r\n");     
                    system_flag_table->guji_mode = RECORED_RESTART_2;
+                   LED_SURPORT_F_FLAG = 1;
                    //osThreadResume(SystemCallHandle); 
                }
                system_flag_table->grecord_timer_cnt = HAL_GetTick();

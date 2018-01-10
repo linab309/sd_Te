@@ -119,10 +119,42 @@ FRESULT open_append (
     }
 	open_cnt ++;
 	if((fr != FR_OK) &&(FR_EXIST != fr) && (open_cnt <10))
-		open_append(fp,path);
+		open_append(fp,path);
+
     else
 		open_cnt = 0;
 //	__enable_irq();
+    return fr;
+}
+
+FRESULT open_append_sp (
+    FIL* fp,            /* [OUT] File object to create */
+    const char* path    /* [IN]  File name to be opened */
+)
+{
+    FRESULT fr;
+
+    char sLine[20] ={0};
+
+    /* Opens an existing file. If not exist, creates a new file. */
+    fr = f_open(fp, path, FA_WRITE|FA_READ| FA_OPEN_ALWAYS);
+    if (fr == FR_OK) {
+        /* Seek to end of the file to append data */
+        fr = f_lseek(fp, f_size(fp)-25);        
+        f_gets(sLine, 20, fp);
+        if (0 == strncmp("</trkseg>", sLine, 9)) 
+        { // 长度依文件读取的为准
+             
+        }
+        else
+        {
+            fr = f_lseek(fp, f_size(fp));
+        }
+        
+        if (fr != FR_OK)
+            f_close(fp);
+    }
+
     return fr;
 }
 
@@ -193,6 +225,7 @@ uint8_t configfs_set(FIL *update_config_fp)
     BSP_LED_Init(LED_GPS);  
     BSP_LED_Init(LED_SD);  
     BSP_LED_Init(LED_SURPORT); 
+    BSP_LED_Init(LED_RED); 
 
 
 
@@ -576,6 +609,15 @@ uint8_t configfs_set(FIL *update_config_fp)
     BSP_LED_Off(LED_SD);  
     BSP_LED_Off(LED_SURPORT); 
     //print_usart1("\r\n no_support_char :%d \r\n",no_support_char); 
+    for(i=0;i<10;i++)
+    {
+        if(i%2 == 0)
+            sound_toggle_simple_Force(1,50,50);
+        HAL_Delay(50);
+        BSP_LED_On(LED_RED); 
+        HAL_Delay(150);
+        BSP_LED_Off(LED_RED); 
+    }
     return no_support_char;
 }
 
@@ -657,7 +699,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
 
         
 
-        f_printf(&update_config_fp,"Firmware: V 0.02 \r\n");
+        f_printf(&update_config_fp,"Firmware: V 0.9 \r\n");
         stm_read_eerpom(11,&eeprom_flag);
         f_printf(&update_config_fp,"PowerOn: %d\r\n",eeprom_flag);
         stm_read_eerpom(12,&eeprom_flag);

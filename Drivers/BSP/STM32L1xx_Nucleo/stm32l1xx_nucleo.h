@@ -231,9 +231,9 @@ bool;
 
 
 #define DD_DETECT_PIN                  GPIO_PIN_3
-#define DD_DETECT_PORT                 GPIOC
-#define DD_DETECT_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOC_CLK_ENABLE()
-#define DD_DETECT_GPIO_CLK_DISABLE()   __HAL_RCC_GPIOC_CLK_DISABLE()
+#define DD_DETECT_PORT                 GPIOA
+#define DD_DETECT_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DD_DETECT_GPIO_CLK_DISABLE()   __HAL_RCC_GPIOA_CLK_DISABLE()
 
 
 /**
