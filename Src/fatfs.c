@@ -140,17 +140,49 @@ FRESULT open_append_sp (
     fr = f_open(fp, path, FA_WRITE|FA_READ| FA_OPEN_ALWAYS);
     if (fr == FR_OK) {
         /* Seek to end of the file to append data */
-        fr = f_lseek(fp, f_size(fp)-25);        
-        f_gets(sLine, 20, fp);
-        if (0 == strncmp("</trkseg>", sLine, 9)) 
-        { // 长度依文件读取的为准
-             
+        if( f_size(fp) > 27)
+        {
+            fr = f_lseek(fp, f_size(fp)-27);        
+            f_gets(sLine, 20, fp);
+            if (0 == strncmp("</trkseg>", sLine, 9)) 
+            { // 长度依文件读取的为准
+                 //print_usart1("%s sLine 1 \r\n",sLine);
+#if 1                 
+                 if(NULL != f_gets(sLine, 20, fp))
+                 {
+                     //print_usart1("%s sLine 2 \r\n",sLine);
+                     if (0 == strncmp("</trk>", sLine, 6)) 
+                     {
+                        
+                         if(NULL != f_gets(sLine, 20, fp))
+                         {
+                             //print_usart1("%s sLine 3 \r\n",sLine);
+                             if (0 == strncmp("</gpx>", sLine, 6)) 
+                             {
+                               
+                                    fr = f_lseek(fp, 0);
+                                    fr = f_lseek(fp, f_size(fp)-27); 
+                             }
+
+                         }
+                     }
+                 }  
+                 
+#endif
+            }
+            else
+            {
+                fr = f_lseek(fp, 0);
+                fr = f_lseek(fp, f_size(fp));
+                //print_usart1("%s sLine 1 else \r\n",sLine);
+            }
         }
         else
         {
-            fr = f_lseek(fp, f_size(fp));
-        }
-        
+             fr = f_lseek(fp, 0);
+             fr = f_lseek(fp, f_size(fp)); 
+             //print_usart1("default \r\n");
+        }        
         if (fr != FR_OK)
             f_close(fp);
     }
@@ -215,8 +247,6 @@ uint8_t  My_Fs_Init(FATFS *SD_FatFs)
 
 uint8_t configfs_set(FIL *update_config_fp)
 {
-
-
     char *string = NULL;
     uint8_t flash_cnt = 0;
     uint8_t i = 0;
@@ -226,10 +256,6 @@ uint8_t configfs_set(FIL *update_config_fp)
     BSP_LED_Init(LED_SD);  
     BSP_LED_Init(LED_SURPORT); 
     BSP_LED_Init(LED_RED); 
-
-
-
-
     
     print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "TimeZone", "config.txt"));
     print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "SpeedAlert", "config.txt")); 
@@ -609,14 +635,17 @@ uint8_t configfs_set(FIL *update_config_fp)
     BSP_LED_Off(LED_SD);  
     BSP_LED_Off(LED_SURPORT); 
     //print_usart1("\r\n no_support_char :%d \r\n",no_support_char); 
-    for(i=0;i<10;i++)
+    if(no_support_char == 1)
     {
-        if(i%2 == 0)
-            sound_toggle_simple_Force(1,50,50);
-        HAL_Delay(50);
-        BSP_LED_On(LED_RED); 
-        HAL_Delay(150);
-        BSP_LED_Off(LED_RED); 
+        for(i=0;i<10;i++)
+        {
+            if(i%2 == 0)
+                sound_toggle_simple_Force(1,50,50);
+            HAL_Delay(50);
+            BSP_LED_On(LED_RED); 
+            HAL_Delay(150);
+            BSP_LED_Off(LED_RED); 
+        }
     }
     return no_support_char;
 }

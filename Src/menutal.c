@@ -1206,6 +1206,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         else if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)
                         {
                             //todo: add gpx file head.
+                            
                             gpx_filehead_write(sys_fp,track_file);
                         }
 

@@ -690,12 +690,12 @@ uint8_t DDvm_ITConfig(void)
   GPIO_InitTypeDef gpioinitstruct = {0};
   
   /* Configure Interrupt mode for SD detection pin */ 
-  gpioinitstruct.Mode      = GPIO_MODE_IT_RISING_FALLING;
+  gpioinitstruct.Mode      = GPIO_MODE_INPUT;
   gpioinitstruct.Pull      = GPIO_PULLUP;
   gpioinitstruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
   gpioinitstruct.Pin       = DD_DETECT_PIN;
   HAL_GPIO_Init(DD_DETECT_PORT, &gpioinitstruct);
-    
+  DD_DETECT_GPIO_CLK_ENABLE();  
   /* NVIC configuration for SDIO interrupts */
   //HAL_NVIC_SetPriority(SD_DETECT_IRQn, 5, 0);
   //HAL_NVIC_EnableIRQ(SD_DETECT_IRQn);

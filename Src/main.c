@@ -1638,6 +1638,13 @@ void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
                 
                 if(system_flag_table->gujiFormats == GUJI_FORMATS_MEA)
                 {
+                    if(system_flag_table->Message_head_number == 0)
+                    {
+                        if(gpsx->hdop >= 500)
+                            break;
+                        else
+                            system_flag_table->Message_head_number = 1; 
+                    }
 
 				    if(system_flag_table->guji_buffer_Index_wp + rxlen < MAX_GUJI_BUFFER_MAX_LEN)
 				    {
@@ -2419,7 +2426,7 @@ void status_led_config(void)
        if(system_flag_table->power_status == POWER_LRUN_SLEEP)
        {
   
-           if((system_flag_table->lowpower_timer) > (HAL_GetTick() - (system_flag_table->grecord_timer_cnt + (system_flag_table->grecord_timer_cnt/120))))
+           if((system_flag_table->lowpower_timer) > (HAL_GetTick() - (system_flag_table->grecord_timer_cnt + (system_flag_table->lowpower_timer/120))))
            {
             ;
            }                   
@@ -2675,7 +2682,7 @@ void StartDefaultTask(void const * argument)
   BSP_LED_Off(LED_RED);
   BSP_LED_Off(LED_BULE);
 #endif
-//  open_append_sp(&test_fp,"2018-01/10053644.CSV");
+  //open_append_sp(&test_fp,"2018-01/10053644.CSV");
 
   /*保存文件*/
   /* Infinite loop */
@@ -2784,14 +2791,17 @@ void Get_gps_info(void const * argument)
 #ifdef TEST_WRITE_SD
               gpsx->gpssta = 2; /*for test*/
               gpsx->posslnum = 5 ;
-              gpsx->utc.year = 2017;
-              gpsx->utc.month= 10;
-              gpsx->utc.date = 10;
+              gpsx->utc.year = 2018;
+              gpsx->utc.month= 1;
+              gpsx->utc.date = 13;
               gpsx->latitude = 101; 
               gpsx->longitude = 29;
+              gpsx->nshemi = 'N';
+              gpsx->ewhemi= 'E';
+              gpsx->speed = 0;
 
               gpsx->hdop = 20;
-              system_flag_table->gujiFormats = GUJI_FORMATS_MEA;
+              system_flag_table->gujiFormats = GUJI_FORMATS_GPX;
 
 #endif
               USART2_RX_STA_RP = save_usart2_wp;	 //得到数据长度  
