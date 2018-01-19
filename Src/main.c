@@ -935,6 +935,7 @@ static void MX_GPIO_Init(void)
   /* EXTI interrupt init*/
   //HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
   //HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+  DDvm_ITConfig();
 
 }
 
@@ -2426,7 +2427,7 @@ void status_led_config(void)
        if(system_flag_table->power_status == POWER_LRUN_SLEEP)
        {
   
-           if((system_flag_table->lowpower_timer) > (HAL_GetTick() - (system_flag_table->grecord_timer_cnt + (system_flag_table->lowpower_timer/120))))
+           if((system_flag_table->lowpower_timer) > (HAL_GetTick() - system_flag_table->grecord_timer_cnt ))
            {
             ;
            }                   
