@@ -102,6 +102,8 @@ system_flag system_flag_table_1;
 FRESULT fr;
 FIL gps_fp ;
 
+IWDG_HandleTypeDef Iwdg;
+
 
 uint32_t gps_data_time = 0xffffffff;
 
@@ -170,7 +172,7 @@ void update_info(void const * argument);
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 static void MX_USART3_UART_Init_9600(void);                                
                                 
-                                
+static void MX_Iwdg_Init(void);                                
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -216,6 +218,7 @@ static int inHandlerMode (void)
 void print_usart1(char *format, ...)
 {
 
+#if 0
     char buf[160];
     uint32_t timer_out = 0;
     va_list ap;
@@ -247,7 +250,7 @@ void print_usart1(char *format, ...)
     {
         taskENABLE_INTERRUPTS();
     }
-   
+#endif   
 }
 
 
@@ -334,6 +337,7 @@ int main(void)
   //MX_RTC_Init();
   //MX_TIM2_Init();
 
+  MX_Iwdg_Init();
 
   /* USER CODE BEGIN 2 */
   //sd_power_mode(1)
@@ -609,6 +613,26 @@ void SystemClock_Config(void)
   /* SysTick_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(SysTick_IRQn, 15, 0);
 }
+
+static void MX_Iwdg_Init(void)
+{
+
+    /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
+    */
+  Iwdg.Instance = IWDG; 
+  Iwdg.Init.Prescaler = IWDG_PRESCALER_32;
+  Iwdg.Init.Reload = 2560;
+
+  if (HAL_IWDG_Init(&Iwdg) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+
+
+}
+
+    
 
 /* ADC init function */
 static void MX_ADC_Init(void)
@@ -2783,9 +2807,9 @@ void Get_gps_info(void const * argument)
               gps_data[rxlen] = 0;
 
 
-			  //if(rxlen)
-              //print_usart1("%s",gps_data);
-              //print_usart1("-%d-%d-%d\r\n",save_usart2_wp,USART2_RX_STA_RP,rxlen);
+			  if(rxlen > 120)
+                print_usart1("%s",gps_data);
+              print_usart1("-%d-%d-%d\r\n",save_usart2_wp,USART2_RX_STA_RP,rxlen);
 
 			  memset(gpsx,0,sizeof(nmea_msg));  
 			  GPS_Analysis(gpsx,gps_data);                
@@ -2793,8 +2817,8 @@ void Get_gps_info(void const * argument)
               gpsx->gpssta = 2; /*for test*/
               gpsx->posslnum = 5 ;
               gpsx->utc.year = 2018;
-              gpsx->utc.month= 1;
-              gpsx->utc.date = 13;
+              gpsx->utc.month= 07;
+              gpsx->utc.date = 19;
               gpsx->latitude = 101; 
               gpsx->longitude = 29;
               gpsx->nshemi = 'N';
@@ -3324,6 +3348,7 @@ void update_info(void const * argument)
   auto_power_on();
   auto_power_off();
   status_led_config();
+  HAL_IWDG_Refresh(&Iwdg);
 
   if(adc_cnt > 600)
   {
@@ -3567,7 +3592,7 @@ void update_info(void const * argument)
 
     if(system_flag_table->guji_mode == RECORED_START_DOING)
     {
-        if(HAL_GetTick() > (save_file_cnt + 60000))
+        if(HAL_GetTick() > (save_file_cnt + 90000))
         {
            system_flag_table->guji_mode = RECORED_SAVE; 
            save_file_cnt  = HAL_GetTick();

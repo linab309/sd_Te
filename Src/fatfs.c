@@ -267,9 +267,9 @@ uint8_t configfs_set(FIL *update_config_fp)
     print_usart1("%s\r\n", GetIniKeyString("RECORD", "SpeedMask", "config.txt"));
     print_usart1("%d\r\n", GetIniKeyInt("RECORD", "SpyModeTimer", "config.txt")); 
     print_usart1("%s\r\n", GetIniKeyString("RECORD", "OneTrackPerDay", "config.txt")); 
-    print_usart1("%s\r\n", GetIniKeyString("Unit", "Speed", "config.txt")); 
+    print_usart1("%s\r\n", GetIniKeyString("UNIT", "Speed", "config.txt")); 
 
-    string = GetIniKeyString("Unit", "Speed", "config.txt");
+    string = GetIniKeyString("UNIT", "Speed", "config.txt");
 
     if(strcmp("km/h",string) == 0)
     {
@@ -728,7 +728,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
 
         
 
-        f_printf(&update_config_fp,"Firmware: V 0.9 \r\n");
+        f_printf(&update_config_fp,"Firmware: V 0.9 %s\r\n",__DATE__);
         stm_read_eerpom(11,&eeprom_flag);
         f_printf(&update_config_fp,"PowerOn: %d\r\n",eeprom_flag);
         stm_read_eerpom(12,&eeprom_flag);
