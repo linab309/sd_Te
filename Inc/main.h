@@ -63,8 +63,10 @@
 /* USER CODE BEGIN Private defines */
 #define  MAX_BMP_FILES  25
 #define  MAX_BMP_FILE_NAME 11
-#define  MAX_UART3_LEN 0x800
-#define  MAX_GUJI_BUFFER_MAX_LEN (1000)
+
+#define  MAX_UART3_LEN 0x400
+#define  MAX_GUJI_BUFFER_MAX_LEN (1024)
+
 
 
 #define BUTTON_PRESS 1
@@ -122,13 +124,14 @@
 #define SD_STATS_OK         0
 #define SD_STATS_ERROR_CARD 1
 #define SD_STATS_NO_CARD    2
+#define SD_STATS_BE_WRITE   3
 
 extern void print_usart1(char *format, ...);
 extern void SystemClock_Config_msi(void);
 extern void SystemClock_Config_resume(void);
 
 
-//#define TEST_WRITE_SD
+#define TEST_WRITE_SD
 
 /* USER CODE END Private defines */
 

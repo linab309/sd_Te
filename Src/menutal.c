@@ -769,6 +769,25 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
 
         
         }
+
+        if(guji_buffer_ == NULL)
+        {
+            print_usart1("Error: guji_buffer_ malloc failed  rxlen = %d\r\n",rxlen);
+        }
+        else
+        {
+        #if 0
+            if(debug_cnt >= 10)
+            {
+                print_usart1("Write to flash rxlen=%d\r\n",rxlen);
+                debug_cnt = 0;
+            }
+            else
+            {
+                debug_cnt++;
+            }
+        #endif            
+        }
         
         system_flag_table->guji_buffer_Index_rp = system_flag_table->guji_buffer_Index_wp;
         
@@ -799,15 +818,7 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
         {    
             fr = f_write(sys_fp,guji_buffer_,rxlen,&wb);
 			//print_usart1("%s",guji_buffer_);
-            if(debug_cnt > 1)
-            {
-                //print_usart1("%s",guji_buffer_);
-                debug_cnt = 0;
-            }
-            else
-            {
-                debug_cnt++;
-            }
+
                
         }
         else if(system_flag_table->gujiFormats == GUJI_FORMATS_GPX)
@@ -818,6 +829,8 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
         }
 
         free(guji_buffer_);
+        system_flag_table->wirte_storge_flag = 1;
+        system_flag_table->File_status = 1;
 
         
         
@@ -980,6 +993,7 @@ void Del_allgujifile(void)
 }
 
 #endif
+extern uint32_t save_file_cnt ;
 void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 {
 
@@ -1193,7 +1207,8 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     {
                         system_flag_table->File_status = 1;
                     }
-
+                    
+                    save_file_cnt  = HAL_GetTick();
                     system_flag_table->guji_mode = 2;
                     if((ret == 1) && (system_flag_table->power_status != POWER_LRUN))
                     {
@@ -1292,7 +1307,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                    if(FR_OK  == sys_fr)
                    {                   
                         print_usart1("\r\n sync \r\n "); 
-                        system_flag_table->File_status = 1;
+                        system_flag_table->File_status = 0;
                    }
                    else
                    {
@@ -1316,7 +1331,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         }
                         #endif
 
-                        system_flag_table->File_status = 1;
+                        system_flag_table->File_status = 0;
  
                    }
                           

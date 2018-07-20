@@ -257,7 +257,7 @@
 #define SD_SINGLE_BUS_SUPPORT           (0x00010000U)
 #define SD_CARD_LOCKED                  (0x02000000U)
 
-#define SD_DATATIMEOUT                  (0xFFFFFFFFU)
+#define SD_DATATIMEOUT                  (0x0000FFFFU)
 #define SD_0TO7BITS                     (0x000000FFU)
 #define SD_8TO15BITS                    (0x0000FF00U)
 #define SD_16TO23BITS                   (0x00FF0000U)
@@ -536,7 +536,7 @@ HAL_SD_ErrorTypedef HAL_SD_ReadBlocks(SD_HandleTypeDef *hsd, uint32_t *pReadBuff
       return errorstate;
     }
 
-    __disable_irq();
+    //__disable_irq();
         
     /* Poll on SDIO flags */
     while(!__HAL_SD_SDIO_GET_FLAG(hsd, SDIO_FLAG_RXOVERR | SDIO_FLAG_DCRCFAIL | SDIO_FLAG_DTIMEOUT | SDIO_FLAG_DATAEND | SDIO_FLAG_STBITERR))
@@ -554,7 +554,7 @@ HAL_SD_ErrorTypedef HAL_SD_ReadBlocks(SD_HandleTypeDef *hsd, uint32_t *pReadBuff
       }
     }     
 
-    __enable_irq();
+   // __enable_irq();
   }
   else
   {
@@ -570,7 +570,7 @@ HAL_SD_ErrorTypedef HAL_SD_ReadBlocks(SD_HandleTypeDef *hsd, uint32_t *pReadBuff
     while(!__HAL_SD_SDIO_GET_FLAG(hsd, SDIO_FLAG_RXOVERR | SDIO_FLAG_DCRCFAIL | SDIO_FLAG_DTIMEOUT | SDIO_FLAG_DBCKEND | SDIO_FLAG_STBITERR))
     {
       //HAL_UART_IRQHandler(&huart3);
-      __disable_irq();
+      //__disable_irq();
       if (__HAL_SD_SDIO_GET_FLAG(hsd, SDIO_FLAG_RXFIFOHF))
       {
         /* Read data from SDIO Rx FIFO */
@@ -581,7 +581,7 @@ HAL_SD_ErrorTypedef HAL_SD_ReadBlocks(SD_HandleTypeDef *hsd, uint32_t *pReadBuff
         
         tempbuff += 8;
       }
-      __enable_irq();
+      //__enable_irq();
     }
   }
   

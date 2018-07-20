@@ -212,6 +212,7 @@ typedef struct
     uint8_t unit;
     uint8_t File_status;
     uint8_t function_index;
+    uint8_t wirte_storge_flag;
 
 }system_flag;
 

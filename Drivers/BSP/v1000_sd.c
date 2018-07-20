@@ -463,7 +463,7 @@ static void SD_MspInit(void)
   HAL_GPIO_Init(SD_DETECT_GPIO_PORT, &gpioinitstruct);
     
   /* NVIC configuration for SDIO interrupts */
-  HAL_NVIC_SetPriority(SDIO_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(SDIO_IRQn, 2 ,0);
   HAL_NVIC_EnableIRQ(SDIO_IRQn);
   
   /* DMA initialization should be done here but , as there is only one channel for RX and TX it is configured and done directly when required*/

@@ -205,6 +205,9 @@ void USART1_IRQHandler(void)
   /* USER CODE END USART1_IRQn 1 */
 }
 
+
+
+
 /**
 * @brief This function handles USART3 global interrupt.
 */
@@ -281,6 +284,12 @@ void DMA2_Channel4_IRQHandler(void)
   {
 
   }
+}
+
+
+void DMA1_Channel3_IRQHandler(void)
+{
+  HAL_DMA_IRQHandler(huart3.hdmarx);
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

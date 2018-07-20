@@ -46,6 +46,18 @@
 
 extern void Error_Handler(void);
 /* USER CODE BEGIN 0 */
+/* Definition for USARTx's DMA */
+#define USARTx_TX_DMA_CHANNEL             DMA1_Channel2
+#define USARTx_RX_DMA_CHANNEL             DMA1_Channel3
+
+
+/* Definition for USARTx's NVIC */
+#define USARTx_DMA_TX_IRQn                DMA1_Channel2_IRQn
+#define USARTx_DMA_RX_IRQn                DMA1_Channel3_IRQn
+#define USARTx_DMA_TX_IRQHandler          DMA1_Channel2_IRQHandler
+#define USARTx_DMA_RX_IRQHandler          DMA1_Channel3_IRQHandler
+
+#define DMAx_CLK_ENABLE()                __HAL_RCC_DMA1_CLK_ENABLE()
 
 /* USER CODE END 0 */
 /**
@@ -373,6 +385,9 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
 {
 
   GPIO_InitTypeDef GPIO_InitStruct;
+  static DMA_HandleTypeDef hdma_tx;
+  static DMA_HandleTypeDef hdma_rx;
+  
   if(huart->Instance==USART1)
   {
   /* USER CODE BEGIN USART1_MspInit 0 */
@@ -393,8 +408,8 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /* Peripheral interrupt init */
-    HAL_NVIC_SetPriority(USART1_IRQn, 5, 0);
-    HAL_NVIC_EnableIRQ(USART1_IRQn);
+    //HAL_NVIC_SetPriority(USART1_IRQn, 5, 0);
+    //HAL_NVIC_EnableIRQ(USART1_IRQn);
   /* USER CODE BEGIN USART1_MspInit 1 */
 
   /* USER CODE END USART1_MspInit 1 */
@@ -402,6 +417,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
   else if(huart->Instance==USART3)
   {
   /* USER CODE BEGIN USART3_MspInit 0 */
+    DMAx_CLK_ENABLE() ; 
 
   /* USER CODE END USART3_MspInit 0 */
     /* Peripheral clock enable */
@@ -418,10 +434,35 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     GPIO_InitStruct.Alternate = GPIO_AF7_USART3;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+
+  /* USER CODE BEGIN USART3_MspInit 1 */
+  
+    /* Configure the DMA handler for reception process */
+    hdma_rx.Instance                 = USARTx_RX_DMA_CHANNEL;
+    hdma_rx.Init.Direction           = DMA_PERIPH_TO_MEMORY;
+    hdma_rx.Init.PeriphInc           = DMA_PINC_DISABLE;
+    hdma_rx.Init.MemInc              = DMA_MINC_ENABLE;
+    hdma_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    hdma_rx.Init.MemDataAlignment    = DMA_MDATAALIGN_BYTE;
+    hdma_rx.Init.Mode                = DMA_CIRCULAR;
+    hdma_rx.Init.Priority            = DMA_PRIORITY_HIGH;
+    /* Associate the initialized DMA handle to the the UART handle */
+    __HAL_LINKDMA(huart, hdmarx, hdma_rx);
+
+    HAL_DMA_Abort(&hdma_rx);
+
+    /* Deinitialize the Channel for new transfer */
+    HAL_DMA_DeInit(&hdma_rx);
+    HAL_DMA_Init(&hdma_rx);
+  /* Stop any ongoing transfer and reset the state*/
+
+    /* NVIC configuration for DMA transfer complete interrupt (USART3a_RX) */
+    HAL_NVIC_SetPriority(USARTx_DMA_RX_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(USARTx_DMA_RX_IRQn);
+    
     /* Peripheral interrupt init */
     HAL_NVIC_SetPriority(USART3_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(USART3_IRQn);
-  /* USER CODE BEGIN USART3_MspInit 1 */
 
   /* USER CODE END USART3_MspInit 1 */
   }
@@ -470,6 +511,20 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
     HAL_NVIC_DisableIRQ(USART3_IRQn);
 
   /* USER CODE BEGIN USART3_MspDeInit 1 */
+  /*##-3- Disable the DMA #####################################################*/
+  /* De-Initialize the DMA channel associated to reception process */
+  if(huart->hdmarx != 0)
+  {
+    HAL_DMA_DeInit(huart->hdmarx);
+  }
+  /* De-Initialize the DMA channel associated to transmission process */
+  if(huart->hdmatx != 0)
+  {
+    HAL_DMA_DeInit(huart->hdmatx);
+  }  
+  
+  /*##-4- Disable the NVIC for DMA ###########################################*/
+  HAL_NVIC_DisableIRQ(USARTx_DMA_RX_IRQn);
 
   /* USER CODE END USART3_MspDeInit 1 */
   }

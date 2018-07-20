@@ -65,6 +65,7 @@
 #include "usb_device.h"
 #include "usbd_core.h"
 #include "stm_eeprom.h"
+#include "RxP.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -80,6 +81,9 @@ TIM_HandleTypeDef htim10;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
+
+WWDG_HandleTypeDef hwwdg;
+
 
 osThreadId defaultTaskHandle;
 osThreadId Get_gps_info_Handle;
@@ -107,20 +111,24 @@ IWDG_HandleTypeDef Iwdg;
 
 uint32_t gps_data_time = 0xffffffff;
 
-uint8_t uart3_buffer[MAX_UART3_LEN];
+uint8_t uart3_dma_buffer[100];
+//uint8_t uart3_buffer[MAX_UART3_LEN];
+
 uint8_t self_guiji_buffer[MAX_GUJI_BUFFER_MAX_LEN];
 static uint16_t usb_timer_cnt = 0 ;
 
 
 /*GPS 数据接收标志位*/
-uint16_t USART2_RX_STA_RP = 0; 
-uint16_t USART2_RX_STA_WP = 0; 
-uint8_t USART2_RX_STA = 0; 
+//uint16_t USART2_RX_STA_RP = 0; 
+//uint16_t USART2_RX_STA_WP = 0; 
+//uint8_t USART2_RX_STA = 0; 
 
-uint16_t save_usart2_wp = 0; 
+//uint16_t save_usart2_wp = 0; 
 
 
 uint16_t support_cnt = 0; 
+uint8_t recored_flag = 0 ;
+uint32_t save_file_cnt = 0 ;
 
 #if 0
 uint8_t sound_cnt= 0 ;
@@ -138,6 +146,30 @@ uint8_t sound_flag = 0;
 static uint8_t start_hotplug  = 0;
 static uint8_t is_locker  = 0;
 static uint8_t is_power_from_auto  = 0;
+
+#define NMEA_EX_LENGTH 		256  // In order to support YLS proprietary sentence
+
+
+typedef enum{
+  STN_GGA = 0,
+  STN_GLL = 1,
+  STN_GSA = 2,
+  STN_GSV = 3,
+  STN_RMC = 4,
+  STN_VTG = 5,
+  STN_QSA = 6,  
+  STN_OTHER = 255,
+} NMEA_STN_T;
+
+
+
+typedef struct {        //NMEA Format structure
+	GINT16 i2PacketType;  // 1: NMEA,  2: DEBUG, 3: HBD, 4: BIN
+	GINT16 i2PacketSize;
+	NMEA_STN_T eType;
+	GCHAR Data[NMEA_EX_LENGTH];
+} NMEA_STN_DATA_T;
+
 
 /* Private function prototypes 
 -----------------------------------------------*/
@@ -171,8 +203,7 @@ void MySystem(void const * argument);
 void update_info(void const * argument);
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 static void MX_USART3_UART_Init_9600(void);                                
-                                
-static void MX_Iwdg_Init(void);                                
+
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -204,7 +235,7 @@ PUTCHAR_PROTOTYPE
 {
   /* Place your implementation of fputc here */
   /* e.g. write a character to the EVAL_COM1 and Loop until the end of transmission */
-  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+  HAL_UART_Transmit_DMA(&huart1, (uint8_t *)&ch, 1);
 
   return ch;
 }
@@ -218,7 +249,10 @@ static int inHandlerMode (void)
 void print_usart1(char *format, ...)
 {
 
-#if 0
+
+#if 1
+
+
     char buf[160];
     uint32_t timer_out = 0;
     va_list ap;
@@ -242,7 +276,7 @@ void print_usart1(char *format, ...)
     va_start(ap, format);
     if(vsprintf(buf, format, ap) > 0)
     {
-        HAL_UART_Transmit(&huart1, (uint8_t *)buf, strlen(buf), 160);
+        HAL_UART_Transmit(&huart1, (uint8_t *)buf, strlen(buf),160);
     }
     va_end(ap);
     
@@ -336,8 +370,11 @@ int main(void)
   //MX_TIM4_Init();
   //MX_RTC_Init();
   //MX_TIM2_Init();
+  //MX_WWDG_Init();
 
-  MX_Iwdg_Init();
+
+  //MX_Iwdg_Init();
+
 
   /* USER CODE BEGIN 2 */
   //sd_power_mode(1)
@@ -402,6 +439,7 @@ int main(void)
       
       system_flag_table->lowpower_timer = system_flag_table->lowpower_timer*1000*60;
       print_usart1("system_flag_table->lowpower_timer :%d \r\n",system_flag_table->lowpower_timer);
+      print_usart1("system_flag_table->by_time_vaule :%d \r\n",system_flag_table->guji_record.by_time_vaule);
 
       stm_read_eerpom(10,&eeprom_flag);
       system_flag_table->ODOR = eeprom_flag;
@@ -450,7 +488,7 @@ int main(void)
       gps_power_mode(1);
       /* init code for USB_DEVICE */
 	  system_flag_table->guji_mode                   = RECORED_START;
-  	  HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1); 
+  	  HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1); 
       if(usb_init_flag == 1)
       {
           USBD_DeInit(&hUsbDeviceFS);
@@ -472,6 +510,7 @@ int main(void)
 #endif
 
   /* USER CODE END 2 */
+  rxp_init_pcrx();
 
   /* Create the mutex(es) */
   /* definition and creation of gpsMutex */
@@ -513,7 +552,7 @@ int main(void)
   Get_gps_info_Handle = osThreadCreate(osThread(Get_gps_info_), NULL);
 
   /* definition and creation of SystemCall */
-  osThreadDef(SystemCall, MySystem, osPriorityHigh, 0, 256);
+  osThreadDef(SystemCall, MySystem, osPriorityNormal, 0, 256);
   SystemCallHandle = osThreadCreate(osThread(SystemCall), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -1073,23 +1112,24 @@ void gps_init(void)
 	osDelay(1000);
 	osDelay(1000);
     MX_USART3_UART_Init_9600();
-	HAL_UART_Transmit_IT(&huart3,(uint8_t*)BaudRate_config,sizeof(BaudRate_config));
+	HAL_UART_Transmit(&huart3,(uint8_t*)BaudRate_config,sizeof(BaudRate_config),0xFFF);
 	osDelay(1000);
 	MX_USART3_UART_Init();
-	HAL_UART_Transmit_IT(&huart3,(uint8_t*)filt_config,sizeof(filt_config));  
+	osDelay(1000);
+	HAL_UART_Transmit(&huart3,(uint8_t*)filt_config,sizeof(filt_config),0xFFF);  
 	osDelay(1000);
 	if(system_flag_table->guji_record.recoed_formats == BY_TIMES)
     {
     	if(system_flag_table->guji_record.by_time_vaule == 100)
-        	HAL_UART_Transmit_IT(&huart3,(uint8_t*)A10hz_config,sizeof(A10hz_config));  
+        	HAL_UART_Transmit(&huart3,(uint8_t*)A10hz_config,sizeof(A10hz_config),0xfff);  
     	else if(system_flag_table->guji_record.by_time_vaule == 200)
-    		HAL_UART_Transmit_IT(&huart3,(uint8_t*)A5hz_config,sizeof(A5hz_config));  
+    		HAL_UART_Transmit(&huart3,(uint8_t*)A5hz_config,sizeof(A5hz_config),0xfff);  
     	else if(system_flag_table->guji_record.by_time_vaule == 1000)
-    		HAL_UART_Transmit_IT(&huart3,(uint8_t*)A1hz_config,sizeof(A1hz_config));  
+    		HAL_UART_Transmit(&huart3,(uint8_t*)A1hz_config,sizeof(A1hz_config),0xfff);  
     }
 	else
     {
-    	HAL_UART_Transmit_IT(&huart3,(uint8_t*)A1hz_config,sizeof(A1hz_config));          
+    	HAL_UART_Transmit(&huart3,(uint8_t*)A1hz_config,sizeof(A1hz_config),0xfff);          
     }
 	
 		
@@ -1110,7 +1150,7 @@ void gps_power_mode(uint8_t mode)
 		HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);	  
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); 
         memset(gpsx,0,sizeof(nmea_msg));
-        HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1); 
+        //HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1); 
 		
     }            
     else
@@ -1351,27 +1391,34 @@ void RTC_TimeShow(DWORD* fattime)
   */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-
+    int i = 0;
     if(huart->Instance == USART3)
     {       
        /* Start another reception: provide the buffer pointer with offset and the buffer size */
       
-    	if(USART2_RX_STA_WP < (MAX_UART3_LEN - 1))		//还可以接收数据
+        for(i = 0;i<100;i++)
+        {
+             rxp_pcrx_nmea(uart3_dma_buffer[i]);   
+        }
+#if 0
+    	if(USART2_RX_STA_WP < (MAX_UART3_LEN - 100))		//还可以接收数据
     	{
-            USART2_RX_STA_WP ++ ; 
+            memcpy(uart3_buffer+USART2_RX_STA_WP,uart3_dma_buffer,100);
+            USART2_RX_STA_WP += 100 ; 
     	}
 		else 
     	{
-    		USART2_RX_STA_WP = 0;
-    	} 
+   
+            memcpy(uart3_buffer+USART2_RX_STA_WP,uart3_dma_buffer,(MAX_UART3_LEN - USART2_RX_STA_WP));
+            memcpy(uart3_buffer,uart3_dma_buffer+(MAX_UART3_LEN - USART2_RX_STA_WP),100+USART2_RX_STA_WP -MAX_UART3_LEN);            
+    		USART2_RX_STA_WP = 100+USART2_RX_STA_WP -MAX_UART3_LEN;
+    	}        
 
-        //if(USART2_RX_STA == 0)
-		gps_data_time = HAL_GetTick(); 
-
-        while(HAL_UART_Receive_IT(&huart3, (uint8_t *)(uart3_buffer + USART2_RX_STA_WP), 1) != HAL_OK)
+        while(HAL_UART_Receive_DMA(&huart3, (uint8_t *)(uart3_buffer + USART2_RX_STA_WP), 1) != HAL_OK)
         {
 	        print_usart1("err\r\n");
         }
+#endif        
     }
 }
 
@@ -1385,6 +1432,11 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
     else if(huart->Instance == USART3) 
     {
 	    print_usart1("huart3->ErrorCode :%x \r\n",huart->ErrorCode);    
+        //MX_USART3_UART_Init();
+        //while(HAL_UART_Receive_DMA(&huart3, (uint8_t *)(uart3_buffer + USART2_RX_STA_WP), 1) != HAL_OK)
+        {
+	    //    print_usart1("HAL_UART_ErrorCallback err\r\n");
+        }        
     }
 
 }
@@ -1567,7 +1619,7 @@ static void StopSequence_Config(void)
 
 
 
-void surport_mode_config(uint8_t mode,uint8_t *buf,uint16_t rxlen)
+void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
 {
     
     float tp_distance = 0;
@@ -1992,7 +2044,7 @@ static uint8_t get_key(void)
                 if((button_flag == 0xff)&&(system_flag_table->guji_mode != RECORED_START))   					  
                 {
                     system_flag_table->guji_mode = RECORED_START;
-		            HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);            
+		            HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);            
                 }
             }
 #endif            
@@ -2468,7 +2520,7 @@ void status_led_config(void)
                 print_usart1("******** \r\n");           
                 gps_power_mode(1);
                 sd_power_mode(1);
-                HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
+                //HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);
                 osThreadResume(Get_gps_info_Handle);
                 osThreadResume(defaultTaskHandle);    
                 if(system_flag_table->guji_mode == RECORED_IDLE)
@@ -2655,7 +2707,7 @@ void status_led_config(void)
                      print_usart1("******** \r\n");           
                      gps_power_mode(1);
                      sd_power_mode(1);
-                     HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
+                     HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_dma_buffer, 1);
                      osThreadResume(Get_gps_info_Handle);
                      osThreadResume(defaultTaskHandle);    
                      if(system_flag_table->guji_mode == RECORED_IDLE)
@@ -2679,11 +2731,33 @@ void status_led_config(void)
 
 
 /* USER CODE END 4 */
+#ifdef TEST_WRITE_SD
+  static   uint16_t cnt_record = 0;
+#endif
+
+
+/* WWDG init function */
+static void MX_WWDG_Init(void)
+{
+
+  hwwdg.Instance = WWDG;
+  hwwdg.Init.Prescaler = WWDG_PRESCALER_8;
+  hwwdg.Init.Window = 100;
+  hwwdg.Init.Counter = 100;
+  hwwdg.Init.EWIMode = WWDG_EWI_DISABLE;
+  if (HAL_WWDG_Init(&hwwdg) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+}
+
 
 /* StartDefaultTask function */
 void StartDefaultTask(void const * argument)
 {
   FIL test_fp ;
+
 
   //uint8_t save_temp = 0;  
   /* init code for FATFS */
@@ -2715,7 +2789,22 @@ void StartDefaultTask(void const * argument)
   {
 
     //if (osMutexWait(gpsMutexHandle, osWaitForever) == osOK)
-    {          
+    {    
+        if(system_flag_table->guji_mode == RECORED_START_DOING)
+        {
+            if(HAL_GetTick() > (save_file_cnt + 1000))
+            {
+                system_flag_table->guji_mode = RECORED_SAVE; 
+                //recored_flag = 1;
+                save_file_cnt  = HAL_GetTick();
+                //cnt_record = 10;
+            }
+
+        }
+        else
+        {
+          save_file_cnt  = HAL_GetTick();
+        }
         Recording_guji(&gps_fp,system_flag_table,gpsx);
 
 #if 0   
@@ -2762,105 +2851,285 @@ void StartDefaultTask(void const * argument)
 }
 
 /* Get_gps_info function */
+
+
+//---------------------------------------------------------------------------
+NMEA_STN_DATA_T rRawData;     //Output Sentence
+
+short i2DataIdx = 0;
+short m_i2PktDataSize = 0;
+NMEA_STN_T m_eLastDecodedSTN;
+
+//---------------------------------------------------------------------------
+void DetermineStnType()
+{
+  if ( (strncmp(&rRawData.Data[0], "$GPGGA", 6) == 0) || 
+  	   (strncmp(&rRawData.Data[0], "$GNGGA", 6) == 0) || 
+  	   (strncmp(&rRawData.Data[0], "$BDGGA", 6) == 0) || 
+  	   (strncmp(&rRawData.Data[0], "$GLGGA", 6) == 0) || 
+  	   (strncmp(&rRawData.Data[0], "$GBGGA", 6) == 0) )
+  {
+    rRawData.eType = STN_GGA;
+  }
+  else if ( (strncmp(&rRawData.Data[0], "$GPGLL", 6) == 0) || 
+  	 		(strncmp(&rRawData.Data[0], "$GNGLL", 6) == 0) || 
+  	 		(strncmp(&rRawData.Data[0], "$BDGLL", 6) == 0) || 
+  	 		(strncmp(&rRawData.Data[0], "$GLGLL", 6) == 0) || 
+  	 		(strncmp(&rRawData.Data[0], "$GBGLL", 6) == 0) )
+  {
+    rRawData.eType = STN_GLL;
+  }
+  else if (	(strncmp(&rRawData.Data[0], "$GPGSA", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$GNGSA", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$BDGSA", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$GLGSA", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$GAGSA", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$GBGSA", 6) == 0) )
+  {
+    rRawData.eType = STN_GSA;
+  }
+  else if (	(strncmp(&rRawData.Data[0], "$GPQSA", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$QZQSA", 6) == 0) ||
+  			(strncmp(&rRawData.Data[0], "$GBQSA", 6) == 0) )
+  {
+    rRawData.eType = STN_QSA;
+  }
+  else if ( (strncmp(&rRawData.Data[0], "$GPGSV", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$QZGSV", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$GLGSV", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$GAGSV", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$BDGSV", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$GBGSV", 6) == 0) )
+  {
+    rRawData.eType = STN_GSV;
+  }
+  else if ( (strncmp(&rRawData.Data[0], "$GPRMC", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$GNRMC", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$BDRMC", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$GLRMC", 6) == 0) ||
+  			(strncmp(&rRawData.Data[0], "$GBRMC", 6) == 0) )
+  {
+    rRawData.eType = STN_RMC;
+  }
+  else if (	(strncmp(&rRawData.Data[0], "$GPVTG", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$GNVTG", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$BDVTG", 6) == 0) || 
+  			(strncmp(&rRawData.Data[0], "$GLVTG", 6) == 0) ||
+  			(strncmp(&rRawData.Data[0], "$GBVTG", 6) == 0) )
+  {
+    rRawData.eType = STN_VTG;
+  }
+  else
+  {
+    rRawData.eType = STN_OTHER;
+  }
+}
+
+GBOOL fgNmeaCheckSum(GCHAR* pData, GINT32 i4Size)
+{
+    GINT32 i;
+    int limit;
+    GUCHAR chksum = 0, chksum2 = 0;
+
+    if (i4Size < 6)
+    {
+        return false;
+    }
+
+    chksum = pData[1];
+    limit = i4Size - 2;
+    for (i = 2; i < (limit); i++)
+    {
+      if (pData[i] != '*')
+      {
+        chksum ^= pData[i];
+
+        // Exclude invalid NMEA characters
+        if (pData[i] & 0x80)
+        {
+          return false;
+        }
+      }
+      else
+      {
+        if (pData[i + 1] >= 'A')
+        {
+          //chksum2 = (pData[i+1]-'A'+10)<<4;
+          chksum2 = (pData[i+1]-55)<<4;
+        }
+        else
+        {
+          chksum2 = (pData[i+1]-'0')<<4;
+        }
+        if (pData[i + 2] >= 'A')
+        {
+          //chksum2 += pData[i+2]-'A'+10;
+          chksum2 += pData[i+2]-55;
+        }
+        else
+        {
+          chksum2 += pData[i+2]-'0';
+        }
+        break;
+      }
+    }
+
+    // if not found character '*'
+    if (i >= (i4Size - 2))
+    {
+      return (false);
+    }
+
+    if (chksum == chksum2)
+    {
+      return (true);
+    }
+    else
+    {
+      return (false);
+    }
+}
+
+
+//---------------------------------------------------------------------------
+void ProcNmeaSentence(nmea_msg *Proc_gpsx)
+{
+  	GBOOL fgParserResult;
+    GBOOL fgValidPkt;
+
+    fgValidPkt = fgNmeaCheckSum(rRawData.Data, rRawData.i2PacketSize - 1);
+
+	if (fgValidPkt)
+    {
+      // Determine sentence type
+      DetermineStnType();
+
+      // Decode NMEA sentence
+
+      if (rRawData.eType == STN_GGA)
+      {
+          fgParserResult = NMEA_GPGGA_Analysis(Proc_gpsx,rRawData.Data);
+          fgParserResult = NMEA_GNGGA_Analysis(Proc_gpsx,rRawData.Data);
+      }
+
+      else if (rRawData.eType == STN_GLL)
+      {
+      }
+
+      else if (rRawData.eType == STN_GSA)
+      {
+
+      }
+
+      else if (rRawData.eType == STN_QSA)
+      {
+
+      }
+
+      else if (rRawData.eType == STN_GSV)
+      {
+
+      }
+
+      else if (rRawData.eType == STN_RMC)
+      {
+
+          fgParserResult = NMEA_GPRMC_Analysis(Proc_gpsx,rRawData.Data);
+          fgParserResult = NMEA_GNRMC_Analysis(Proc_gpsx,rRawData.Data);
+          
+      }
+
+      else if (rRawData.eType == STN_VTG)
+      {
+
+      }
+
+      else
+      {
+          fgParserResult = false;
+          rRawData.eType = STN_OTHER;
+      }
+
+      m_eLastDecodedSTN = rRawData.eType;
+   }
+
+    
+}
+
+
+
+// 2，rxp_init_pcrx()初始化之后把rxp_pcrx_nmea()作为回调函数注册给串口接收程序
+
+// 3，解析rxp_pcrx_nmea()存下来的NMEA语句
+
+
+
 void Get_gps_info(void const * argument)
 {
   /* USER CODE BEGIN Get_gps_info */
   uint16_t rxlen = 0;
-  uint8_t *gps_data = NULL;
-  //uint8_t ret = 0;
-//  static   uint16_t cnt_record = 0;
+ // uint8_t *gps_data = NULL;
+  uint8_t recode_cnt = 0 ;
+
+
+
   /* Infinite loop */
   print_usart1("Get_gps_info\r\n");
   /*##-4- Put UART peripheral in reception process ###########################*/  
   gps_init();  
-  HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1); 
+  //osDelay(1000);
+  HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_dma_buffer, 100); 
   //print_usart1("Get_gps_info start !\r\n");
   
   for(;;)
-  {
-   
-      if(USART2_RX_STA == 1)
+  {  
+      // 判断rxp_init_pcrx()是否解析到可用的NMEA语句
+      if(rxp_inst_avail(&rRawData.i2PacketType, &i2DataIdx, &m_i2PktDataSize))
       {
-		  
-          //(osMutexWait(gpsMutexHandle, 0) == osOK)
+          // 把整条NMEA语句拷贝到rRawData.Data[]
+          rxp_get_inst(i2DataIdx, m_i2PktDataSize, &rRawData.Data[0]);
+                      
+          /* we don't need <CR>, replace it with string ending symbol */
+          rRawData.Data[m_i2PktDataSize] = '\n';  
+          rRawData.Data[m_i2PktDataSize + 1] = 0x00;  
+          rRawData.i2PacketSize = m_i2PktDataSize;
+          if(recode_cnt == 20)
           {
-		     
-              //print_usart1("gps_1: %x\r\n",uart3_buffer[save_usart2_wp - 1]);
-              //print_usart1("+%d+\r\n",HAL_GetTick());
-
-              
-			  if(USART2_RX_STA_RP > save_usart2_wp)
-			  {
-                  gps_data = malloc(save_usart2_wp + MAX_UART3_LEN - USART2_RX_STA_RP + 1);
-			      memcpy(gps_data,uart3_buffer + USART2_RX_STA_RP,(MAX_UART3_LEN - USART2_RX_STA_RP));
-			      memcpy(gps_data + (MAX_UART3_LEN - USART2_RX_STA_RP),uart3_buffer,save_usart2_wp);
-                  rxlen = save_usart2_wp + MAX_UART3_LEN - USART2_RX_STA_RP;
-
-			  }
-			  else
-			  {
-			      gps_data = malloc((save_usart2_wp - USART2_RX_STA_RP)+1);
-			      memcpy(gps_data,uart3_buffer + USART2_RX_STA_RP,(save_usart2_wp - USART2_RX_STA_RP));
-                  rxlen = (save_usart2_wp - USART2_RX_STA_RP);
-
-			  }
-              gps_data[rxlen] = 0;
-
-
-			  if(rxlen > 120)
-                print_usart1("%s",gps_data);
-              print_usart1("-%d-%d-%d\r\n",save_usart2_wp,USART2_RX_STA_RP,rxlen);
-
-			  memset(gpsx,0,sizeof(nmea_msg));  
-			  GPS_Analysis(gpsx,gps_data);                
-#ifdef TEST_WRITE_SD
-              gpsx->gpssta = 2; /*for test*/
-              gpsx->posslnum = 5 ;
-              gpsx->utc.year = 2018;
-              gpsx->utc.month= 07;
-              gpsx->utc.date = 19;
-              gpsx->latitude = 101; 
-              gpsx->longitude = 29;
-              gpsx->nshemi = 'N';
-              gpsx->ewhemi= 'E';
-              gpsx->speed = 0;
-
-              gpsx->hdop = 20;
-              system_flag_table->gujiFormats = GUJI_FORMATS_GPX;
-
-#endif
-              USART2_RX_STA_RP = save_usart2_wp;	 //得到数据长度  
-              USART2_RX_STA = 0;         //启动下一次接收
-
-			  
-              if((gpsx->gpssta <1)&&(rxlen < 160))
-              {
-
-                  #if 0//def TEST_WRITE_SD
-                  memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],gps_data,rxlen);
-                  system_flag_table->guji_buffer_Index_wp  += rxlen;        
-                  if(system_flag_table->guji_buffer_Index_wp >= MAX_GUJI_BUFFER_MAX_LEN)
-                  {
-                      system_flag_table->guji_buffer_Index_wp = 0;
-                  }
-                  #endif              
-              } 
-			  			   		      	
-    	      surport_mode_config(system_flag_table->power_status,gps_data,rxlen);      
-
-			  free(gps_data); 
-
-  
-
-              // (osMutexRelease(gpsMutexHandle) != osOK)
-              {
-                 //rror_Handler();
-              }  		  
+              print_usart1("\r\n%d - %d\r\n",i2DataIdx,rRawData.i2PacketSize);
+              print_usart1("%s",rRawData.Data);
+              recode_cnt = 0;
           }
-          
+          else
+          {
+              recode_cnt++;
+          }
+          // 解析NMEA语句
+          ProcNmeaSentence(gpsx);
+
+
+         
+#ifdef TEST_WRITE_SD
+          gpsx->gpssta = 2; /*for test*/
+          gpsx->posslnum = 5 ;
+          gpsx->utc.year = 2018;
+          gpsx->utc.month= 1;
+          gpsx->utc.date = 13;
+          gpsx->latitude = 101; 
+          gpsx->longitude = 29;
+          gpsx->nshemi = 'N';
+          gpsx->ewhemi= 'E';
+          gpsx->speed = 0;
+
+
+          gpsx->hdop = 20;
+          system_flag_table->gujiFormats = GUJI_FORMATS_MEA;
+
+#endif          
+
+          surport_mode_config(system_flag_table->power_status,rRawData.Data,m_i2PktDataSize+1);            
 
       }
-     
+
       if((system_flag_table->power_status == POWER_STANBY)
         ||(system_flag_table->power_status == POWER_LRUN_SLEEP)||(system_flag_table->power_status == POWER_SURPORT_SLEEP))
       {
@@ -2939,7 +3208,7 @@ void MySystem(void const * argument)
                     print_usart1("******** \r\n");           
                     gps_power_mode(1);
                     sd_power_mode(1);
-                    HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
+                    //HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);
                     osThreadResume(Get_gps_info_Handle);
                     osThreadResume(defaultTaskHandle);                 
                     sound_toggle_simple(1,50,50);
@@ -2993,7 +3262,7 @@ void MySystem(void const * argument)
     			   print_usart1("******** \r\n");			
     			   gps_power_mode(1);
     			   sd_power_mode(1);
-    			   HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
+//    			   HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);
     			   osThreadResume(Get_gps_info_Handle);
     			   osThreadResume(defaultTaskHandle);				  
     			   sound_toggle_simple(1,50,50);
@@ -3046,7 +3315,7 @@ void MySystem(void const * argument)
                   Recording_guji(&gps_fp,system_flag_table,gpsx);
                   system_flag_table->guji_mode = RECORED_RESTART;
                   is_locker = 0;
-                  HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
+//                  HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);
 				  osThreadResume(Get_gps_info_Handle);
  
 
@@ -3076,7 +3345,7 @@ void MySystem(void const * argument)
                   {
                    
                        system_flag_table->guji_mode = RECORED_START;
-                       //HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
+                       //HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);
                   }
 #if 1
                   if(usb_init_flag == 1)
@@ -3217,7 +3486,7 @@ void MySystem(void const * argument)
                     print_usart1("******** \r\n");           
                     gps_power_mode(1);
                     sd_power_mode(1);
-                    HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
+//                    HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);
                     osThreadResume(Get_gps_info_Handle);
                     osThreadResume(defaultTaskHandle);                 
                     sound_toggle_simple(1,50,50);
@@ -3309,7 +3578,7 @@ void MySystem(void const * argument)
                if(_commit_ == 0)
                {
                    system_flag_table->guji_mode = RECORED_START;
-                   HAL_UART_Receive_IT(&huart3, (uint8_t *)uart3_buffer, 1);
+                   HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);
                    print_usart1("to  start !");
                }
            }
@@ -3332,7 +3601,6 @@ void update_info(void const * argument)
 
   static uint16_t sd_timer_cnt = 0 ;
   static uint16_t support_timer_cnt = 0 ;
-  static uint32_t save_file_cnt = 0 ;
   static uint16_t adc_cnt = 0 ;
 
 #if 0
@@ -3344,6 +3612,7 @@ void update_info(void const * argument)
   system_flag_table->RTC_DateStructure = sdatestructureget;
   system_flag_table->RTC_TimeStructure = stimestructureget;
 #endif
+  //HAL_WWDG_Refresh(&hwwdg);
 
   auto_power_on();
   auto_power_off();
@@ -3515,13 +3784,14 @@ void update_info(void const * argument)
 	           
 	           if(system_flag_table->power_status == POWER_SURPORT_RUN ||system_flag_table->power_status == POWER_RUN ||system_flag_table->power_status == POWER_LRUN)
 	           {
-	               if((gpsx->gpssta >= 1)&&(system_flag_table->guji_mode == RECORED_START_DOING))
+	               if((gpsx->gpssta >= 1)&&(system_flag_table->wirte_storge_flag == 1))
 	               //if((system_flag_table->guji_mode == RECORED_START_DOING))
 	               {
 	                   if((system_flag_table->guji_record.recoed_formats == BY_TIMES) && (system_flag_table->guji_record.by_time_vaule < 1000))     
 	                       sd_led_config(300,700);     
 	                   else
 	                       sd_led_config(300,2700);     
+                       system_flag_table->wirte_storge_flag = 0;
 	               }
 	               else
 	               {
@@ -3590,19 +3860,9 @@ void update_info(void const * argument)
     }
 
 
-    if(system_flag_table->guji_mode == RECORED_START_DOING)
-    {
-        if(HAL_GetTick() > (save_file_cnt + 90000))
-        {
-           system_flag_table->guji_mode = RECORED_SAVE; 
-           save_file_cnt  = HAL_GetTick();
-        }
-         
-    }
-    else
-    {
-        save_file_cnt  = HAL_GetTick();
-    }
+
+
+
 
     if(system_flag_table->wanng_speed_vaule > 0)
     {
@@ -3640,6 +3900,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
 /* USER CODE BEGIN Callback 1 */
+
+#if 0
   if (htim->Instance == TIM7) {
   	if(HAL_GetTick() > (gps_data_time + 10))
   	{
@@ -3667,13 +3929,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             
         }
 		gps_data_time = 0xffffffff;
+        recored_flag = 1;
     }
+  
 //    __HAL_TIM_DISABLE(&htim6);
   }
+#endif    
   /* USER CODE BEGIN Callback 1 */
-  if (htim->Instance == TIM7){
-  
-  }
+
  
 
 
