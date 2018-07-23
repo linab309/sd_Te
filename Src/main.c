@@ -171,6 +171,16 @@ typedef struct {        //NMEA Format structure
 } NMEA_STN_DATA_T;
 
 
+//---------------------------------------------------------------------------
+NMEA_STN_DATA_T rRawData;     //Output Sentence
+
+short i2DataIdx = 0;
+short m_i2PktDataSize = 0;
+NMEA_STN_T m_eLastDecodedSTN;
+
+//---------------------------------------------------------------------------
+
+
 /* Private function prototypes 
 -----------------------------------------------*/
 #ifdef __GNUC__
@@ -193,7 +203,7 @@ static void MX_USART1_UART_Init(void);
 static void MX_ADC_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM10_Init(void);
-static void MX_SPI1_Init(void);
+//static void MX_SPI1_Init(void);
 //static void MX_TIM4_Init(void);
 //static void MX_RTC_Init(void);
 //static void MX_TIM2_Init(void);
@@ -274,7 +284,7 @@ void print_usart1(char *format, ...)
     va_start(ap, format);
     if(vsprintf(buf, format, ap) > 0)
     {
-        HAL_UART_Transmit(&huart1, (uint8_t *)buf, strlen(buf),160);
+        HAL_UART_Transmit(&huart1, (uint8_t *)buf, strlen(buf),0xffff);
     }
     va_end(ap);
     
@@ -1632,7 +1642,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
         case POWER_RUN:
         case POWER_SURPORT_RUN:
             //print_usart1("gpsx->gpssta :%d \r\n",gpsx->gpssta); /*打印行驶距离*/
-             if(gpsx->gpssta >= 1)
+             if((gpsx->gpssta >= 1)&&(rRawData.eType == STN_RMC))
              {   
 				if((system_flag_table->guji_mode == RECORED_START_DOING)||(system_flag_table->guji_mode == RECORED_SAVE)\
 				||(system_flag_table->guji_mode == RECORED_T)||(system_flag_table->guji_mode == RECORED_D))
@@ -1701,6 +1711,39 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                    
             } 
 
+           if((system_flag_table->gujiFormats == GUJI_FORMATS_MEA)&&(gpsx->gpssta >= 1))
+           {
+               if((system_flag_table->guji_mode == RECORED_START_DOING)||(system_flag_table->guji_mode == RECORED_SAVE)\
+               ||(system_flag_table->guji_mode == RECORED_T)||(system_flag_table->guji_mode == RECORED_D))
+               {
+
+                   if(system_flag_table->Message_head_number == 0)
+                   {
+                       if(gpsx->hdop >= 500)
+                           break;
+                       else
+                           system_flag_table->Message_head_number = 1; 
+                   }
+               
+                   if(system_flag_table->guji_buffer_Index_wp + rxlen < MAX_GUJI_BUFFER_MAX_LEN)
+                   {
+                       memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],buf,rxlen);
+                       system_flag_table->guji_buffer_Index_wp  += rxlen;    
+                   }
+                   else
+                   {
+                       //print_usart1("over flow 1 \r\n");
+                       memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],buf,MAX_GUJI_BUFFER_MAX_LEN-system_flag_table->guji_buffer_Index_wp);
+                       memcpy(&system_flag_table->guji_buffer[0],(buf+MAX_GUJI_BUFFER_MAX_LEN-system_flag_table->guji_buffer_Index_wp),\
+                           system_flag_table->guji_buffer_Index_wp+rxlen - MAX_GUJI_BUFFER_MAX_LEN);
+                       
+                       system_flag_table->guji_buffer_Index_wp  += rxlen;    
+                       system_flag_table->guji_buffer_Index_wp = (system_flag_table->guji_buffer_Index_wp - MAX_GUJI_BUFFER_MAX_LEN);
+                   }       
+               }
+           }
+           
+
            if(ret == 1)
             {
             #if 0
@@ -1712,31 +1755,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
             #endif
                 
                 if(system_flag_table->gujiFormats == GUJI_FORMATS_MEA)
-                {
-                    if(system_flag_table->Message_head_number == 0)
-                    {
-                        if(gpsx->hdop >= 500)
-                            break;
-                        else
-                            system_flag_table->Message_head_number = 1; 
-                    }
-
-				    if(system_flag_table->guji_buffer_Index_wp + rxlen < MAX_GUJI_BUFFER_MAX_LEN)
-				    {
-                        memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],buf,rxlen);
-                        system_flag_table->guji_buffer_Index_wp  += rxlen;    
-				    }
-					else
-                    {
-                        print_usart1("over flow 1 \r\n");
-                        memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],buf,MAX_GUJI_BUFFER_MAX_LEN-system_flag_table->guji_buffer_Index_wp);
-						memcpy(&system_flag_table->guji_buffer[0],(buf+MAX_GUJI_BUFFER_MAX_LEN-system_flag_table->guji_buffer_Index_wp),\
-							system_flag_table->guji_buffer_Index_wp+rxlen - MAX_GUJI_BUFFER_MAX_LEN);
-						
-						system_flag_table->guji_buffer_Index_wp  += rxlen;	  
-						system_flag_table->guji_buffer_Index_wp = (system_flag_table->guji_buffer_Index_wp - MAX_GUJI_BUFFER_MAX_LEN);
-                    }              
-                }
+                    ;
                 else
                 {
                      if(LED_SURPORT_F_FLAG == 1)
@@ -1746,10 +1765,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
 
                      }
                      else
-                         save_guiji_message(gpsx,system_flag_table,'T');
-					 //test_cnt++;
-					 //print_usart1("save :%d \r\n",test_cnt);
-
+                         save_guiji_message(gpsx,system_flag_table,'T');				
                     
                 }
                 
@@ -1778,14 +1794,14 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                 }
                 else
                 {
-                    if(gpsx->hdop < 500)
+                    if((gpsx->hdop < 500)&&(rRawData.eType == STN_RMC))
                     {
                         if(800 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
                          {
                             is_locker = 1;
                             save_guiji_message(gpsx,system_flag_table,'T');
                             lp_number++;
-                            print_usart1("hdop :%d \r\n",gpsx->hdop );                                                    
+                            //print_usart1("hdop :%d \r\n",gpsx->hdop );                                                    
                             system_flag_table->grecord_timer_cnt = HAL_GetTick();
                         }
                    }
@@ -1802,7 +1818,8 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                     
                     gps_power_mode(0);
                     //Recording_guji(&gps_fp,system_flag_table,gpsx);
-                    print_usart1("go to lrun sleep \r\n");
+                    //print_usart1("go to lrun sleep \r\n");
+                    Recording_guji(&gps_fp,system_flag_table,gpsx);
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
                     system_flag_table->power_status = POWER_LRUN_SLEEP;
                     //write_flash(&gps_fp,system_flag_table);     
@@ -1813,7 +1830,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                     BSP_LED_Off(LED_SD);
                     BSP_LED_Off(LED_GPS);
                     BSP_LED_Off(LED_SURPORT);
-                    
+
                     sd_power_mode(0);
 
                     SystemClock_Config_msi();
@@ -2852,14 +2869,7 @@ void StartDefaultTask(void const * argument)
 /* Get_gps_info function */
 
 
-//---------------------------------------------------------------------------
-NMEA_STN_DATA_T rRawData;     //Output Sentence
 
-short i2DataIdx = 0;
-short m_i2PktDataSize = 0;
-NMEA_STN_T m_eLastDecodedSTN;
-
-//---------------------------------------------------------------------------
 void DetermineStnType()
 {
   if ( (strncmp(&rRawData.Data[0], "$GPGGA", 6) == 0) || 
@@ -3101,6 +3111,7 @@ void Get_gps_info(void const * argument)
           {
               recode_cnt++;
           }
+          //print_usart1("%s",rRawData.Data);
           // 解析NMEA语句
           ProcNmeaSentence(gpsx);
 
@@ -3110,7 +3121,7 @@ void Get_gps_info(void const * argument)
           gpsx->gpssta = 2; /*for test*/
           gpsx->posslnum = 5 ;
           gpsx->utc.year = 2018;
-          gpsx->utc.month= 2;
+          gpsx->utc.month= 4;
           gpsx->utc.date = 13;
           gpsx->latitude = 101; 
           gpsx->longitude = 29;
@@ -3123,7 +3134,7 @@ void Get_gps_info(void const * argument)
           system_flag_table->gujiFormats = GUJI_FORMATS_MEA;
 
 #endif          
-
+          //if(rRawData.eType == STN_RMC)
           surport_mode_config(system_flag_table->power_status,rRawData.Data,m_i2PktDataSize+1);            
 
       }
@@ -3306,16 +3317,17 @@ void MySystem(void const * argument)
           case USER_KEY_LONG:  /*重新开启一条轨迹*/
               if(system_flag_table->guji_mode >= RECORED_START)
               {
-                  system_flag_table->guji_mode = RECORED_STOP;		                      
 
-				  osThreadSuspend(Get_gps_info_Handle);
-				  sound_toggle_simple(3,50,50);
-                  Recording_guji(&gps_fp,system_flag_table,gpsx);
-                  system_flag_table->guji_mode = RECORED_RESTART;
+                  __HAL_UART_DISABLE(&huart3);
+                  system_flag_table->guji_mode = RECORED_STOP;
+                  sound_toggle_simple(3,50,50);
                   is_locker = 0;
-//                  HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);
-				  osThreadResume(Get_gps_info_Handle);
- 
+                  while(system_flag_table->guji_mode != RECORED_IDLE)
+                  {
+                      osDelay(10); 
+                  }
+                  system_flag_table->guji_mode = RECORED_RESTART;
+                  __HAL_UART_ENABLE(&huart3); 
 
 				  
               }
@@ -3425,7 +3437,11 @@ void MySystem(void const * argument)
                   {
 				      StopSequence_Config();                  
                   }
-                  
+                  else
+                  {
+                      __set_FAULTMASK(1);      // 关闭所有中端
+                      HAL_NVIC_SystemReset();     
+                  }
               }            
               break;
           case POWER_USER_KEY_LONG:
@@ -3446,6 +3462,8 @@ void MySystem(void const * argument)
 			  print_usart1("************\r\n");
 			  print_usart1("goto stanby.\r\n");
 			  print_usart1("************\r\n");
+              __set_FAULTMASK(1);      // 关闭所有中端
+              HAL_NVIC_SystemReset();              
               if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) == GPIO_PIN_RESET)
               {
 			      StopSequence_Config();                  
@@ -3615,7 +3633,7 @@ void update_info(void const * argument)
   auto_power_on();
   auto_power_off();
   status_led_config();
-  HAL_IWDG_Refresh(&Iwdg);
+  //HAL_IWDG_Refresh(&Iwdg);
 
   if(adc_cnt > 600)
   {

@@ -714,7 +714,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
         }
         f_printf(&update_config_fp,"SpyModeTimer=%d\r\n",(system_flag_table->lowpower_timer/60000));
         f_printf(&update_config_fp,"OneTrackPerDay=%s\r\n", system_flag_table->auto_new_guji ? "ON" : "OFF");       
-        f_printf(&update_config_fp,"[Unit]\r\n");
+        f_printf(&update_config_fp,"[UNIT\r\n");
 
         if(system_flag_table->unit == 1)
         {
