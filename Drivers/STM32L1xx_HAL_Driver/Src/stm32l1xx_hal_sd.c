@@ -554,7 +554,7 @@ HAL_SD_ErrorTypedef HAL_SD_ReadBlocks(SD_HandleTypeDef *hsd, uint32_t *pReadBuff
       }
     }     
 
-   // __enable_irq();
+   //__enable_irq();
   }
   else
   {

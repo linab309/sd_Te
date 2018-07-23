@@ -249,9 +249,7 @@ static int inHandlerMode (void)
 void print_usart1(char *format, ...)
 {
 
-
-#if 1
-
+#if 0
 
     char buf[160];
     uint32_t timer_out = 0;
@@ -1730,6 +1728,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
 				    }
 					else
                     {
+                        print_usart1("over flow 1 \r\n");
                         memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],buf,MAX_GUJI_BUFFER_MAX_LEN-system_flag_table->guji_buffer_Index_wp);
 						memcpy(&system_flag_table->guji_buffer[0],(buf+MAX_GUJI_BUFFER_MAX_LEN-system_flag_table->guji_buffer_Index_wp),\
 							system_flag_table->guji_buffer_Index_wp+rxlen - MAX_GUJI_BUFFER_MAX_LEN);
@@ -2792,7 +2791,7 @@ void StartDefaultTask(void const * argument)
     {    
         if(system_flag_table->guji_mode == RECORED_START_DOING)
         {
-            if(HAL_GetTick() > (save_file_cnt + 1000))
+            if(HAL_GetTick() > (save_file_cnt + 60000))
             {
                 system_flag_table->guji_mode = RECORED_SAVE; 
                 //recored_flag = 1;
@@ -3091,12 +3090,11 @@ void Get_gps_info(void const * argument)
                       
           /* we don't need <CR>, replace it with string ending symbol */
           rRawData.Data[m_i2PktDataSize] = '\n';  
-          rRawData.Data[m_i2PktDataSize + 1] = 0x00;  
+          rRawData.Data[m_i2PktDataSize +1] = 0x00;  
           rRawData.i2PacketSize = m_i2PktDataSize;
           if(recode_cnt == 20)
           {
-              print_usart1("\r\n%d - %d\r\n",i2DataIdx,rRawData.i2PacketSize);
-              print_usart1("%s",rRawData.Data);
+              //print_usart1("%s",rRawData.Data);
               recode_cnt = 0;
           }
           else
@@ -3112,7 +3110,7 @@ void Get_gps_info(void const * argument)
           gpsx->gpssta = 2; /*for test*/
           gpsx->posslnum = 5 ;
           gpsx->utc.year = 2018;
-          gpsx->utc.month= 1;
+          gpsx->utc.month= 2;
           gpsx->utc.date = 13;
           gpsx->latitude = 101; 
           gpsx->longitude = 29;

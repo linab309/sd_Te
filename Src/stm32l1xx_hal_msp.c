@@ -457,11 +457,11 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
   /* Stop any ongoing transfer and reset the state*/
 
     /* NVIC configuration for DMA transfer complete interrupt (USART3a_RX) */
-    HAL_NVIC_SetPriority(USARTx_DMA_RX_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(USARTx_DMA_RX_IRQn, 4, 1);
     HAL_NVIC_EnableIRQ(USARTx_DMA_RX_IRQn);
     
     /* Peripheral interrupt init */
-    HAL_NVIC_SetPriority(USART3_IRQn, 1, 0);
+    HAL_NVIC_SetPriority(USART3_IRQn, 4, 0);
     HAL_NVIC_EnableIRQ(USART3_IRQn);
 
   /* USER CODE END USART3_MspInit 1 */
