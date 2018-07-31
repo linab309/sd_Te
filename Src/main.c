@@ -3096,6 +3096,7 @@ void Get_gps_info(void const * argument)
       if(rxp_inst_avail(&rRawData.i2PacketType, &i2DataIdx, &m_i2PktDataSize))
       {
           // 把整条NMEA语句拷贝到rRawData.Data[]
+          memset(&rRawData,0x00,sizeof(NMEA_STN_DATA_T));
           rxp_get_inst(i2DataIdx, m_i2PktDataSize, &rRawData.Data[0]);
                       
           /* we don't need <CR>, replace it with string ending symbol */
@@ -3122,7 +3123,7 @@ void Get_gps_info(void const * argument)
           gpsx->posslnum = 5 ;
           gpsx->utc.year = 2018;
           gpsx->utc.month= 4;
-          gpsx->utc.date = 13;
+          gpsx->utc.date = 16;
           gpsx->latitude = 101; 
           gpsx->longitude = 29;
           gpsx->nshemi = 'N';
@@ -3131,7 +3132,7 @@ void Get_gps_info(void const * argument)
 
 
           gpsx->hdop = 20;
-          system_flag_table->gujiFormats = GUJI_FORMATS_MEA;
+          system_flag_table->gujiFormats = GUJI_FORMATS_GPX;
 
 #endif          
           //if(rRawData.eType == STN_RMC)

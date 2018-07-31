@@ -693,14 +693,11 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
 
             sprintf((char *)dtbuf,"%d,%c,%02d%02d%02d,",message_number_index,record_type,
                 guji_data.bitc.year+16,guji_data.bitc.month,guji_data.bitc.date);
-            print_usart1("%s",dtbuf);
             f_printf(sys_fp,"%s",(char *)dtbuf);
             sprintf((char *)dtbuf,"%02d%02d%02d,%.6f%c,",guji_data.bitc.hour,guji_data.bitc.min,guji_data.bitc.sec,tp_lat/1000000,lat_flag);
-            print_usart1("%s",dtbuf);
             f_printf(sys_fp,"%s",(char *)dtbuf);
             sprintf((char *)dtbuf,"%.6f%c,%d,%.1f,%d",tp_lon/1000000,lon_flag,attiautl/10,(speed/10),angle);	
             f_printf(sys_fp,"%s\n",(char *)dtbuf);
-			print_usart1("%s\n",dtbuf);
             //print_usart1("index :%d \r\n",message_number_index);
             
         }
@@ -785,27 +782,17 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
         {
             //print_usart1("%d-%d-%d\r\n",rxlen,system_flag_table->guji_buffer_Index_wp ,system_flag_table->guji_buffer_Index_rp );
           
-        #if 0
-            if(debug_cnt >= 20)
-            {
-                //print_usart1("rxlen = %d\r\n",loading_leng);
-                print_usart1("%s",guji_buffer_);
-                debug_cnt = 0;
-            }
-            else
-            {
-                debug_cnt++;
-            }
-        #endif            
         }
-        
+#if 0        
         system_flag_table->guji_buffer_Index_rp += rxlen;
         if(system_flag_table->guji_buffer_Index_rp >= MAX_GUJI_BUFFER_MAX_LEN)
         {
             system_flag_table->guji_buffer_Index_rp = system_flag_table->guji_buffer_Index_rp  - MAX_GUJI_BUFFER_MAX_LEN;            
         }
+#endif        
         //system_flag_table->guji_buffer_Index_wp = 0;
         //system_flag_table->guji_buffer_Index_rp = 0;   
+        system_flag_table->guji_buffer_Index_rp = save_wp;
         if(get_space() < 1)
         {
             if(system_flag_table->guji_record.recoed_meth == 0)
@@ -831,8 +818,25 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
         }
         else if((system_flag_table->gujiFormats == GUJI_FORMATS_GPS)||(system_flag_table->gujiFormats == GUJI_FORMATS_MEA))
         {    
-            print_usart1("%s",guji_buffer_);
+            
             fr = f_write(sys_fp,guji_buffer_,rxlen,&wb);
+#if 0
+            if(debug_cnt >= 200)
+            {
+                //print_usart1("rxlen = %d\r\n",loading_leng);
+                print_usart1("%s",guji_buffer_);
+                debug_cnt++;
+                if(debug_cnt>= 220)
+                {
+                    print_usart1("\r\n*********\r\n");
+                    debug_cnt = 0;
+                }
+            }
+            else
+            {
+                debug_cnt++;
+            }
+#endif            
 			
 
                
@@ -1226,7 +1230,6 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     }
                     
                     save_file_cnt  = HAL_GetTick();
-                    system_flag_table->guji_mode = 2;
                     if((ret == 1) && (system_flag_table->power_status != POWER_LRUN))
                     {
                         if(system_flag_table->gujiFormats == GUJI_FORMATS_GPS) 
@@ -1247,6 +1250,13 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
         			//save_guiji_message(gpsx,system_flag_table,'T');
                     
         			//interst_pos_number = 0;
+        			while(system_flag_table->grecord_timer_cnt +2000 > HAL_GetTick())
+                    {
+                        osDelay(100);
+                    }  
+                    
+                    system_flag_table->grecord_timer_cnt = HAL_GetTick();
+                    system_flag_table->guji_mode = 2;
 
                }
 
