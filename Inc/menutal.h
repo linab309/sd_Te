@@ -209,6 +209,7 @@ typedef struct
     uint32_t grecord_timer_cnt;
     uint8_t sd_stats;
     uint8_t ODOR;
+    uint32_t odor_time_cnt;
     uint8_t unit;
     uint8_t File_status;
     uint8_t function_index;

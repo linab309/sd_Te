@@ -373,7 +373,6 @@ void check_time(nmea_msg *gpsx ,system_flag *system_flag_table)
 
 }
 
-
 uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_t guji_record_type)
 {
     uint8_t one_shot_buffer[MESSAGE_LEN] = {0};
@@ -498,7 +497,7 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
         else
         {
 
-            check_time(gpsx,system_flag_table);        
+     
             guji_data.bitc.year  = (system_flag_table->sys_tm.w_year -16);
             guji_data.bitc.month = system_flag_table->sys_tm.w_month;
             guji_data.bitc.date  = system_flag_table->sys_tm.w_date;
@@ -545,7 +544,7 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
         one_shot_buffer[index++]  = (uint8_t)(TEMPERATURE)&0xff;  // 28mb
 #endif    
     
-    
+
         memcpy(&system_flag_table->guji_buffer[system_flag_table->guji_buffer_Index_wp],one_shot_buffer,MESSAGE_LEN);
     
         system_flag_table->guji_buffer_Index_wp  += MESSAGE_LEN;        
@@ -1096,21 +1095,23 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 				        fr = f_mkdir(track_file);
 				    }
 
-                    if(((system_flag_table->ODOR == 1)&&(mode == RECORED_START ))||(RECORED_RESTART_2 == mode))
+                    stm_read_eerpom(20,&eeprom_vaule);
+                    eeprom_tm.w_year  = eeprom_vaule;
+                    stm_read_eerpom(21,&eeprom_vaule);
+                    eeprom_tm.w_month = eeprom_vaule;
+                    stm_read_eerpom(22,&eeprom_vaule);
+                    eeprom_tm.w_date  = eeprom_vaule;
+                    stm_read_eerpom(23,&eeprom_vaule);
+                    eeprom_tm.hour    = eeprom_vaule;
+                    stm_read_eerpom(24,&eeprom_vaule);
+                    eeprom_tm.min     = eeprom_vaule;
+                    stm_read_eerpom(25,&eeprom_vaule);
+                    eeprom_tm.sec     = eeprom_vaule;
+
+                    if(system_flag_table->ODOR == 1)
                     {
                         /*eeprom 20 -25*/
-                        stm_read_eerpom(20,&eeprom_vaule);
-                        eeprom_tm.w_year  = eeprom_vaule;
-                        stm_read_eerpom(21,&eeprom_vaule);
-                        eeprom_tm.w_month = eeprom_vaule;
-                        stm_read_eerpom(22,&eeprom_vaule);
-                        eeprom_tm.w_date  = eeprom_vaule;
-                        stm_read_eerpom(23,&eeprom_vaule);
-                        eeprom_tm.hour    = eeprom_vaule;
-                        stm_read_eerpom(24,&eeprom_vaule);
-                        eeprom_tm.min     = eeprom_vaule;
-                        stm_read_eerpom(25,&eeprom_vaule);
-                        eeprom_tm.sec     = eeprom_vaule;
+
 
                         //print_usart1("%04d-%02d/%02d%02d%02d%02d.CSV \r\n",eeprom_tm.w_year,eeprom_tm.w_month,
                         //    eeprom_tm.w_date, eeprom_tm.hour,eeprom_tm.min,eeprom_tm.sec);    
@@ -1134,11 +1135,18 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         {
                             ret = 1;                      
                         }
+                        
+                        if(RECORED_RESTART == mode)
+                            ret = 1;
 
        
                     }
                     else 
-                        ret = 1;
+                    {
+                        if((mode == RECORED_START )||(RECORED_RESTART == mode))
+                            ret = 1;
+                        
+                    }
 
 
 

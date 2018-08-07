@@ -224,6 +224,7 @@ uint8_t breathing_toggle(uint16_t breath_on_timer, uint16_t breath_off_timer);
 void gps_power_mode(uint8_t mode);
 void sd_power_mode(uint8_t mode);
 void sleep_power_config(void);
+void resume_new_recode(void);
 
 /* USER CODE END PFP */
 
@@ -3105,7 +3106,7 @@ void Get_gps_info(void const * argument)
           rRawData.i2PacketSize = m_i2PktDataSize;
           if(recode_cnt == 20)
           {
-              //print_usart1("%s",rRawData.Data);
+              print_usart1("%s",rRawData.Data);
               recode_cnt = 0;
           }
           else
@@ -3122,7 +3123,7 @@ void Get_gps_info(void const * argument)
           gpsx->gpssta = 2; /*for test*/
           gpsx->posslnum = 5 ;
           gpsx->utc.year = 2018;
-          gpsx->utc.month= 4;
+          gpsx->utc.month= 8;
           gpsx->utc.date = 16;
           gpsx->latitude = 101; 
           gpsx->longitude = 29;
@@ -3136,6 +3137,26 @@ void Get_gps_info(void const * argument)
 
 #endif          
           //if(rRawData.eType == STN_RMC)
+          if((system_flag_table->guji_mode == RECORED_START_DOING)||(system_flag_table->guji_mode == RECORED_START))
+          {
+              if(rRawData.eType == STN_RMC)
+              {
+                  check_time(gpsx,system_flag_table);
+                  if(system_flag_table->sys_tm.hour == 0)
+                  {
+                      if(system_flag_table->sys_tm.min == 0)
+                      {
+                          if(system_flag_table->sys_tm.sec== 0)
+                          {
+                              resume_new_recode();
+                              continue;
+                          }
+                          
+                      }
+                  }
+              }
+              
+          }
           surport_mode_config(system_flag_table->power_status,rRawData.Data,m_i2PktDataSize+1);            
 
       }
@@ -3158,6 +3179,24 @@ void Get_gps_info(void const * argument)
   /* USER CODE END Get_gps_info */
 }
 
+
+void resume_new_recode(void)
+{
+    if(system_flag_table->guji_mode > RECORED_START)
+    {    
+        __HAL_UART_DISABLE(&huart3);
+        system_flag_table->guji_mode = RECORED_STOP;
+        sound_toggle_simple(3,50,50);
+        is_locker = 0;
+        while(system_flag_table->guji_mode != RECORED_IDLE)
+        {
+            osDelay(10); 
+        }
+        system_flag_table->guji_mode = RECORED_RESTART;
+        __HAL_UART_ENABLE(&huart3);           
+    }
+
+}
 /* MySystem function */
 void MySystem(void const * argument)
 {
@@ -3316,7 +3355,9 @@ void MySystem(void const * argument)
 
               break;
           case USER_KEY_LONG:  /*重新开启一条轨迹*/
-              if(system_flag_table->guji_mode >= RECORED_START)
+              resume_new_recode();
+#if 0              
+              if(system_flag_table->guji_mode > RECORED_START)
               {
 
                   __HAL_UART_DISABLE(&huart3);
@@ -3332,7 +3373,7 @@ void MySystem(void const * argument)
 
 				  
               }
-			  
+#endif			  
               break;
           case POWER_KEY_LONG_5S:
               if(system_flag_table->power_status == POWER_STANBY)
@@ -3801,7 +3842,8 @@ void update_info(void const * argument)
 	           
 	           if(system_flag_table->power_status == POWER_SURPORT_RUN ||system_flag_table->power_status == POWER_RUN ||system_flag_table->power_status == POWER_LRUN)
 	           {
-	               if((gpsx->gpssta >= 1)&&(system_flag_table->wirte_storge_flag == 1))
+	               if((gpsx->gpssta >= 1)&&(system_flag_table->guji_mode == RECORED_START_DOING))
+                    //(system_flag_table->wirte_storge_flag == 1))
 	               //if((system_flag_table->guji_mode == RECORED_START_DOING))
 	               {
 	                   if((system_flag_table->guji_record.recoed_formats == BY_TIMES) && (system_flag_table->guji_record.by_time_vaule < 1000))     
