@@ -184,7 +184,7 @@ typedef struct
     uint32_t lowpower_timer;
     uint32_t wanng_speed_vaule;
     uint8_t  guji_mode;
-    uint8_t  auto_new_guji;
+    //uint8_t  auto_new_guji;
     uint8_t  auto_power;
     uint8_t  auto_power_Status;
     uint8_t  power_status ;

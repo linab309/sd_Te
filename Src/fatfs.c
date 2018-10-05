@@ -261,7 +261,7 @@ uint8_t configfs_set(FIL *update_config_fp)
     print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "SpeedAlert", "config.txt")); 
     print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "AutoPowerOn", "config.txt"));
     print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "Beeper", "config.txt")); 
-    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "FunctionKey", "config.txt")); 
+    print_usart1("%s\r\n", GetIniKeyString("SETTINGS", "FunctionButton", "config.txt")); 
     print_usart1("%s\r\n", GetIniKeyString("RECORD", "Format", "config.txt"));
     print_usart1("%s\r\n", GetIniKeyString("RECORD", "LogMode", "config.txt")); 
     print_usart1("%s\r\n", GetIniKeyString("RECORD", "SpeedMask", "config.txt"));
@@ -330,7 +330,7 @@ uint8_t configfs_set(FIL *update_config_fp)
 
     /*function*/
 
-    string = GetIniKeyString("SETTINGS", "FunctionKey", "config.txt");
+    string = GetIniKeyString("SETTINGS", "FunctionButton", "config.txt");
 
     if(strcmp("Pause",string) == 0)
     {
@@ -656,7 +656,8 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
     FRESULT fr;
     uint32_t eeprom_flag = 0;
     uint8_t ret  = 0; 
-
+    
+  
     if(f_open(&update_config_fp,(TCHAR const*)"P-1.BIN",FA_READ) == FR_OK)
     {
         f_close(&update_config_fp);
@@ -665,9 +666,11 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
     }
     else if(f_open(&update_config_fp,(TCHAR const*)"config.txt",FA_READ) == FR_OK)
     {
+        system_flag_table->buzzer = 1;
         sound_toggle_simple(3,50,50);
         ret = configfs_set(&update_config_fp);
         print_usart1("\r\n read config.txt \r\n");
+        system_flag_table->buzzer = 1;
     }
     else
     {
@@ -688,7 +691,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
         }
         f_printf(&update_config_fp,"AutoPowerOn=%s\r\n",system_flag_table->auto_power ? "ON" : "OFF");
         f_printf(&update_config_fp,"Beeper=%s\r\n",system_flag_table->buzzer? "ON" : "OFF");
-        f_printf(&update_config_fp,"FunctionKey=%s\r\n",functionkey_Aarry[system_flag_table->function_index]);
+        f_printf(&update_config_fp,"FunctionButton=%s\r\n",functionkey_Aarry[system_flag_table->function_index]);
         f_printf(&update_config_fp,"[RECORD]\r\n");
         f_printf(&update_config_fp,"Format=%s\r\n",format_Aarry[system_flag_table->gujiFormats]);
         if( system_flag_table->guji_record.recoed_formats  == BY_TIMES)
@@ -713,8 +716,8 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
                 f_printf(&update_config_fp,"SpeedMask=%d\r\n",system_flag_table->guji_record.by_speed_vaule/1000);
         }
         f_printf(&update_config_fp,"SpyModeTimer=%d\r\n",(system_flag_table->lowpower_timer/60000));
-        f_printf(&update_config_fp,"OneTrackPerDay=%s\r\n", system_flag_table->auto_new_guji ? "ON" : "OFF");       
-        f_printf(&update_config_fp,"[UNIT\r\n");
+        f_printf(&update_config_fp,"OneTrackPerDay=%s\r\n", system_flag_table->ODOR ? "ON" : "OFF");       
+        f_printf(&update_config_fp,"[UNIT]\r\n");
 
         if(system_flag_table->unit == 1)
         {
@@ -747,6 +750,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
         print_usart1("\r\n write info.txt \r\n");
 
     }
+
 
 
     return ret ;

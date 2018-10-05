@@ -109,8 +109,8 @@ const int8_t  STORAGE_Inquirydata_FS[] = {/* 36 */
   0x00,
   0x00,	
   0x00,
-  'S', 'T', 'M', ' ', ' ', ' ', ' ', ' ', /* Manufacturer : 8 bytes */
-  'P', 'r', 'o', 'd', 'u', 'c', 't', ' ', /* Product      : 16 Bytes */
+  'C', 'O', 'L', 'U', 'M', 'B', 'U', 'S', /* Manufacturer : 8 bytes */
+  'P', '-', '1', ' ', ' ', ' ', ' ', ' ', /* Product      : 16 Bytes */
   ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
   '0', '.', '0' ,'1',                     /* Version      : 4 Bytes */
 }; 
@@ -336,8 +336,8 @@ int8_t STORAGE_Write_FS (uint8_t lun,
 	  //__enable_irq();
       ret = 0;
   }
-  //print_usart1("l%d \r\n",blk_len);    
-  //print_usart1("w:%d \r\n",blk_addr);    
+ // print_usart1("l%d \r\n",blk_len);    
+ // print_usart1("w:%d \r\n",blk_addr);    
   
   return ret; 
   /* USER CODE END 7 */ 

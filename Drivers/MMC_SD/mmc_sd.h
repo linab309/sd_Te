@@ -104,7 +104,7 @@
 #define __SD_DETECT_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOC_CLK_ENABLE()
 #define SD_DETECT_IRQn                   EXTI9_5_IRQn
    
-#define SD_DATATIMEOUT           ((uint32_t)0xFFFF)
+#define SD_DATATIMEOUT           ((uint32_t)0x10000000)
     
 #define SD_PRESENT               ((uint8_t)0x01)
 #define SD_NOT_PRESENT           ((uint8_t)0x00)

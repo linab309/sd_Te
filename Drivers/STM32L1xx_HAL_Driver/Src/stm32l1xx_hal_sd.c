@@ -257,7 +257,7 @@
 #define SD_SINGLE_BUS_SUPPORT           (0x00010000U)
 #define SD_CARD_LOCKED                  (0x02000000U)
 
-#define SD_DATATIMEOUT                  (0x0000FFFFU)
+#define SD_DATATIMEOUT                  (0x10000000U)
 #define SD_0TO7BITS                     (0x000000FFU)
 #define SD_8TO15BITS                    (0x0000FF00U)
 #define SD_16TO23BITS                   (0x00FF0000U)
