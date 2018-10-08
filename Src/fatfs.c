@@ -663,18 +663,18 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
         f_close(&update_config_fp);
         __set_FAULTMASK(1);      // 关闭所有中端
         HAL_NVIC_SystemReset();
+     
     }
     else if(f_open(&update_config_fp,(TCHAR const*)"config.txt",FA_READ) == FR_OK)
     {
-        system_flag_table->buzzer = 1;
-        sound_toggle_simple(3,50,50);
+        sound_toggle_simple_Force(3,50,50);
         ret = configfs_set(&update_config_fp);
         print_usart1("\r\n read config.txt \r\n");
-        system_flag_table->buzzer = 1;
+    
     }
     else
     {
-        sound_toggle_simple(3,50,50);
+        sound_toggle_simple_Force(3,50,50);
         fr = f_open(&update_config_fp, "INFO.TXT",FA_WRITE | FA_OPEN_ALWAYS);
         f_printf(&update_config_fp,"[SETTINGS]\r\n");
         f_printf(&update_config_fp,"TimeZone=%s\r\n",timer_zone_Aarry[system_flag_table->time_zone]);

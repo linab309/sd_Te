@@ -1277,7 +1277,12 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     }  
                     
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
-                    system_flag_table->guji_mode = 2;
+                    if(system_flag_table->puase_flag == 1)
+                    {
+                          system_flag_table->guji_mode = RECORED_PAUSE;                        
+                    }
+                    else
+                          system_flag_table->guji_mode = 2;
                     print_usart1("start -> doing \r\n");
 
                }
@@ -1421,12 +1426,12 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                 
             }
 
-			print_usart1("\r\n close file-- :%d\r\n ",fr);
+			 print_usart1("\r\n 11-close file :%d--%x\r\n ",fr,sys_fp);
             system_flag_table->guji_mode = RECORED_IDLE;            
 
 			break;
        case RECORED_PAUSE:
-            if((system_flag_table->power_status == POWER_LRUN_SLEEP)||(system_flag_table->power_status == POWER_SURPORT_SLEEP))
+            if(0)//(system_flag_table->power_status == POWER_LRUN_SLEEP)||(system_flag_table->power_status == POWER_SURPORT_SLEEP))
             {
                 if(sys_fp != NULL)
                 {
@@ -1436,7 +1441,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         { 
                             //save_guiji_message(gpsx,system_flag_table,'T');              
                             write_flash(sys_fp,system_flag_table);              
-                            print_usart1("\r\n close file \r\n ");
+                            print_usart1("\r\n RECORED_PAUSE close file :%x \r\n ",sys_fp);
                          }
         			}
         			
@@ -1451,7 +1456,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         }
                     }
                     fr = f_close(sys_fp);
-                    print_usart1("\r\n close file :%d\r\n ",fr);
+                    print_usart1("\r\n close file :%d--%x\r\n ",fr,sys_fp);
 
                     stm_write_eerpom(100,system_flag_table->Message_head_number);
                     
@@ -1462,7 +1467,12 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
 
             if(system_flag_table->power_status == POWER_LRUN_SLEEP)
             {
-                system_flag_table->guji_mode = RECORED_IDLE;         
+                //system_flag_table->guji_mode = RECORED_IDLE;      
+                system_flag_table->puase_flag = 0;
+            }
+            else
+            {
+                system_flag_table->puase_flag = 1;
             }
 
             break;

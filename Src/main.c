@@ -116,6 +116,7 @@ uint8_t uart3_dma_buffer[100];
 
 uint8_t self_guiji_buffer[MAX_GUJI_BUFFER_MAX_LEN];
 static uint16_t usb_timer_cnt = 0 ;
+static uint8_t warn_cnt = 0 ;
 
 
 /*GPS 数据接收标志位*/
@@ -260,7 +261,7 @@ static int inHandlerMode (void)
 void print_usart1(char *format, ...)
 {
 
-#if 0
+#if 1
 
     char buf[160];
     uint32_t timer_out = 0;
@@ -511,7 +512,7 @@ int main(void)
   print_usart1("system_flag_table->power_mode :%d \r\n",system_flag_table->power_mode);
   system_flag_table->guji_record.recoed_meth         = AUTO_STOP;
 
-#if 1
+#if 0
   if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) != GPIO_PIN_RESET)
   {
       system_flag_table->charger_connected = 1;
@@ -1118,15 +1119,15 @@ const uint8_t A10hz_config[]="$PMTK220,100*2f\r\n";
 
 void gps_init(void)
 {
-	osDelay(1000);
-	osDelay(1000);
+	osDelay(100);
+	osDelay(100);
     MX_USART3_UART_Init_9600();
 	HAL_UART_Transmit(&huart3,(uint8_t*)BaudRate_config,sizeof(BaudRate_config),0xFFF);
-	osDelay(1000);
+	osDelay(100);
 	MX_USART3_UART_Init();
-	osDelay(1000);
+	osDelay(100);
 	HAL_UART_Transmit(&huart3,(uint8_t*)filt_config,sizeof(filt_config),0xFFF);  
-	osDelay(1000);
+	osDelay(100);
 	if(system_flag_table->guji_record.recoed_formats == BY_TIMES)
     {
     	if(system_flag_table->guji_record.by_time_vaule == 100)
@@ -1160,7 +1161,7 @@ void gps_power_mode(uint8_t mode)
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); 
         memset(gpsx,0,sizeof(nmea_msg));
         //HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1); 
-        HAL_Delay(1000);
+        //HAL_Delay(1000);
         gps_init();  
     }            
     else
@@ -2404,6 +2405,9 @@ void auto_power_off(void)
            start_hotplug = 0;
            BSP_LED_Off(LED_GREEN);
            //USBD_Start(&hUsbDeviceFS);
+           
+           BSP_LED_Off(LED_GPS);
+           BSP_LED_Off(LED_SD);
            if(usb_init_flag == 0)
            {
                MX_USB_DEVICE_Init();
@@ -2438,7 +2442,8 @@ void auto_power_on(void)
 {
     static uint8_t auto_power_timer = 0;  
     uint32_t eeprom_flag = 0;  
-     
+
+    //print_usart1(":%d--%d \r\n",system_flag_table->charger_connected,start_hotplug);
     if((system_flag_table->charger_connected  == 0)||(start_hotplug == 0))
     {
         auto_power_timer = 0;
@@ -2456,12 +2461,27 @@ void auto_power_on(void)
             start_hotplug = 0 ;
             is_power_from_auto = 1;
             stm_read_eerpom(11,&eeprom_flag);
-            stm_write_eerpom(11,(eeprom_flag+1));                      
-            sound_toggle_simple(1,50,50);                                    
+            stm_write_eerpom(11,(eeprom_flag+1));                                 
+            sound_toggle_simple(2,50,50);                                                                                 
             system_flag_table->power_status = system_flag_table->power_mode;  
             system_flag_table->auto_power_Status = 1;
+            BSP_LED_Init(LED_GPS);
+            BSP_LED_Init(LED_SD);
+            BSP_LED_On(LED_GPS);
+            BSP_LED_On(LED_SD);            
+
+            if(system_flag_table->power_status == POWER_SURPORT_RUN)
+            {
+               if(LED_SURPORT_FLAG == 1)
+               {
+                   BSP_LED_Init(LED_SURPORT);
+                   LED_SURPORT_FLAG = 0;
+               }
+               BSP_LED_On(LED_SURPORT);            
+            }
             gps_power_mode(1);
-            sd_power_mode(1);
+            sd_power_mode(1);            
+            print_usart1("AUTO POWER ON -2 \r\n");
             system_flag_table->guji_mode = RECORED_START;
   #if 1
             if(usb_init_flag == 1)
@@ -2489,6 +2509,7 @@ void status_led_config(void)
     static uint8_t read_led_flag = 0;
     static uint32_t green_timer_cnt = 0 ;
     static uint8_t green_led_flag = 0;    
+    uint32_t eeprom_flag = 0;
 
     if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) != GPIO_PIN_RESET) /*充电中*/
     {
@@ -2512,6 +2533,14 @@ void status_led_config(void)
            if(BSP_PB_GetState(BUTTON_USER) == 0)/*poi按下后，不唤醒*/
            {
               start_hotplug = 1 ;
+           }
+
+           stm_read_eerpom(0xe0,&eeprom_flag);   /*reset for power off when usb detect*/
+           print_usart1("eeprom_flag :%d \r\n",eeprom_flag);
+           if(eeprom_flag == 1)
+           {
+                start_hotplug = 0;
+                stm_write_eerpom(0xe0,0);   /*reset for power off when usb detect*/
            }
         }
         
@@ -2845,7 +2874,7 @@ void StartDefaultTask(void const * argument)
     if((system_flag_table->power_status == POWER_STANBY)
         ||(system_flag_table->power_status == POWER_LRUN_SLEEP)||(system_flag_table->power_status == POWER_SURPORT_SLEEP))
     {
-        if(system_flag_table->guji_mode  == RECORED_START_DOING)
+        if((system_flag_table->guji_mode  == RECORED_START_DOING)||(system_flag_table->guji_mode  == RECORED_PAUSE))
         {
             if(1)//system_flag_table->power_status == POWER_STANBY)
             {
@@ -3198,6 +3227,7 @@ void resume_new_recode(void)
         {
             osDelay(10); 
         }
+        system_flag_table->puase_flag  =  0;
         system_flag_table->guji_mode = RECORED_RESTART;
         __HAL_UART_ENABLE(&huart3);           
     }
@@ -3234,10 +3264,15 @@ void MySystem(void const * argument)
 		  	    if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
 		  	    {			
                     system_flag_table->power_status = POWER_SURPORT_RUN;
+                    
+                    BSP_LED_On(LED_SURPORT);
+                    BSP_LED_On(LED_SD);
+                    BSP_LED_On(LED_GPS);
+                    SystemClock_Config_resume();
                     //BSP_SD_Init();
                     gps_power_mode(1);
                     sd_power_mode(1) ;
-                    SystemClock_Config_resume();
+                   
 
                     HAL_NVIC_DisableIRQ(EXTI1_IRQn);
  				    MX_TIM10_Init();
@@ -3264,6 +3299,7 @@ void MySystem(void const * argument)
  				    MX_TIM10_Init();
                     osDelay(500);                  
 
+
                     print_usart1("*********\r\n");
                     print_usart1("levef lprun mode  resume \r\n");       
                     print_usart1("******** \r\n");           
@@ -3282,6 +3318,7 @@ void MySystem(void const * argument)
                 {
                     //system_flag_table->wanng_speed_vaule  = 0;
                     Wang_FLAG = 0;
+                    warn_cnt = 0xff;
                     HAL_TIM_PWM_Stop(&htim10, TIM_CHANNEL_1);                      
                     break;
                 }
@@ -3319,10 +3356,14 @@ void MySystem(void const * argument)
     			{			
     				system_flag_table->power_status = POWER_SURPORT_RUN;
 //                    BSP_SD_Init();
+                    BSP_LED_On(LED_SURPORT);
+                    BSP_LED_On(LED_SD);
+                    BSP_LED_On(LED_GPS);
+                    SystemClock_Config_resume();
+
     				gps_power_mode(1);
     				sd_power_mode(1) ;
-    				SystemClock_Config_resume();
-
+    			
     				HAL_NVIC_DisableIRQ(EXTI1_IRQn);
     				MX_TIM10_Init();
                     osDelay(500);                                      
@@ -3347,7 +3388,7 @@ void MySystem(void const * argument)
  				   MX_TIM10_Init();                       
     			   print_usart1("*********\r\n");
     			   print_usart1("levef lprun mode  resume \r\n");		
-    			   print_usart1("******** \r\n");			
+    			   print_usart1("******** \r\n");	                   
     			   gps_power_mode(1);
     			   sd_power_mode(1);
                    osDelay(500);                                     
@@ -3422,6 +3463,7 @@ void MySystem(void const * argument)
                   system_flag_table->auto_power_Status = 0;
                   //sound_flag = 1 ;
                   is_power_from_auto = 0;
+
                   stm_read_eerpom(11,&eeprom_flag);
                   stm_write_eerpom(11,(eeprom_flag+1));     
                   sound_toggle_simple(2,500,150); 
@@ -3521,10 +3563,12 @@ void MySystem(void const * argument)
                   }
                   else
                   {
+                      stm_write_eerpom(0xe0,1);   /*reset for power off when usb detect*/
+
                       __set_FAULTMASK(1);      // 关闭所有中端
                       HAL_NVIC_SystemReset();     
                       
-                      stm_write_eerpom(0xe0,1);   /*reset for power off when usb detect*/
+
                   }
               }            
               break;
@@ -3537,7 +3581,7 @@ void MySystem(void const * argument)
           	  }            
               if(entry_config_mode(system_flag_table) == 0)
               {
-                  sound_toggle_simple(1,500,150); 
+                  sound_toggle_simple_Force(1,500,150); 
                   stm_read_eerpom(1,&eeprom_flag);
                   system_flag_table->buzzer = eeprom_flag;                  
               }
@@ -3566,6 +3610,10 @@ void MySystem(void const * argument)
  		  	    if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
 		  	    {			
                     system_flag_table->power_status = POWER_SURPORT_RUN;
+                    
+                    BSP_LED_On(LED_SURPORT);
+                    BSP_LED_On(LED_SD);
+                    BSP_LED_On(LED_GPS);
                     //BSP_SD_Init();
                     gps_power_mode(1);
                     sd_power_mode(1) ;
@@ -3596,7 +3644,9 @@ void MySystem(void const * argument)
 
                     print_usart1("*********\r\n");
                     print_usart1("levef lprun mode  resume \r\n");       
-                    print_usart1("******** \r\n");           
+                    print_usart1("******** \r\n");      
+
+                    
                     gps_power_mode(1);
                     sd_power_mode(1);
 //                    HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);
@@ -3626,6 +3676,7 @@ void MySystem(void const * argument)
                         {
 
                             system_flag_table->guji_mode = RECORED_PAUSE; 
+                            system_flag_table->puase_flag = 1;
                             sound_toggle_simple(1,50,50);
                             print_usart1("pause\r\n");
                         }
@@ -3651,6 +3702,7 @@ void MySystem(void const * argument)
                         if(system_flag_table->function_index == 0)/*pause*/
                         {
                             system_flag_table->guji_mode = RECORED_START_DOING; 
+                            system_flag_table->puase_flag = 0;
                             sound_toggle_simple(1,50,50);
 
                         }
@@ -3734,7 +3786,7 @@ void update_info(void const * argument)
   static uint16_t sd_timer_cnt = 0 ;
   static uint16_t support_timer_cnt = 0 ;
   static uint16_t adc_cnt = 0 ;
-  static uint16_t warn_cnt = 0 ;
+
 
 #if 0
      /* Get the RTC current Time */
@@ -3809,7 +3861,7 @@ void update_info(void const * argument)
            if((gpsx->speed < 3000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
            {
                support_timer_cnt ++;
-               if(support_timer_cnt == 3000)  //3000
+               if(support_timer_cnt == 100)  //3000
                {
                    support_timer_cnt = 0;
                    //StopSequence_Config();
@@ -3833,6 +3885,7 @@ void update_info(void const * argument)
                    //osThreadSuspend(defaultTaskHandle);
           		   while(osThreadGetState(Get_gps_info_Handle) != osThreadSuspended) { osDelay(1);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
           		   while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(1);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
+                   //osDelay(1000);
 
                    sd_power_mode(0) ;
                    SystemClock_Config_msi();
@@ -3881,6 +3934,9 @@ void update_info(void const * argument)
                    SystemClock_Config_resume();                 
                    BSP_SD_ITConfig();
 //                           SD_IO_Init();     
+                   BSP_LED_On(LED_SURPORT);
+                   BSP_LED_On(LED_SD);
+                   BSP_LED_On(LED_GPS);
                    gps_power_mode(1);
                    sd_power_mode(1) ;                   
 				   MX_TIM10_Init();
@@ -4010,8 +4066,8 @@ void update_info(void const * argument)
    {
         if(system_flag_table->wanng_speed_vaule > 0)
         {
-            if((gpsx->speed) > (system_flag_table->wanng_speed_vaule))
-            {
+            if(((gpsx->speed) > (system_flag_table->wanng_speed_vaule))&&(warn_cnt != 0xff))
+            {                                         
                warn_cnt++;
                if(warn_cnt >= 8)
                {
