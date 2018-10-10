@@ -261,7 +261,7 @@ static int inHandlerMode (void)
 void print_usart1(char *format, ...)
 {
 
-#if 1
+#if 0
 
     char buf[160];
     uint32_t timer_out = 0;
@@ -3861,7 +3861,7 @@ void update_info(void const * argument)
            if((gpsx->speed < 3000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
            {
                support_timer_cnt ++;
-               if(support_timer_cnt == 100)  //3000
+               if(support_timer_cnt == 3000)  //3000
                {
                    support_timer_cnt = 0;
                    //StopSequence_Config();
@@ -4066,14 +4066,17 @@ void update_info(void const * argument)
    {
         if(system_flag_table->wanng_speed_vaule > 0)
         {
-            if(((gpsx->speed) > (system_flag_table->wanng_speed_vaule))&&(warn_cnt != 0xff))
-            {                                         
-               warn_cnt++;
-               if(warn_cnt >= 8)
+            if((gpsx->speed) > (system_flag_table->wanng_speed_vaule))
+            {  
+               if(warn_cnt != 0xff)
                {
-                   HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
-                   Wang_FLAG = 1;
-                   warn_cnt = 9 ;
+                   warn_cnt++;
+                   if(warn_cnt >= 8)
+                   {
+                       HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+                       Wang_FLAG = 1;
+                       warn_cnt = 9 ;
+                   }
                }
             }
             else
