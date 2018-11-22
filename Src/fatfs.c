@@ -731,7 +731,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
 
         
 
-        f_printf(&update_config_fp,"Firmware: V 0.9 %s\r\n",__DATE__);
+        f_printf(&update_config_fp,"Firmware: V 1.0 \r\n");
         stm_read_eerpom(11,&eeprom_flag);
         f_printf(&update_config_fp,"PowerOn: %d\r\n",eeprom_flag);
         stm_read_eerpom(12,&eeprom_flag);
