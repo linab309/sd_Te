@@ -342,11 +342,12 @@ void reset_eeprom(void)
       stm_write_eerpom(30,0);
 
       /*标记EERPOM表示已初始化*/
-      stm_write_eerpom(0xff,0x12345678);
+      
       stm_write_eerpom(0xf0,0);   /*power mode save ! default is normal support mode*/
       system_flag_table->frist_power = 1;
       stm_write_eerpom(13,system_flag_table->frist_power);
       system_flag_table->lowpower_timer = system_flag_table->lowpower_timer*1000*60;
+      stm_write_eerpom(0xff,0x12345678);
 
 }
 
@@ -421,7 +422,7 @@ int main(void)
   //while(1);
   //HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI); 
   stm_read_eerpom(0xff,&eeprom_flag);
-  if(eeprom_flag == 0x12345677)
+  if(eeprom_flag == 0x12345678)
   {
       print_usart1("update eerpom info \r\n");
       stm_read_eerpom(0,&eeprom_flag);

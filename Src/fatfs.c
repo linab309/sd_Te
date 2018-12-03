@@ -598,7 +598,7 @@ uint8_t configfs_set(FIL *update_config_fp)
     
     stm_write_eerpom(10,system_flag_table->ODOR);
 
-    stm_write_eerpom(0xff,0x12345677);
+
     f_close(update_config_fp);
 
 
