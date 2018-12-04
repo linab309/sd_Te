@@ -91,6 +91,7 @@
 #define POWER_LRUN_SLEEP         4  
 #define POWER_STOP               5
 #define POWER_STANBY             6  
+#define POWER_SD_ERROR             7  
 
 
 /*button release flag*/

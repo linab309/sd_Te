@@ -3579,14 +3579,27 @@ void MySystem(void const * argument)
                   USBD_DeInit(&hUsbDeviceFS);
                   USBD_Stop(&hUsbDeviceFS);
                   usb_init_flag = 0;
-          	  }            
-              if(entry_config_mode(system_flag_table) == 0)
-              {
-                  sound_toggle_simple_Force(1,500,150); 
-                  stm_read_eerpom(1,&eeprom_flag);
-                  system_flag_table->buzzer = eeprom_flag;                  
-              }
+          	  }
 
+              if((HAL_GPIO_ReadPin(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != GPIO_PIN_RESET)&&(system_flag_table->sd_stats == SD_STATS_OK))
+              {
+                  if(entry_config_mode(system_flag_table) == 0)
+                  {
+                      sound_toggle_simple_Force(1,500,150); 
+                      stm_read_eerpom(1,&eeprom_flag);
+                      system_flag_table->buzzer = eeprom_flag;                  
+                  }
+
+                
+              }            
+              else
+              {
+                  system_flag_table->power_status = POWER_SD_ERROR;
+                  print_usart1("system_flag_table->power_status = POWER_SD_ERROR\r\n");
+                  break ;
+
+              }
+              
               if(usb_init_flag == 0)
               {
                   MX_USB_DEVICE_Init();
@@ -3605,7 +3618,7 @@ void MySystem(void const * argument)
                   __set_FAULTMASK(1);      // 关闭所有中端
                   HAL_NVIC_SystemReset();    
               }
-              
+              break;
           case FUNCTION_KEY:
 
  		  	    if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
@@ -4022,7 +4035,11 @@ void update_info(void const * argument)
 	       } 
            else 
 	       {
-	   
+	            if(osThreadGetState(SystemCallHandle) != osThreadSuspended)
+                {   
+	               osThreadSuspend(SystemCallHandle);
+                }
+                
 	            if(LED_Sd_FLAG == 1)
 	            {
 	                BSP_LED_Init(LED_SD);
@@ -4040,7 +4057,7 @@ void update_info(void const * argument)
 	   
 	            BSP_LED_Toggle(LED_SD);                
 	   
-	            if(sd_timer_cnt == 100)
+	            if(sd_timer_cnt == 90)
 	            {
 	                sd_timer_cnt = 0;    
                     sound_toggle_simple(1,500,150);  
