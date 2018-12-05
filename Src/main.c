@@ -4056,8 +4056,8 @@ void update_info(void const * argument)
 	            sd_timer_cnt ++;
 	   
 	            BSP_LED_Toggle(LED_SD);                
-	   
-	            if(sd_timer_cnt == 90)
+	            BSP_LED_DeInit(LED_GPS);
+	            if(sd_timer_cnt == 15)
 	            {
 	                sd_timer_cnt = 0;    
                     sound_toggle_simple(1,500,150);  
