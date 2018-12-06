@@ -744,7 +744,10 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
         }
 
         else
+        {
             f_printf(&update_config_fp,"First Use: ---\r\n");
+            f_printf(&update_config_fp,"   \r\n");
+        }
 
         f_close(&update_config_fp);
         print_usart1("\r\n write info.txt \r\n");
