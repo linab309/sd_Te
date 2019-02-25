@@ -656,7 +656,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
     FRESULT fr;
     uint32_t eeprom_flag = 0;
     uint8_t ret  = 0; 
-    
+    uint32_t logmod = 0;
   
     if(f_open(&update_config_fp,(TCHAR const*)"P-1.BIN",FA_READ) == FR_OK)
     {
@@ -699,7 +699,32 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
         else
         {
             if(system_flag_table->unit == 1)
-                f_printf(&update_config_fp,"LogMode=%dft\r\n",(uint32_t)(system_flag_table->guji_record.by_distance_vaule/0.3048)); 
+            {
+                logmod  = (uint32_t)(system_flag_table->guji_record.by_distance_vaule/0.3048));
+
+                if((logmod=>17) && (logmod<=23))
+                {
+                    logmod = 20;
+                }
+                else if((logmod=>45) && (logmod<=55))
+                {
+                    logmod = 50;
+                }
+                else if((logmod=>90) && (logmod<=110))
+                {
+                    logmod = 100;
+                }
+                else if((logmod=>190) && (logmod<=210))
+                {
+                    logmod = 200;
+                }
+                else if((logmod=>490) && (logmod<=510))
+                {
+                    logmod = 500;
+                }
+
+                f_printf(&update_config_fp,"LogMode=%dft\r\n",logmod); 
+            }
             else
                 f_printf(&update_config_fp,"LogMode=%dm\r\n",(uint32_t)(system_flag_table->guji_record.by_distance_vaule)); 
         }
@@ -731,7 +756,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
 
         
 
-        f_printf(&update_config_fp,"Firmware: V 1.0 \r\n");
+        f_printf(&update_config_fp,"Firmware: V 1.1 \r\n");
         stm_read_eerpom(11,&eeprom_flag);
         f_printf(&update_config_fp,"PowerOn: %d\r\n",eeprom_flag);
         stm_read_eerpom(12,&eeprom_flag);
