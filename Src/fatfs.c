@@ -567,6 +567,14 @@ uint8_t configfs_set(FIL *update_config_fp)
     stm_write_eerpom(8,system_flag_table->guji_record.by_speed_vaule);  
 
     system_flag_table->lowpower_timer = GetIniKeyInt("RECORD", "SpyModeTimer", "config.txt");
+#ifdef P1_USAD    
+    if(system_flag_table->lowpower_timer < 1 || system_flag_table->lowpower_timer>60)
+    {
+         system_flag_table->lowpower_timer = 15;
+         no_support_char = 1;
+
+    }
+#else
     if(system_flag_table->lowpower_timer < 5 || system_flag_table->lowpower_timer>60)
     {
          system_flag_table->lowpower_timer = 15;
@@ -574,6 +582,7 @@ uint8_t configfs_set(FIL *update_config_fp)
 
     }
 
+#endif
     stm_write_eerpom(9,system_flag_table->lowpower_timer);  
 
 
@@ -700,25 +709,25 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
         {
             if(system_flag_table->unit == 1)
             {
-                logmod  = (uint32_t)(system_flag_table->guji_record.by_distance_vaule/0.3048));
+                logmod  = (uint32_t)(system_flag_table->guji_record.by_distance_vaule/0.3048);
 
-                if((logmod=>17) && (logmod<=23))
+                if((logmod >= 17) && (logmod <= 23))
                 {
                     logmod = 20;
                 }
-                else if((logmod=>45) && (logmod<=55))
+                else if((logmod >= 45) && (logmod <= 55))
                 {
                     logmod = 50;
                 }
-                else if((logmod=>90) && (logmod<=110))
+                else if((logmod >= 90) && (logmod <= 110))
                 {
                     logmod = 100;
                 }
-                else if((logmod=>190) && (logmod<=210))
+                else if((logmod >= 190) && (logmod <= 210))
                 {
                     logmod = 200;
                 }
-                else if((logmod=>490) && (logmod<=510))
+                else if((logmod >= 490) && (logmod <= 510))
                 {
                     logmod = 500;
                 }
@@ -755,8 +764,12 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
 
 
         
+#ifdef P1_USAD
+        f_printf(&update_config_fp,"Firmware: V1.1_USDA \r\n");
 
-        f_printf(&update_config_fp,"Firmware: V 1.1 \r\n");
+#else
+        f_printf(&update_config_fp,"Firmware: V1.1 \r\n");
+#endif
         stm_read_eerpom(11,&eeprom_flag);
         f_printf(&update_config_fp,"PowerOn: %d\r\n",eeprom_flag);
         stm_read_eerpom(12,&eeprom_flag);

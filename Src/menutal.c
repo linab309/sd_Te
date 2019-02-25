@@ -402,9 +402,9 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
         }
         
         one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>24)&0xff;  // 1mb
-        one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>16)&0xff;  // 1mb
-        one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>8)&0xff;  // 2mb
-        one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1))&0xff;  // 3 mb
+        one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>16)&0xff;  // 2mb
+        one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>8)&0xff;  // 3mb
+        one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1))&0xff;  // 4 mb
     
         flag.all = 0;
         guji_data.all = 0;
@@ -537,13 +537,11 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
         one_shot_buffer[index++]  = (uint8_t)(((gpsx->angle/1000)>>8)&0xff);  // 25mb
         one_shot_buffer[index++]  = (uint8_t)((gpsx->angle/1000)&0xff);  // 26mb
     
-#if 0    
-        one_shot_buffer[index++]  = (uint8_t)(PRESSURE>>8)&0xff;  // 29mb
-        one_shot_buffer[index++]  = (uint8_t)(PRESSURE)&0xff;  // 30mb
-    
-    
-        one_shot_buffer[index++]  = (uint8_t)(TEMPERATURE>>8)&0xff;  // 27mb
-        one_shot_buffer[index++]  = (uint8_t)(TEMPERATURE)&0xff;  // 28mb
+#ifdef P1_USAD 
+        one_shot_buffer[index++]  = (uint8_t)(gpsx->fixmode & 0xff);  // 27mb        
+        one_shot_buffer[index++]  = (uint8_t)(((gpsx->hdop/100)>>8)&0xff);  // 29mb
+        one_shot_buffer[index++]  = (uint8_t)((gpsx->hdop/100)&0xff);  // 30mb
+
 #endif    
     
 
@@ -553,7 +551,7 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
 
         if(system_flag_table->guji_buffer_Index_wp >= MAX_GUJI_BUFFER_MAX_LEN)
         {
-            system_flag_table->guji_buffer_Index_wp = 0;
+            system_flag_table->guji_buffer_Index_wp = (system_flag_table->guji_buffer_Index_wp - MAX_GUJI_BUFFER_MAX_LEN);
            // print_usart1("over flow 2 \r\n");
         }
          
@@ -580,6 +578,10 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
     uint8_t lat_flag,lon_flag,record_type;
     uint32_t message_number_index;
     int32_t attiautl;
+#ifdef P1_USAD    
+    uint8_t fixmode = 0;
+    float hodp = 0;
+#endif    
     //int16_t temp;
     float tp_lat =0.0,tp_lon =0.0,speed =0.0;
     GUJI_TAG flag ;
@@ -608,10 +610,10 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
         speed                = (buffer[SPEED_OFFSET+1 + index]|(buffer[SPEED_OFFSET + index]<<8));
 
         angle                = (buffer[ANGLE_OFFSET+1 + index]|(buffer[ANGLE_OFFSET + index]<<8));
-
-        //per                  = (buffer[PER_OFFSET+1 + index]|(buffer[PER_OFFSET + index]<<8));		
-
-        //temp                 = (buffer[TEM_OFFSET+1 + index]|(buffer[TEM_OFFSET+ index]<<8));
+#ifdef P1_USAD
+        fixmode              = buffer[VALID_OFFSET + index];		
+        hodp                 = (buffer[HDOP_OFFSET+1 + index]|(buffer[HDOP_OFFSET+ index]<<8));
+#endif
 
         index                =  index+MESSAGE_LEN;
 
@@ -686,9 +688,11 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
         {
             if(message_number_index == 1)
             {
-
+#ifdef P1_USAD
+                f_printf(sys_fp,"INDEX,TAG,DATE,TIME,LATITUDE N/S,LONGITUDE E/W,HEIGHT,SPEED,HEADING,VALID,HDOP\n");
+#else
                 f_printf(sys_fp,"INDEX,TAG,DATE,TIME,LATITUDE N/S,LONGITUDE E/W,HEIGHT,SPEED,HEADING\n");
-
+#endif
             }
             
 
@@ -697,8 +701,15 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
             f_printf(sys_fp,"%s",(char *)dtbuf);
             sprintf((char *)dtbuf,"%02d%02d%02d,%.6f%c,",guji_data.bitc.hour,guji_data.bitc.min,guji_data.bitc.sec,tp_lat/1000000,lat_flag);
             f_printf(sys_fp,"%s",(char *)dtbuf);
-            sprintf((char *)dtbuf,"%.6f%c,%d,%.1f,%d",tp_lon/1000000,lon_flag,attiautl/10,(speed/10),angle);	
+            
+#ifdef P1_USAD            
+            sprintf((char *)dtbuf,"%.6f%c,%d,%.1f,%d,%d,%.2f",tp_lon/1000000,lon_flag,attiautl/10,(speed/10),angle,fixmode,hodp/100);	
             f_printf(sys_fp,"%s\n",(char *)dtbuf);
+#else
+            sprintf((char *)dtbuf,"%.6f%c,%d,%.1f,%d",tp_lon/1000000,lon_flag,attiautl/10,(speed/10),angle);    
+            f_printf(sys_fp,"%s\n",(char *)dtbuf);
+
+#endif
             //print_usart1("index :%d \r\n",message_number_index);
             
         }
