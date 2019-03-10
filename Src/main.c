@@ -227,6 +227,10 @@ void sd_power_mode(uint8_t mode);
 void sleep_power_config(void);
 void resume_new_recode(void);
 
+#ifdef NEED_RTC
+static void MX_RTC_Init(void);
+#endif
+
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -379,7 +383,9 @@ int main(void)
   MX_TIM10_Init();
   //MX_SPI1_Init();
   //MX_TIM4_Init();
-  //MX_RTC_Init();
+#ifdef NEED_RTC  
+  MX_RTC_Init();
+#endif
   //MX_TIM2_Init();
   //MX_WWDG_Init();
 
@@ -723,13 +729,76 @@ static void MX_ADC_Init(void)
   }
 
 }
-#if 0
+#ifdef NEED_RTC
+
+
+/**
+  * @brief  Configure the current time and date.
+  * @param  None
+  * @retval None
+  */
+static void RTC_AlarmConfig(void)
+{
+  RTC_DateTypeDef  sdatestructure;
+  RTC_TimeTypeDef  stimestructure;
+  uint8_t temp[3];
+  uint8_t i,mon;
+  uint8_t date;
+  uint16_t year;
+  uint8_t sec,min,hour;
+  
+  const uint8_t *COMPILED_TIME=__TIME__;//??¦Ì?¡À¨¤¨°?¨º¡À??
+  const uint8_t *COMPILED_DATE=__DATE__;//??¦Ì?¡À¨¤¨°?¨¨??¨²
+
+  const uint8_t Month_Tab[12][3]={"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+  //¡Á??¡¥¨¦¨¨??¨º¡À???a¡À¨¤¨°??¡Â¨º¡À??
+ 
+  for(i=0;i<3;i++)temp[i]=COMPILED_DATE[i];
+  for(i=0;i<12;i++)if(str_cmpx((uint8_t*)Month_Tab[i],temp,3))break;
+  mon=i+1;//¦Ì?¦Ì???¡¤Y
+  if(COMPILED_DATE[4]==' ')date=COMPILED_DATE[5]-'0';
+  else date=10*(COMPILED_DATE[4]-'0')+COMPILED_DATE[5]-'0';
+  year=/*1000*(COMPILED_DATE[7]-'0')+100*(COMPILED_DATE[8]-'0')*/+10*(COMPILED_DATE[9]-'0')+COMPILED_DATE[10]-'0';
+  hour=10*(COMPILED_TIME[0]-'0')+COMPILED_TIME[1]-'0';
+  min=10*(COMPILED_TIME[3]-'0')+COMPILED_TIME[4]-'0';
+  sec=10*(COMPILED_TIME[6]-'0')+COMPILED_TIME[7]-'0';
+
+ 
+  /*##-1- Configure the Date #################################################*/
+  /* Set Date: Tuesday February 18th 2014 */
+  sdatestructure.Year = year;
+  sdatestructure.Month = mon;
+  sdatestructure.Date = date; 
+  sdatestructure.WeekDay = RTC_Get_Week(year,mon,date);   
+  if(HAL_RTC_SetDate(&hrtc,&sdatestructure,RTC_FORMAT_BCD) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler(); 
+  } 
+  
+  /*##-2- Configure the Time #################################################*/
+  /* Set Time: 02:20:00 */
+  stimestructure.Hours = hour;
+  stimestructure.Minutes = min;
+  stimestructure.Seconds = sec;
+  stimestructure.TimeFormat = RTC_HOURFORMAT12_AM;
+  stimestructure.DayLightSaving = RTC_DAYLIGHTSAVING_NONE ;
+  stimestructure.StoreOperation = RTC_STOREOPERATION_RESET;
+  
+  if(HAL_RTC_SetTime(&hrtc,&stimestructure,RTC_FORMAT_BCD) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler(); 
+  }  
+
+
+}
+
+
 /* RTC init function */
 static void MX_RTC_Init(void)
 {
 
-  RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef sDate;
 
     /**Initialize RTC Only 
     */
@@ -748,26 +817,7 @@ static void MX_RTC_Init(void)
     /**Initialize RTC and set the Time and Date 
     */
   if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) != 0x32F2){
-  sTime.Hours = 0x0;
-  sTime.Minutes = 0x0;
-  sTime.Seconds = 0x0;
-  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
-  sDate.Month = RTC_MONTH_JANUARY;
-  sDate.Date = 0x1;
-  sDate.Year = 0x0;
-
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
+    RTC_AlarmConfig();
     HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR0,0x32F2);
   }
 
@@ -1295,69 +1345,6 @@ static void Pwm_Breathing(uint8_t Led_pwm,uint8_t mode)
 
 }
 
-#if 0
-/**
-  * @brief  Configure the current time and date.
-  * @param  None
-  * @retval None
-  */
-static void RTC_AlarmConfig(void)
-{
-  RTC_DateTypeDef  sdatestructure;
-  RTC_TimeTypeDef  stimestructure;
-  uint8_t temp[3];
-  uint8_t i,mon;
-  uint8_t date;
-  uint16_t year;
-  uint8_t sec,min,hour;
-  
-  const uint8_t *COMPILED_TIME=__TIME__;//??¦Ì?¡À¨¤¨°?¨º¡À??
-  const uint8_t *COMPILED_DATE=__DATE__;//??¦Ì?¡À¨¤¨°?¨¨??¨²
-
-  const uint8_t Month_Tab[12][3]={"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-  //¡Á??¡¥¨¦¨¨??¨º¡À???a¡À¨¤¨°??¡Â¨º¡À??
- 
-  for(i=0;i<3;i++)temp[i]=COMPILED_DATE[i];
-  for(i=0;i<12;i++)if(str_cmpx((uint8_t*)Month_Tab[i],temp,3))break;
-  mon=i+1;//¦Ì?¦Ì???¡¤Y
-  if(COMPILED_DATE[4]==' ')date=COMPILED_DATE[5]-'0';
-  else date=10*(COMPILED_DATE[4]-'0')+COMPILED_DATE[5]-'0';
-  year=/*1000*(COMPILED_DATE[7]-'0')+100*(COMPILED_DATE[8]-'0')*/+10*(COMPILED_DATE[9]-'0')+COMPILED_DATE[10]-'0';
-  hour=10*(COMPILED_TIME[0]-'0')+COMPILED_TIME[1]-'0';
-  min=10*(COMPILED_TIME[3]-'0')+COMPILED_TIME[4]-'0';
-  sec=10*(COMPILED_TIME[6]-'0')+COMPILED_TIME[7]-'0';
-
- 
-  /*##-1- Configure the Date #################################################*/
-  /* Set Date: Tuesday February 18th 2014 */
-  sdatestructure.Year = year;
-  sdatestructure.Month = mon;
-  sdatestructure.Date = date; 
-  sdatestructure.WeekDay = RTC_Get_Week(year,mon,date);   
-  if(HAL_RTC_SetDate(&hrtc,&sdatestructure,RTC_FORMAT_BCD) != HAL_OK)
-  {
-    /* Initialization Error */
-    Error_Handler(); 
-  } 
-  
-  /*##-2- Configure the Time #################################################*/
-  /* Set Time: 02:20:00 */
-  stimestructure.Hours = hour;
-  stimestructure.Minutes = min;
-  stimestructure.Seconds = sec;
-  stimestructure.TimeFormat = RTC_HOURFORMAT12_AM;
-  stimestructure.DayLightSaving = RTC_DAYLIGHTSAVING_NONE ;
-  stimestructure.StoreOperation = RTC_STOREOPERATION_RESET;
-  
-  if(HAL_RTC_SetTime(&hrtc,&stimestructure,RTC_FORMAT_BCD) != HAL_OK)
-  {
-    /* Initialization Error */
-    Error_Handler(); 
-  }  
-
-
-}
-#endif
 
 /**
   * @brief  Display the current time.
@@ -1366,8 +1353,8 @@ static void RTC_AlarmConfig(void)
   */
 void RTC_TimeShow(DWORD* fattime)
 {
-    //RTC_DateTypeDef sdatestructureget;
-    //RTC_TimeTypeDef stimestructureget;
+    RTC_DateTypeDef sdatestructureget;
+    RTC_TimeTypeDef stimestructureget;
   
     //DWORD fattime = 0;
     #if 0	
@@ -1382,6 +1369,8 @@ void RTC_TimeShow(DWORD* fattime)
     *fattime =  ((DWORD)((sdatestructureget.Year + 20) << 25) | (DWORD)(sdatestructureget.Month<< 21) | (DWORD)(sdatestructureget.Date<< 16));
     *fattime |= ((DWORD)(stimestructureget.Hours << 11) | (DWORD)(stimestructureget.Minutes<< 5)|((DWORD)(stimestructureget.Seconds)/2));  
   #endif
+   if(gpsx->fixmode >= 1)
+   {
     check_time(gpsx,system_flag_table);
     //print_usart1("time: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.w_year, system_flag_table->sys_tm.w_month,system_flag_table->sys_tm.w_date);
     //print_usart1("date: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.hour, system_flag_table->sys_tm.min, system_flag_table->sys_tm.sec);
@@ -1390,6 +1379,25 @@ void RTC_TimeShow(DWORD* fattime)
                | (DWORD)(system_flag_table->sys_tm.w_date << 16));
     *fattime |= ((DWORD)(system_flag_table->sys_tm.hour << 11) | (DWORD)(system_flag_table->sys_tm.min<< 5)\
                |((DWORD)(system_flag_table->sys_tm.sec)/2));  
+   }
+   else
+   {
+   #ifdef NEED_RTC
+           /* Get the RTC current Time */
+        HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BCD);
+        /* Get the RTC current Date */
+        HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BCD);
+   #endif     
+    sdatestructureget.Year = 19;
+    sdatestructureget.Month = 1;
+    sdatestructureget.Date = 1;
+    stimestructureget.Hours = 0;
+    stimestructureget.Minutes = 0;
+    stimestructureget.Seconds = 0;
+
+    *fattime =  ((DWORD)((sdatestructureget.Year + 20) << 25) | (DWORD)(sdatestructureget.Month<< 21) | (DWORD)(sdatestructureget.Date<< 16));
+    *fattime |= ((DWORD)(stimestructureget.Hours << 11) | (DWORD)(stimestructureget.Minutes<< 5)|((DWORD)(stimestructureget.Seconds)/2));  
+   }
  
 } 
 
@@ -2091,7 +2099,7 @@ uint8_t sound_toggle_config(uint16_t sound_on_timer, uint16_t sound_off_timer)
 {
     static uint8_t sound_flag = 0;
     static uint32_t sound_toggle_cnt = 0;
- 
+    //return 0;
     if((sound_flag == 0)&&(HAL_GetTick() >= (sound_toggle_cnt + sound_off_timer)))
     {
         sound_toggle_cnt = HAL_GetTick();
@@ -2115,7 +2123,7 @@ uint8_t sound_toggle_config(uint16_t sound_on_timer, uint16_t sound_off_timer)
 uint8_t sound_toggle_simple(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound_off_timer)
 {
    uint8_t i = 0;
-
+   //return 0;
    if(system_flag_table->buzzer == 1)
    {
        for(i = 0;i< cnt ; i++)
@@ -2812,7 +2820,7 @@ static void MX_WWDG_Init(void)
 /* StartDefaultTask function */
 void StartDefaultTask(void const * argument)
 {
-  FIL test_fp ;
+//  FIL test_fp ;
 
 
   //uint8_t save_temp = 0;  
@@ -3158,17 +3166,18 @@ void Get_gps_info(void const * argument)
 #ifdef TEST_WRITE_SD
           gpsx->gpssta = 2; /*for test*/
           gpsx->posslnum = 5 ;
-          gpsx->utc.year = 2018;
+          gpsx->utc.year = 2019;
           gpsx->utc.month= 8;
-          gpsx->utc.date = 16;
+          gpsx->utc.date = 17;
           gpsx->latitude = 101; 
           gpsx->longitude = 29;
           gpsx->nshemi = 'N';
           gpsx->ewhemi= 'E';
-          gpsx->speed = 0;
+          gpsx->speed = 11100;
 
 
-          gpsx->hdop = 20;
+          gpsx->hdop = 278;
+          gpsx->fixmode = 2;
           system_flag_table->gujiFormats = GUJI_FORMATS_CSV;
 
 #endif          

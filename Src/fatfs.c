@@ -685,26 +685,26 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
     {
         sound_toggle_simple_Force(3,50,50);
         fr = f_open(&update_config_fp, "INFO.TXT",FA_WRITE | FA_OPEN_ALWAYS);
-        f_printf(&update_config_fp,"[SETTINGS]\r\n");
-        f_printf(&update_config_fp,"TimeZone=%s\r\n",timer_zone_Aarry[system_flag_table->time_zone]);
+        f_printf(&update_config_fp,"[SETTINGS]\n");
+        f_printf(&update_config_fp,"TimeZone=%s\n",timer_zone_Aarry[system_flag_table->time_zone]);
         if(system_flag_table->wanng_speed_vaule == 0)
         {
-            f_printf(&update_config_fp,"SpeedAlert=OFF\r\n");
+            f_printf(&update_config_fp,"SpeedAlert=OFF\n");
         }
         else
         {
             if(system_flag_table->unit == 1)
-                f_printf(&update_config_fp,"SpeedAlert=%d\r\n",system_flag_table->wanng_speed_vaule/1609);
+                f_printf(&update_config_fp,"SpeedAlert=%d\n",system_flag_table->wanng_speed_vaule/1609);
             else
-                f_printf(&update_config_fp,"SpeedAlert=%d\r\n",system_flag_table->wanng_speed_vaule/1000);
+                f_printf(&update_config_fp,"SpeedAlert=%d\n",system_flag_table->wanng_speed_vaule/1000);
         }
-        f_printf(&update_config_fp,"AutoPowerOn=%s\r\n",system_flag_table->auto_power ? "ON" : "OFF");
-        f_printf(&update_config_fp,"Beeper=%s\r\n",system_flag_table->buzzer? "ON" : "OFF");
-        f_printf(&update_config_fp,"FunctionButton=%s\r\n",functionkey_Aarry[system_flag_table->function_index]);
-        f_printf(&update_config_fp,"[RECORD]\r\n");
-        f_printf(&update_config_fp,"Format=%s\r\n",format_Aarry[system_flag_table->gujiFormats]);
+        f_printf(&update_config_fp,"AutoPowerOn=%s\n",system_flag_table->auto_power ? "ON" : "OFF");
+        f_printf(&update_config_fp,"Beeper=%s\n",system_flag_table->buzzer? "ON" : "OFF");
+        f_printf(&update_config_fp,"FunctionButton=%s\n",functionkey_Aarry[system_flag_table->function_index]);
+        f_printf(&update_config_fp,"[RECORD]\n");
+        f_printf(&update_config_fp,"Format=%s\n",format_Aarry[system_flag_table->gujiFormats]);
         if( system_flag_table->guji_record.recoed_formats  == BY_TIMES)
-            f_printf(&update_config_fp,"LogMode=%dHz\r\n",1000/(system_flag_table->guji_record.by_time_vaule));
+            f_printf(&update_config_fp,"LogMode=%dHz\n",1000/(system_flag_table->guji_record.by_time_vaule));
         else
         {
             if(system_flag_table->unit == 1)
@@ -732,59 +732,59 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
                     logmod = 500;
                 }
 
-                f_printf(&update_config_fp,"LogMode=%dft\r\n",logmod); 
+                f_printf(&update_config_fp,"LogMode=%dft\n",logmod); 
             }
             else
-                f_printf(&update_config_fp,"LogMode=%dm\r\n",(uint32_t)(system_flag_table->guji_record.by_distance_vaule)); 
+                f_printf(&update_config_fp,"LogMode=%dm\n",(uint32_t)(system_flag_table->guji_record.by_distance_vaule)); 
         }
             
         if(system_flag_table->guji_record.by_speed_vaule == 0)
         {
-            f_printf(&update_config_fp,"SpeedMask=OFF\r\n");    
+            f_printf(&update_config_fp,"SpeedMask=OFF\n");    
         }
         else
         {
             if(system_flag_table->unit == 1)
-                f_printf(&update_config_fp,"SpeedAlert=%d\r\n",system_flag_table->guji_record.by_speed_vaule/1609);
+                f_printf(&update_config_fp,"SpeedMask=%d\n",system_flag_table->guji_record.by_speed_vaule/1609);
             else        
-                f_printf(&update_config_fp,"SpeedMask=%d\r\n",system_flag_table->guji_record.by_speed_vaule/1000);
+                f_printf(&update_config_fp,"SpeedMask=%d\n",system_flag_table->guji_record.by_speed_vaule/1000);
         }
-        f_printf(&update_config_fp,"SpyModeTimer=%d\r\n",(system_flag_table->lowpower_timer/60000));
-        f_printf(&update_config_fp,"OneTrackPerDay=%s\r\n", system_flag_table->ODOR ? "ON" : "OFF");       
-        f_printf(&update_config_fp,"[UNIT]\r\n");
+        f_printf(&update_config_fp,"SpyModeTimer=%d\n",(system_flag_table->lowpower_timer/60000));
+        f_printf(&update_config_fp,"OneTrackPerDay=%s\n", system_flag_table->ODOR ? "ON" : "OFF");       
+        f_printf(&update_config_fp,"[UNIT]\n");
 
         if(system_flag_table->unit == 1)
         {
-            f_printf(&update_config_fp,"Speed=mi/h\r\n");  
+            f_printf(&update_config_fp,"Speed=mi/h\n");  
         }
         else
         {
-            f_printf(&update_config_fp,"Speed=km/h\r\n");  
+            f_printf(&update_config_fp,"Speed=km/h\n");  
         }
 
 
         
 #ifdef P1_USAD
-        f_printf(&update_config_fp,"Firmware: V1.1_USDA \r\n");
+        f_printf(&update_config_fp,"Firmware: V1.1_USDA \n");
 
 #else
-        f_printf(&update_config_fp,"Firmware: V1.1 \r\n");
+        f_printf(&update_config_fp,"Firmware: V1.1 \n");
 #endif
         stm_read_eerpom(11,&eeprom_flag);
-        f_printf(&update_config_fp,"PowerOn: %d\r\n",eeprom_flag);
+        f_printf(&update_config_fp,"PowerOn: %d\n",eeprom_flag);
         stm_read_eerpom(12,&eeprom_flag);
 
         stm_read_eerpom(13,&eeprom_flag);
         if(system_flag_table->frist_power == 0)
         {
             stm_read_eerpom(14,&eeprom_flag);
-            f_printf(&update_config_fp,"First Use: %02d-%02d-%02d\r\n",(eeprom_flag>>16)&0xff,(eeprom_flag>>8)&0xff,(eeprom_flag)&0xff);
+            f_printf(&update_config_fp,"First Use: %02d-%02d-%02d\n",(eeprom_flag>>16)&0xff,(eeprom_flag>>8)&0xff,(eeprom_flag)&0xff);
         }
 
         else
         {
-            f_printf(&update_config_fp,"First Use: ---\r\n");
-            f_printf(&update_config_fp,"   \r\n");
+            f_printf(&update_config_fp,"First Use: ---\n");
+            f_printf(&update_config_fp,"   \n");
         }
 
         f_close(&update_config_fp);
