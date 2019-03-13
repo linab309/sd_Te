@@ -1369,16 +1369,16 @@ void RTC_TimeShow(DWORD* fattime)
     *fattime =  ((DWORD)((sdatestructureget.Year + 20) << 25) | (DWORD)(sdatestructureget.Month<< 21) | (DWORD)(sdatestructureget.Date<< 16));
     *fattime |= ((DWORD)(stimestructureget.Hours << 11) | (DWORD)(stimestructureget.Minutes<< 5)|((DWORD)(stimestructureget.Seconds)/2));  
   #endif
-   if(gpsx->fixmode >= 1)
+   if((gpsx->gpssta >= 1)||((system_flag_table->guji_mode != RECORED_IDLE)))
    {
-    check_time(gpsx,system_flag_table);
-    //print_usart1("time: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.w_year, system_flag_table->sys_tm.w_month,system_flag_table->sys_tm.w_date);
-    //print_usart1("date: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.hour, system_flag_table->sys_tm.min, system_flag_table->sys_tm.sec);
+        check_time(gpsx,system_flag_table);
+        //print_usart1("time: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.w_year, system_flag_table->sys_tm.w_month,system_flag_table->sys_tm.w_date);
+        //print_usart1("date: %02d:%02d:%02d \r\n",system_flag_table->sys_tm.hour, system_flag_table->sys_tm.min, system_flag_table->sys_tm.sec);
 
-    *fattime =  ((DWORD)((system_flag_table->sys_tm.w_year + 20) << 25) | (DWORD)(system_flag_table->sys_tm.w_month<< 21)\
-               | (DWORD)(system_flag_table->sys_tm.w_date << 16));
-    *fattime |= ((DWORD)(system_flag_table->sys_tm.hour << 11) | (DWORD)(system_flag_table->sys_tm.min<< 5)\
-               |((DWORD)(system_flag_table->sys_tm.sec)/2));  
+        *fattime =  ((DWORD)((system_flag_table->sys_tm.w_year + 20) << 25) | (DWORD)(system_flag_table->sys_tm.w_month<< 21)\
+                   | (DWORD)(system_flag_table->sys_tm.w_date << 16));
+        *fattime |= ((DWORD)(system_flag_table->sys_tm.hour << 11) | (DWORD)(system_flag_table->sys_tm.min<< 5)\
+                   |((DWORD)(system_flag_table->sys_tm.sec)/2));  
    }
    else
    {
