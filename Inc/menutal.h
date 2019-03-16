@@ -70,10 +70,10 @@
 #else
 #define TEM_OFFSET ANGLE_OFFSET + 2
 #endif
-#define MESSAGE_LEN TEM_OFFSET+2
+#define MESSAGE_LEN (TEM_OFFSET)
 
 
-#define  MAX_GUJI_BUFFER_MAX_LEN ((MESSAGE_LEN)*20)
+#define  MAX_GUJI_BUFFER_MAX_LEN ((MESSAGE_LEN)*40)
 
 
 typedef enum
