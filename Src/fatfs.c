@@ -765,7 +765,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
 
         
 #ifdef P1_USAD
-        f_printf(&update_config_fp,"Firmware: V1.1_USDA \n");
+        f_printf(&update_config_fp,"Firmware: V1.1_USDA_V2 \n");
 
 #else
         f_printf(&update_config_fp,"Firmware: V1.1 \n");

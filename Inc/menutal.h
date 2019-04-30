@@ -73,7 +73,7 @@
 #define MESSAGE_LEN (TEM_OFFSET)
 
 
-#define  MAX_GUJI_BUFFER_MAX_LEN ((MESSAGE_LEN)*40)
+#define  MAX_GUJI_BUFFER_MAX_LEN ((MESSAGE_LEN)*20)
 
 
 typedef enum

@@ -150,6 +150,7 @@ static uint8_t is_power_from_auto  = 0;
 
 #define NMEA_EX_LENGTH 		256  // In order to support YLS proprietary sentence
 
+tm tm_odor = {0};
 
 typedef enum{
   STN_GGA = 0,
@@ -226,6 +227,7 @@ void gps_power_mode(uint8_t mode);
 void sd_power_mode(uint8_t mode);
 void sleep_power_config(void);
 void resume_new_recode(void);
+void resume_new_recode_orod(void);
 
 #ifdef NEED_RTC
 static void MX_RTC_Init(void);
@@ -2141,6 +2143,7 @@ uint8_t sound_toggle_simple(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound
 uint8_t sound_toggle_simple_Force(uint8_t cnt ,uint16_t sound_on_timer, uint16_t sound_off_timer)
 {
    uint8_t i = 0;
+   //return 0;
 
 
    {
@@ -3127,7 +3130,7 @@ void Get_gps_info(void const * argument)
   uint16_t rxlen = 0;
  // uint8_t *gps_data = NULL;
   uint8_t recode_cnt = 0 ;
-
+  
 
 
   /* Infinite loop */
@@ -3150,14 +3153,14 @@ void Get_gps_info(void const * argument)
           rRawData.i2PacketSize = m_i2PktDataSize;
           if(recode_cnt == 20)
           {
-              print_usart1("%s",rRawData.Data);
+              //print_usart1("%s",rRawData.Data);
               recode_cnt = 0;
           }
           else
           {
               recode_cnt++;
           }
-          //print_usart1("%s",rRawData.Data);
+          print_usart1("%s",rRawData.Data);
           // ½âÎöNMEAÓï¾ä
           ProcNmeaSentence(gpsx);
 
@@ -3167,8 +3170,8 @@ void Get_gps_info(void const * argument)
           gpsx->gpssta = 2; /*for test*/
           gpsx->posslnum = 5 ;
           gpsx->utc.year = 2019;
-          gpsx->utc.month= 8;
-          gpsx->utc.date = 17;
+          gpsx->utc.month= 5;
+          //gpsx->utc.date = 28;
           gpsx->latitude = 101; 
           gpsx->longitude = 29;
           gpsx->nshemi = 'N';
@@ -3187,17 +3190,17 @@ void Get_gps_info(void const * argument)
               if((rRawData.eType == STN_RMC)&&(system_flag_table->ODOR == 1))
               {
                   check_time(gpsx,system_flag_table);
-                  if(system_flag_table->sys_tm.hour == 0)
-                  {
-                      if(system_flag_table->sys_tm.min == 0)
-                      {
-                          if(system_flag_table->sys_tm.sec== 0)
-                          {
-                              resume_new_recode();
-                              continue;
-                          }
-                          
-                      }
+                  print_usart1("**%04d-%02d/%02d%02d%02d%02d\r\n",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
+                  system_flag_table->sys_tm.w_date, system_flag_table->sys_tm.hour,system_flag_table->sys_tm.min,system_flag_table->sys_tm.sec);
+
+                  if((system_flag_table->sys_tm.w_year != tm_odor.w_year )||\
+                    (system_flag_table->sys_tm.w_month != tm_odor.w_month )|| \
+                    (system_flag_table->sys_tm.w_date != tm_odor.w_date ))
+                  {              
+                      print_usart1("resume_new_recode\r\n");
+                      resume_new_recode_orod();
+                      memcpy(&tm_odor,&(system_flag_table->sys_tm),sizeof(tm));                  
+                      continue;                                                                 
                   }
               }
               
@@ -3243,6 +3246,26 @@ void resume_new_recode(void)
     }
 
 }
+
+
+void resume_new_recode_orod(void)
+{
+    if(system_flag_table->guji_mode > RECORED_START)
+    {    
+        //__HAL_UART_DISABLE(&huart3);
+        system_flag_table->guji_mode = RECORED_STOP;
+        is_locker = 0;
+        while(system_flag_table->guji_mode != RECORED_IDLE)
+        {
+            osDelay(10); 
+        }
+        system_flag_table->puase_flag  =  0;
+        system_flag_table->guji_mode = RECORED_RESTART;
+        //__HAL_UART_ENABLE(&huart3);           
+    }
+
+}
+
 /* MySystem function */
 void MySystem(void const * argument)
 {
