@@ -172,6 +172,13 @@ typedef struct {        //NMEA Format structure
 	GCHAR Data[NMEA_EX_LENGTH];
 } NMEA_STN_DATA_T;
 
+#ifdef SpyMode_1sec
+    #define LP_NUMBER_VUALE  1
+#else
+    #define LP_NUMBER_VUALE  8
+#endif
+
+
 
 //---------------------------------------------------------------------------
 NMEA_STN_DATA_T rRawData;     //Output Sentence
@@ -1804,7 +1811,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                     if(180000 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
                     {
                         if(is_locker == 1)
-                            lp_number = 8 ;
+                            lp_number = LP_NUMBER_VUALE ;
                     }
                 }
                 else
@@ -1827,7 +1834,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                 }
     
                 
-                if(lp_number >= 8)
+                if(lp_number >= LP_NUMBER_VUALE)
                 {
 
                     lp_number = 0;
