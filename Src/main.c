@@ -274,7 +274,7 @@ static int inHandlerMode (void)
 void print_usart1(char *format, ...)
 {
 
-#if 0
+#if 1
 
     char buf[160];
     uint32_t timer_out = 0;
@@ -487,6 +487,8 @@ int main(void)
   stm_read_eerpom(0xf0,&eeprom_flag);
   //system_flag_table->gujiFormats				 = GUJI_FORMATS_MEA;
 
+
+
   if(eeprom_flag == 0)
   {
       system_flag_table->power_mode                  = NORMAL_SURPORT_MODE;
@@ -495,6 +497,10 @@ int main(void)
   {
       system_flag_table->power_mode                  = SENCSE_SURPORT_MODE;
   }
+
+#ifdef P1_USAD
+  system_flag_table->power_mode                  = NORMAL_SURPORT_MODE;
+#endif
 
   system_flag_table->batt_Status = BATT_HIGH;
   sd_power_mode(1);
@@ -1081,6 +1087,7 @@ void SystemClock_Config_msi(void)
     GPIO_InitTypeDef GPIO_InitStruct;
     /* Select MSI as system clock source and configure the HCLK, PCLK1 and PCLK2 
        clocks dividers */
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);       
     RCC_ClkInitStruct.ClockType       = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
     RCC_ClkInitStruct.SYSCLKSource    = RCC_SYSCLKSOURCE_MSI;
     RCC_ClkInitStruct.AHBCLKDivider   = RCC_SYSCLK_DIV2;
@@ -1123,7 +1130,7 @@ void SystemClock_Config_msi(void)
     MX_USART1_UART_Init();
 
 
-    //print_usart1("msi clock = %d\r\n ",HAL_RCC_GetHCLKFreq());
+    print_usart1("msi clock = %d\r\n ",HAL_RCC_GetHCLKFreq());
 #endif
 }
 
@@ -1134,7 +1141,7 @@ void SystemClock_Config_resume(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
   GPIO_InitTypeDef GPIO_InitStruct;
 
-  
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
@@ -1151,7 +1158,7 @@ void SystemClock_Config_resume(void)
   /**Configure the Systick 
   */
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);  
-  //print_usart1("resume clock = %d\r\n ",HAL_RCC_GetHCLKFreq());
+  print_usart1("resume clock = %d\r\n ",HAL_RCC_GetHCLKFreq());
   if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
   {
       /* EXTI interrupt init*/
@@ -1857,7 +1864,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                     osDelay(1000);
                     while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(10);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
                     //osThreadSuspend(Get_gps_info_Handle);
-                    sd_power_mode(0);
+                    sd_power_mode(1);
 
                     SystemClock_Config_msi();
 					//sleep_power_config();
@@ -2596,7 +2603,8 @@ void status_led_config(void)
                 sd_power_mode(1);
                 //HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);
                 osThreadResume(Get_gps_info_Handle);
-                osThreadResume(defaultTaskHandle);    
+                osThreadResume(defaultTaskHandle);  
+                osDelay(1000);
                 if(system_flag_table->guji_mode == RECORED_IDLE)
                     system_flag_table->guji_mode = RECORED_RESTART_2;
                 else
@@ -2691,7 +2699,14 @@ void status_led_config(void)
                     }
                     else
                     {
+                    #ifdef P1_USAD
+                        if(system_flag_table->guji_mode >= RECORED_START_DOING)
+                            BSP_LED_Off(LED_GREEN);  /*USAD模式下，开始记录的时候不亮灯*/
+                        else
+                            BSP_LED_On(LED_GREEN);
+                    #else
                         BSP_LED_On(LED_GREEN);
+                    #endif
                     }
                 }
 				else
@@ -3200,6 +3215,9 @@ void Get_gps_info(void const * argument)
                   print_usart1("**%04d-%02d/%02d%02d%02d%02d\r\n",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
                   system_flag_table->sys_tm.w_date, system_flag_table->sys_tm.hour,system_flag_table->sys_tm.min,system_flag_table->sys_tm.sec);
 
+
+                  print_usart1("++%04d-%02d/%02d%02d%02d%02d\r\n",tm_odor.w_year+2000,tm_odor.w_month,tm_odor.w_date, tm_odor.hour,tm_odor.min,tm_odor.sec);
+
                   if((system_flag_table->sys_tm.w_year != tm_odor.w_year )||\
                     (system_flag_table->sys_tm.w_month != tm_odor.w_month )|| \
                     (system_flag_table->sys_tm.w_date != tm_odor.w_date ))
@@ -3440,6 +3458,19 @@ void MySystem(void const * argument)
                    system_flag_table->guji_mode = RECORED_RESTART_2;
     			   break;				
     			}
+
+#ifdef P1_USAD
+                system_flag_table->power_status = POWER_RUN;
+                if(LED_SURPORT_FLAG == 1)
+                {
+                    BSP_LED_Init(LED_SURPORT);
+                    LED_SURPORT_FLAG = 0;
+                    BSP_LED_Off(LED_SURPORT);
+                    stm_write_eerpom(0xf0,0);
+                }
+
+                break;
+#endif
 
 				if(system_flag_table->power_status == POWER_RUN)
                 {       
@@ -3940,7 +3971,9 @@ void update_info(void const * argument)
           		   while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(1);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
                    //osDelay(1000);
 
-                   sd_power_mode(0) ;
+                   //sd_power_mode(0) ;
+                   /*由于SD卡供电也不会很大，而且可以保护它的一个稳定性
+                                       因此休眠时就不再考虑SD卡掉电了*/
                    SystemClock_Config_msi();
 				   //sleep_power_config();				   
                    //osThreadSuspend(SystemCallHandle);                                           
@@ -4029,20 +4062,44 @@ void update_info(void const * argument)
 	           
 	           if(system_flag_table->power_status == POWER_SURPORT_RUN ||system_flag_table->power_status == POWER_RUN ||system_flag_table->power_status == POWER_LRUN)
 	           {
+
+
 	               if((gpsx->gpssta >= 1)&&(system_flag_table->guji_mode == RECORED_START_DOING))
                     //(system_flag_table->wirte_storge_flag == 1))
 	               //if((system_flag_table->guji_mode == RECORED_START_DOING))
 	               {
+                   
 	                   if(system_flag_table->power_status == POWER_LRUN)
                        {   
                            sd_led_config(300,2700); 
                        }
                        else
                        {
+#ifdef P1_USAD
+                          if(system_flag_table->power_status == POWER_RUN)
+                          {
+                              if(LED_Sd_FLAG == 1)
+                              {
+                                  BSP_LED_Init(LED_SD);
+                                  //Pwm_Breathing(SD_LED,0);
+                                  LED_Sd_FLAG = 0;
+                              }  
+                              BSP_LED_Off(LED_SD);  
+                          }
+                          else
+                          {
+                               if((system_flag_table->guji_record.recoed_formats == BY_TIMES) && (system_flag_table->guji_record.by_time_vaule < 1000))     
+        	                       sd_led_config(300,700);     
+        	                   else
+        	                       sd_led_config(300,2700);    
+                          }
+
+#else
     	                   if((system_flag_table->guji_record.recoed_formats == BY_TIMES) && (system_flag_table->guji_record.by_time_vaule < 1000))     
     	                       sd_led_config(300,700);     
     	                   else
     	                       sd_led_config(300,2700);     
+#endif                           
                        }
                        system_flag_table->wirte_storge_flag = 0;
 	               }
@@ -4056,6 +4113,7 @@ void update_info(void const * argument)
 	                   }  
 	                   BSP_LED_On(LED_SD);                    
 	               }
+   
 	           }
 	           else
 	           {

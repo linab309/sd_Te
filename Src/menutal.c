@@ -838,6 +838,8 @@ void write_flash(FIL *sys_fp,system_flag *system_flag_table)  /*write to  the fi
         }
  
        if((system_flag_table->gujiFormats == GUJI_FORMATS_CSV) || (system_flag_table->power_status == POWER_LRUN)|| (system_flag_table->power_status == POWER_LRUN_SLEEP))
+       //if(system_flag_table->gujiFormats == GUJI_FORMATS_CSV)
+
         {
             buffer_Analysis(sys_fp,system_flag_table,guji_buffer_,rxlen);
         }
@@ -1180,6 +1182,7 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     {
 
                         if((system_flag_table->gujiFormats == GUJI_FORMATS_CSV) || (system_flag_table->power_status == POWER_LRUN))
+                        //if(system_flag_table->gujiFormats == GUJI_FORMATS_CSV)
                         {
                             system_flag_table->gujiFormats = GUJI_FORMATS_CSV;
                             sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CSV",eeprom_tm.w_year,eeprom_tm.w_month,
@@ -1206,7 +1209,10 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                         stm_read_eerpom(100,&eeprom_vaule);
                         system_flag_table->Message_head_number = eeprom_vaule ;
                         memcpy(&tm_odor,&(eeprom_tm),sizeof(tm)); 
-                        print_usart1("eeprom %04d-%02d/%02d%02d%02d%02d\r\n",tm_odor.w_year+2000,tm_odor.w_month,tm_odor.w_date,tm_odor.hour,tm_odor.min,tm_odor.sec);
+                        if(tm_odor.w_year> 2000)
+                            tm_odor.w_year = tm_odor.w_year -2000;
+                        
+                        print_usart1("eeprom %04d-%02d/%02d%02d%02d%02d\r\n",tm_odor.w_year,tm_odor.w_month,tm_odor.w_date,tm_odor.hour,tm_odor.min,tm_odor.sec);
 
                         sys_fr = f_open(sys_fp,track_file,FA_READ);
                         print_usart1("--open--  :%d \n",sys_fr);
@@ -1223,8 +1229,9 @@ void Recording_guji(FIL *sys_fp,system_flag *system_flag_table,nmea_msg *gpsx)
                     {
                     
                         if((system_flag_table->gujiFormats == GUJI_FORMATS_CSV) || (system_flag_table->power_status == POWER_LRUN))
+                        //if(system_flag_table->gujiFormats == GUJI_FORMATS_CSV)    
                         {
-                            //system_flag_table->gujiFormats = GUJI_FORMATS_CSV;
+                            system_flag_table->gujiFormats = GUJI_FORMATS_CSV;
                             sprintf(track_file,"%04d-%02d/%02d%02d%02d%02d.CSV",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
                             system_flag_table->sys_tm.w_date, system_flag_table->sys_tm.hour,system_flag_table->sys_tm.min,system_flag_table->sys_tm.sec);
                             

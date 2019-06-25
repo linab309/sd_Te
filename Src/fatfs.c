@@ -765,13 +765,13 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
 
         
 #ifdef P1_USAD
-        f_printf(&update_config_fp,"Firmware: V1.1_USDA_V3 \n");
+        f_printf(&update_config_fp,"Firmware: V1.2_USDA \n");
 
 #else
         #ifdef SpyMode_1sec
-            f_printf(&update_config_fp,"Firmware: V1.1_SpyMode_1sec \n");
+            f_printf(&update_config_fp,"Firmware: V1.2_SpyMode_1sec \n");
         #else
-            f_printf(&update_config_fp,"Firmware: V1.1 \n");
+            f_printf(&update_config_fp,"Firmware: V1.2 \n");
         #endif
 #endif
         stm_read_eerpom(11,&eeprom_flag);
