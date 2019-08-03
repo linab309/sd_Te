@@ -274,7 +274,7 @@ static int inHandlerMode (void)
 void print_usart1(char *format, ...)
 {
 
-#if 1
+#if 0
 
     char buf[160];
     uint32_t timer_out = 0;
@@ -1084,10 +1084,28 @@ void SystemClock_Config_msi(void)
 {
 
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0}; 
+    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+    
     GPIO_InitTypeDef GPIO_InitStruct;
     /* Select MSI as system clock source and configure the HCLK, PCLK1 and PCLK2 
        clocks dividers */
-    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);       
+    /* Enable Power Control clock */
+    __HAL_RCC_PWR_CLK_ENABLE();
+    
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
+
+    /* Enable MSI Oscillator */
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
+    RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+    RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_5;
+    RCC_OscInitStruct.MSICalibrationValue = 0x00;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+    if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+    {
+      /* Initialization Error */
+      Error_Handler();
+    }
+  
     RCC_ClkInitStruct.ClockType       = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
     RCC_ClkInitStruct.SYSCLKSource    = RCC_SYSCLKSOURCE_MSI;
     RCC_ClkInitStruct.AHBCLKDivider   = RCC_SYSCLK_DIV2;
@@ -1103,6 +1121,10 @@ void SystemClock_Config_msi(void)
     
      /**Configure the Systick interrupt time 
      */
+
+    /* Set MSI range to 0 */
+    //__HAL_RCC_MSI_RANGE_CONFIG(RCC_MSIRANGE_0);
+    
 
     HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
     
@@ -1127,10 +1149,9 @@ void SystemClock_Config_msi(void)
         HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
         HAL_NVIC_EnableIRQ(EXTI1_IRQn);        
     }
-    MX_USART1_UART_Init();
-
-
-    print_usart1("msi clock = %d\r\n ",HAL_RCC_GetHCLKFreq());
+    
+    HAL_UART_DeInit(&huart1);
+    //print_usart1("msi clock = %d\r\n ",HAL_RCC_GetHCLKFreq());
 #endif
 }
 
@@ -1240,6 +1261,7 @@ void gps_power_mode(uint8_t mode)
     
         //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);    
         memset(gpsx,0,sizeof(nmea_msg));
+        //HAL_UART_DeInit(&huart3);
         //is_locker  = 0;
     }
 }
@@ -1622,7 +1644,9 @@ static void StopSequence_Config(void)
 
         //osDelay(100);
         /* Request to enter STOP mode */
+
         HAL_PWR_EnterSTANDBYMode();
+
         //HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON,PWR_STOPENTRY_WFI);
         //while(1);
  #if 0       
@@ -1748,7 +1772,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
 
                    if(system_flag_table->Message_head_number == 0)
                    {
-                       if(gpsx->hdop >= 500)
+                       if(gpsx->hdop >= HDOP_RECODE_VAULE)
                            break;
                        else
                            system_flag_table->Message_head_number = 1; 
@@ -1823,7 +1847,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                 }
                 else
                 {
-                    if((gpsx->hdop < 500)&&(rRawData.eType == STN_RMC))
+                    if((gpsx->hdop < HDOP_RECODE_VAULE)&&(rRawData.eType == STN_RMC))
                     {
                         if(800 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
                          {
