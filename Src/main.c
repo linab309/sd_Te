@@ -119,7 +119,7 @@ static uint16_t usb_timer_cnt = 0 ;
 static uint8_t warn_cnt = 0 ;
 
 
-/*GPS Êý¾Ý½ÓÊÕ±êÖ¾Î»*/
+/*GPS ï¿½ï¿½ï¿½Ý½ï¿½ï¿½Õ±ï¿½Ö¾Î»*/
 //uint16_t USART2_RX_STA_RP = 0; 
 //uint16_t USART2_RX_STA_WP = 0; 
 //uint8_t USART2_RX_STA = 0; 
@@ -274,7 +274,7 @@ static int inHandlerMode (void)
 void print_usart1(char *format, ...)
 {
 
-#if 1
+#if 0
 
     char buf[160];
     uint32_t timer_out = 0;
@@ -345,7 +345,7 @@ void reset_eeprom(void)
       stm_write_eerpom(11,0);
       stm_write_eerpom(12,system_flag_table->unit);
 
-      /*Ò»ÌìÒ»¹ì¼£´æ´¢¿Õ¼äÇåÁã*/   
+      /*Ò»ï¿½ï¿½Ò»ï¿½ì¼£ï¿½æ´¢ï¿½Õ¼ï¿½ï¿½ï¿½ï¿½ï¿½*/   
       stm_write_eerpom(20,0);
       stm_write_eerpom(21,0);
       stm_write_eerpom(22,0);
@@ -354,7 +354,7 @@ void reset_eeprom(void)
       stm_write_eerpom(25,0);
       stm_write_eerpom(30,0);
 
-      /*±ê¼ÇEERPOM±íÊ¾ÒÑ³õÊ¼»¯*/
+      /*ï¿½ï¿½ï¿½EERPOMï¿½ï¿½Ê¾ï¿½Ñ³ï¿½Ê¼ï¿½ï¿½*/
       
       stm_write_eerpom(0xf0,0);   /*power mode save ! default is normal support mode*/
       system_flag_table->frist_power = 1;
@@ -762,15 +762,15 @@ static void RTC_AlarmConfig(void)
   uint16_t year;
   uint8_t sec,min,hour;
   
-  const uint8_t *COMPILED_TIME=__TIME__;//??¦Ì?¡À¨¤¨°?¨º¡À??
-  const uint8_t *COMPILED_DATE=__DATE__;//??¦Ì?¡À¨¤¨°?¨¨??¨²
+  const uint8_t *COMPILED_TIME=__TIME__;//??ï¿½ï¿½?ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½?ï¿½ï¿½ï¿½ï¿½??
+  const uint8_t *COMPILED_DATE=__DATE__;//??ï¿½ï¿½?ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½?ï¿½ï¿½??ï¿½ï¿½
 
   const uint8_t Month_Tab[12][3]={"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-  //¡Á??¡¥¨¦¨¨??¨º¡À???a¡À¨¤¨°??¡Â¨º¡À??
+  //ï¿½ï¿½??ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½??ï¿½ï¿½ï¿½ï¿½???aï¿½ï¿½ï¿½ï¿½ï¿½ï¿½??ï¿½Â¨ï¿½ï¿½ï¿½??
  
   for(i=0;i<3;i++)temp[i]=COMPILED_DATE[i];
   for(i=0;i<12;i++)if(str_cmpx((uint8_t*)Month_Tab[i],temp,3))break;
-  mon=i+1;//¦Ì?¦Ì???¡¤Y
+  mon=i+1;//ï¿½ï¿½?ï¿½ï¿½???ï¿½ï¿½Y
   if(COMPILED_DATE[4]==' ')date=COMPILED_DATE[5]-'0';
   else date=10*(COMPILED_DATE[4]-'0')+COMPILED_DATE[5]-'0';
   year=/*1000*(COMPILED_DATE[7]-'0')+100*(COMPILED_DATE[8]-'0')*/+10*(COMPILED_DATE[9]-'0')+COMPILED_DATE[10]-'0';
@@ -1084,10 +1084,28 @@ void SystemClock_Config_msi(void)
 {
 
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0}; 
+    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+    
     GPIO_InitTypeDef GPIO_InitStruct;
     /* Select MSI as system clock source and configure the HCLK, PCLK1 and PCLK2 
        clocks dividers */
-    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);       
+    /* Enable Power Control clock */
+    __HAL_RCC_PWR_CLK_ENABLE();
+    
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
+
+    /* Enable MSI Oscillator */
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
+    RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+    RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_5;
+    RCC_OscInitStruct.MSICalibrationValue = 0x00;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+    if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+    {
+      /* Initialization Error */
+      Error_Handler();
+    }
+  
     RCC_ClkInitStruct.ClockType       = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
     RCC_ClkInitStruct.SYSCLKSource    = RCC_SYSCLKSOURCE_MSI;
     RCC_ClkInitStruct.AHBCLKDivider   = RCC_SYSCLK_DIV2;
@@ -1103,6 +1121,10 @@ void SystemClock_Config_msi(void)
     
      /**Configure the Systick interrupt time 
      */
+
+    /* Set MSI range to 0 */
+    //__HAL_RCC_MSI_RANGE_CONFIG(RCC_MSIRANGE_0);
+    
 
     HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
     
@@ -1127,10 +1149,9 @@ void SystemClock_Config_msi(void)
         HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
         HAL_NVIC_EnableIRQ(EXTI1_IRQn);        
     }
-    MX_USART1_UART_Init();
-
-
-    print_usart1("msi clock = %d\r\n ",HAL_RCC_GetHCLKFreq());
+    
+    HAL_UART_DeInit(&huart1);
+    //print_usart1("msi clock = %d\r\n ",HAL_RCC_GetHCLKFreq());
 #endif
 }
 
@@ -1240,6 +1261,7 @@ void gps_power_mode(uint8_t mode)
     
         //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);    
         memset(gpsx,0,sizeof(nmea_msg));
+        //HAL_UART_DeInit(&huart3);
         //is_locker  = 0;
     }
 }
@@ -1270,7 +1292,7 @@ void sd_power_mode(uint8_t mode)
 }
 
 
-/*ºôÒ»´Î2.5S  2500/100 = 25*/
+/*ï¿½ï¿½Ò»ï¿½ï¿½2.5S  2500/100 = 25*/
 static void Pwm_Breathing(uint8_t Led_pwm,uint8_t mode)
 {
 
@@ -1437,7 +1459,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
              rxp_pcrx_nmea(uart3_dma_buffer[i]);   
         }
 #if 0
-    	if(USART2_RX_STA_WP < (MAX_UART3_LEN - 100))		//»¹¿ÉÒÔ½ÓÊÕÊý¾Ý
+    	if(USART2_RX_STA_WP < (MAX_UART3_LEN - 100))		//ï¿½ï¿½ï¿½ï¿½ï¿½Ô½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     	{
             memcpy(uart3_buffer+USART2_RX_STA_WP,uart3_dma_buffer,100);
             USART2_RX_STA_WP += 100 ; 
@@ -1622,7 +1644,9 @@ static void StopSequence_Config(void)
 
         //osDelay(100);
         /* Request to enter STOP mode */
+
         HAL_PWR_EnterSTANDBYMode();
+
         //HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON,PWR_STOPENTRY_WFI);
         //while(1);
  #if 0       
@@ -1670,7 +1694,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
     {
         case POWER_RUN:
         case POWER_SURPORT_RUN:
-            //print_usart1("gpsx->gpssta :%d \r\n",gpsx->gpssta); /*´òÓ¡ÐÐÊ»¾àÀë*/
+            //print_usart1("gpsx->gpssta :%d \r\n",gpsx->gpssta); /*ï¿½ï¿½Ó¡ï¿½ï¿½Ê»ï¿½ï¿½ï¿½ï¿½*/
              if((gpsx->gpssta >= 1)&&(rRawData.eType == STN_RMC))
              {   
 				if((system_flag_table->guji_mode == RECORED_START_DOING)||(system_flag_table->guji_mode == RECORED_SAVE)\
@@ -1691,7 +1715,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                      {
 
                          tp_distance = (tp_distance*1000);
-                         print_usart1("tp_distance :%.3f \r\n",tp_distance); /*´òÓ¡ÐÐÊ»¾àÀë*/
+                         print_usart1("tp_distance :%.3f \r\n",tp_distance); /*ï¿½ï¿½Ó¡ï¿½ï¿½Ê»ï¿½ï¿½ï¿½ï¿½*/
 
                          if((tp_distance) >= system_flag_table->guji_record.by_distance_vaule)
                          {
@@ -1748,7 +1772,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
 
                    if(system_flag_table->Message_head_number == 0)
                    {
-                       if(gpsx->hdop >= 500)
+                       if(gpsx->hdop >= HDOP_RECODE_VAULE)
                            break;
                        else
                            system_flag_table->Message_head_number = 1; 
@@ -1823,7 +1847,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                 }
                 else
                 {
-                    if((gpsx->hdop < 500)&&(rRawData.eType == STN_RMC))
+                    if((gpsx->hdop < HDOP_RECODE_VAULE)&&(rRawData.eType == STN_RMC))
                     {
                         if(800 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
                          {
@@ -2087,8 +2111,8 @@ static uint8_t get_key(void)
             }
 #if 0            
             else if(button_press_cnt < 12)
-           /*POWER¼üÆðÀ´ºó£¬ÏÈ²»ÇÐ»»µ½START£¬¹ýÂËµôPOWER LPÊ±³öÏÖµÄÎÊÌâ
-                    startºóÈç¹ûÂíÉÏÈÏµ½GPS¾Í»á¿ªÆôÎÄ¼þ£¬»áµ¼ÖÂ ºóÐøÁ¬°´»áÓÐÎÊÌâ¡£*/
+           /*POWERï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È²ï¿½ï¿½Ð»ï¿½ï¿½ï¿½STARTï¿½ï¿½ï¿½ï¿½ï¿½Ëµï¿½POWER LPÊ±ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½
+                    startï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½GPSï¿½Í»á¿ªï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½áµ¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â¡£*/
             {
                 if((button_flag == 0xff)&&(system_flag_table->guji_mode != RECORED_START))   					  
                 {
@@ -2537,7 +2561,7 @@ void status_led_config(void)
     static uint8_t green_led_flag = 0;    
     uint32_t eeprom_flag = 0;
 
-    if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) != GPIO_PIN_RESET) /*³äµçÖÐ*/
+    if(HAL_GPIO_ReadPin(USB_DETECT_GPIO_PORT, USB_DETECT_PIN) != GPIO_PIN_RESET) /*ï¿½ï¿½ï¿½ï¿½ï¿½*/
     {
 
         if(system_flag_table->batt_Status == BATT_CHARG_OK)
@@ -2556,7 +2580,7 @@ void status_led_config(void)
         if(system_flag_table->charger_connected  == 0)
         {
            BSP_LED_Off(LED_GREEN);
-           if(BSP_PB_GetState(BUTTON_USER) == 0)/*poi°´ÏÂºó£¬²»»½ÐÑ*/
+           if(BSP_PB_GetState(BUTTON_USER) == 0)/*poiï¿½ï¿½ï¿½Âºó£¬²ï¿½ï¿½ï¿½ï¿½ï¿½*/
            {
               start_hotplug = 1 ;
            }
@@ -2701,7 +2725,7 @@ void status_led_config(void)
                     {
                     #ifdef P1_USAD
                         if(system_flag_table->guji_mode >= RECORED_START_DOING)
-                            BSP_LED_Off(LED_GREEN);  /*USADÄ£Ê½ÏÂ£¬¿ªÊ¼¼ÇÂ¼µÄÊ±ºò²»ÁÁµÆ*/
+                            BSP_LED_Off(LED_GREEN);  /*USADÄ£Ê½ï¿½Â£ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½Â¼ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
                         else
                             BSP_LED_On(LED_GREEN);
                     #else
@@ -2872,7 +2896,7 @@ void StartDefaultTask(void const * argument)
 #endif
   //open_append_sp(&test_fp,"2018-01/10053644.CSV");
 
-  /*±£´æÎÄ¼þ*/
+  /*ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½*/
   /* Infinite loop */
   for(;;)
   {
@@ -3140,9 +3164,9 @@ void ProcNmeaSentence(nmea_msg *Proc_gpsx)
 
 
 
-// 2£¬rxp_init_pcrx()³õÊ¼»¯Ö®ºó°Ñrxp_pcrx_nmea()×÷Îª»Øµ÷º¯Êý×¢²á¸ø´®¿Ú½ÓÊÕ³ÌÐò
+// 2ï¿½ï¿½rxp_init_pcrx()ï¿½ï¿½Ê¼ï¿½ï¿½Ö®ï¿½ï¿½ï¿½rxp_pcrx_nmea()ï¿½ï¿½Îªï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½×¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú½ï¿½ï¿½Õ³ï¿½ï¿½ï¿½
 
-// 3£¬½âÎörxp_pcrx_nmea()´æÏÂÀ´µÄNMEAÓï¾ä
+// 3ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½rxp_pcrx_nmea()ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½NMEAï¿½ï¿½ï¿½
 
 
 
@@ -3162,10 +3186,10 @@ void Get_gps_info(void const * argument)
   HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_dma_buffer, 100); 
   for(;;)
   {  
-      // ÅÐ¶Ïrxp_init_pcrx()ÊÇ·ñ½âÎöµ½¿ÉÓÃµÄNMEAÓï¾ä
+      // ï¿½Ð¶ï¿½rxp_init_pcrx()ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½NMEAï¿½ï¿½ï¿½
       if(rxp_inst_avail(&rRawData.i2PacketType, &i2DataIdx, &m_i2PktDataSize))
       {
-          // °ÑÕûÌõNMEAÓï¾ä¿½±´µ½rRawData.Data[]
+          // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½NMEAï¿½ï¿½ä¿½ï¿½ï¿½ï¿½ï¿½rRawData.Data[]
           memset(&rRawData,0x00,sizeof(NMEA_STN_DATA_T));
           rxp_get_inst(i2DataIdx, m_i2PktDataSize, &rRawData.Data[0]);
                       
@@ -3183,7 +3207,7 @@ void Get_gps_info(void const * argument)
               recode_cnt++;
           }
           print_usart1("%s",rRawData.Data);
-          // ½âÎöNMEAÓï¾ä
+          // ï¿½ï¿½ï¿½ï¿½NMEAï¿½ï¿½ï¿½
           ProcNmeaSentence(gpsx);
 
 
@@ -3383,7 +3407,7 @@ void MySystem(void const * argument)
 
                 if(system_flag_table->gujiFormats != GUJI_FORMATS_CSV)/*10-05*/
                 {
-                    /*²»ÊÇCSVµÄ¾Í²»ÏìÓ¦POIµÄ²Ù×÷*/
+                    /*ï¿½ï¿½ï¿½ï¿½CSVï¿½Ä¾Í²ï¿½ï¿½ï¿½Ó¦POIï¿½Ä²ï¿½ï¿½ï¿½*/
                     break;
                 }
 
@@ -3408,7 +3432,7 @@ void MySystem(void const * argument)
                 }    
                          
               break;
-          case POWER_KEY:  /*ÇÐ»»¼ÇÂ¼Ä£Ê½£¬ÔË¶¯ºÍÆÕÍ¨*/
+          case POWER_KEY:  /*ï¿½Ð»ï¿½ï¿½ï¿½Â¼Ä£Ê½ï¿½ï¿½ï¿½Ë¶ï¿½ï¿½ï¿½ï¿½ï¿½Í¨*/
 		  	
     			if(system_flag_table->power_status == POWER_SURPORT_SLEEP)
     			{			
@@ -3506,7 +3530,7 @@ void MySystem(void const * argument)
 
 
               break;
-          case USER_KEY_LONG:  /*ÖØÐÂ¿ªÆôÒ»Ìõ¹ì¼£*/
+          case USER_KEY_LONG:  /*ï¿½ï¿½ï¿½Â¿ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ì¼£*/
               resume_new_recode();
 #if 0              
               if(system_flag_table->guji_mode > RECORED_START)
@@ -3636,7 +3660,7 @@ void MySystem(void const * argument)
                   {
                       stm_write_eerpom(0xe0,1);   /*reset for power off when usb detect*/
 
-                      __set_FAULTMASK(1);      // ¹Ø±ÕËùÓÐÖÐ¶Ë
+                      __set_FAULTMASK(1);      // ï¿½Ø±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
                       HAL_NVIC_SystemReset();     
                       
 
@@ -3685,7 +3709,7 @@ void MySystem(void const * argument)
               }
               else
               {
-                  __set_FAULTMASK(1);      // ¹Ø±ÕËùÓÐÖÐ¶Ë
+                  __set_FAULTMASK(1);      // ï¿½Ø±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
                   HAL_NVIC_SystemReset();    
               }
               break;
@@ -3772,7 +3796,7 @@ void MySystem(void const * argument)
                                 sound_toggle_simple(1,50,50);
                                 print_usart1("RECORED_D\r\n");    
                             }
-                            /*GPXÓëNMEAÎÄ¼þ¸ñÊ½²»Ö§³ÖÐËÈ¤µã 2 */
+                            /*GPXï¿½ï¿½NMEAï¿½Ä¼ï¿½ï¿½ï¿½Ê½ï¿½ï¿½Ö§ï¿½ï¿½ï¿½ï¿½È¤ï¿½ï¿½ 2 */
                         }
                          
     
@@ -3890,7 +3914,7 @@ void update_info(void const * argument)
 
   if(adc_cnt > 600)
   {
-      vddmv_adc_proess(system_flag_table); /*¸üÐÂµç³Ø×´Ì¬*/   
+      vddmv_adc_proess(system_flag_table); /*ï¿½ï¿½ï¿½Âµï¿½ï¿½×´Ì¬*/   
 	  adc_cnt = 0; 
   }
   else
@@ -3972,8 +3996,8 @@ void update_info(void const * argument)
                    //osDelay(1000);
 
                    //sd_power_mode(0) ;
-                   /*ÓÉÓÚSD¿¨¹©µçÒ²²»»áºÜ´ó£¬¶øÇÒ¿ÉÒÔ±£»¤ËüµÄÒ»¸öÎÈ¶¨ÐÔ
-                                       Òò´ËÐÝÃßÊ±¾Í²»ÔÙ¿¼ÂÇSD¿¨µôµçÁË*/
+                   /*ï¿½ï¿½ï¿½ï¿½SDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò²ï¿½ï¿½ï¿½ï¿½Ü´ó£¬¶ï¿½ï¿½Ò¿ï¿½ï¿½Ô±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½È¶ï¿½ï¿½ï¿½
+                                       ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Í²ï¿½ï¿½Ù¿ï¿½ï¿½ï¿½SDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
                    SystemClock_Config_msi();
 				   //sleep_power_config();				   
                    //osThreadSuspend(SystemCallHandle);                                           

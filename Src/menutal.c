@@ -401,7 +401,7 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
 
         if(system_flag_table->Message_head_number == 0)
         {
-            if(gpsx->hdop >= 500)
+            if(gpsx->hdop >= HDOP_RECODE_VAULE)
                 return 1;
         }
         

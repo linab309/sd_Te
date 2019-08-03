@@ -126,6 +126,11 @@
 #define SD_STATS_NO_CARD    2
 #define SD_STATS_BE_WRITE   3
 
+
+//#define HDOP_RECODE_VAULE 150
+//#define HDOP_RECODE_VAULE 120
+#define HDOP_RECODE_VAULE 100
+
 extern void print_usart1(char *format, ...);
 extern void SystemClock_Config_msi(void);
 extern void SystemClock_Config_resume(void);
