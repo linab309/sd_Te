@@ -10,8 +10,8 @@
 
 float rad(float d)
 {
-
    return d * PI / 180.0;
+
 
 }
 
@@ -80,17 +80,17 @@ float getDistanceVer2(float lat1, char latitude1_flag,float lng1, char longitude
 
 #if 1
 
-#define Rc  6378137  // ³àµÀ°ë¾¶
+#define Rc  6378137  // ï¿½ï¿½ï¿½ï¿½ë¾¶
 
-#define Rj   6356725  // ¼«°ë¾¶
+#define Rj   6356725  // ï¿½ï¿½ï¿½ë¾¶
 
 
- //! ¼ÆËãµãA ºÍ µãBµÄ¾­Î³¶È£¬ÇóËûÃÇµÄ¾àÀëºÍµãBÏà¶ÔÓÚµãAµÄ·½Î»
+ //! ï¿½ï¿½ï¿½ï¿½ï¿½A ï¿½ï¿½ ï¿½ï¿½Bï¿½Ä¾ï¿½Î³ï¿½È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÇµÄ¾ï¿½ï¿½ï¿½Íµï¿½Bï¿½ï¿½ï¿½ï¿½Úµï¿½Aï¿½Ä·ï¿½Î»
 /*!
-  * /param A Aµã¾­Î³¶È
-  * /param B Bµã¾­Î³¶È
-  * /param angle BÏà¶ÔÓÚAµÄ·½Î», ²»ÐèÒª·µ»Ø¸ÃÖµ£¬Ôò½«ÆäÉèÎª¿Õ
-  * /return AµãBµãµÄ¾àÀë
+  * /param A Aï¿½ã¾­Î³ï¿½ï¿½
+  * /param B Bï¿½ã¾­Î³ï¿½ï¿½
+  * /param angle Bï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½Ä·ï¿½Î», ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½Ø¸ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½
+  * /return Aï¿½ï¿½Bï¿½ï¿½Ä¾ï¿½ï¿½ï¿½
   */
 float get_angle(float latitude1, char latitude1_flag,float longitude1, char longitude1_flag,
                  float latitude2, char latitude2_flag, float longitude2, char longitude2_flag)
@@ -119,7 +119,7 @@ float get_angle(float latitude1, char latitude1_flag,float longitude1, char long
     if( &angle != NULL)
     {
         angle = atan(fabs(dx/dy))*180/PI;
-        // ÅÐ¶ÏÏóÏÞ
+        // ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½
 
         dLo = longitude2 - longitude1;
         dLa = latitude2 - latitude1;
@@ -142,24 +142,24 @@ float get_angle(float latitude1, char latitude1_flag,float longitude1, char long
                                     
 #else
 
-            if(dLa > 0)//ÔÚÄÏ±ß
+            if(dLa > 0)//ï¿½ï¿½ï¿½Ï±ï¿½
             {
-               if(dLo> 0) //ÔÚÎ÷±ß   180--270 -=-- Î÷ÄÏ
+               if(dLo> 0) //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½   180--270 -=-- ï¿½ï¿½ï¿½ï¿½
                {
                    angle = 180 + (90 - angle);
                }
-               else if(dLo <= 0)//  ¶«ÄÏ    90- 180
+               else if(dLo <= 0)//  ï¿½ï¿½ï¿½ï¿½    90- 180
                {
                    angle = 90 + (90 - angle);
                }
             }
-           else if(dLa < 0 ) // ±±±ß
+           else if(dLa < 0 ) // ï¿½ï¿½ï¿½ï¿½
            {
-               if(dLo >= 0) //ÔÚÎ÷±ß   270--360  Î÷±±
+               if(dLo >= 0) //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½   270--360  ï¿½ï¿½ï¿½ï¿½
                {
                    angle = 270 + (90 - angle);
                }
-               else    // ¶«±±
+               else    // ï¿½ï¿½ï¿½ï¿½
                {
                    angle = (90 - angle);
                }
@@ -168,11 +168,11 @@ float get_angle(float latitude1, char latitude1_flag,float longitude1, char long
            else
            {
 
-               if(dLo > 0) //ÔÚÎ÷±ß
+               if(dLo > 0) //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                {
                    angle = 270 ;
                }
-               else if(dLo < 0)  // ¶«
+               else if(dLo < 0)  // ï¿½ï¿½
                {
                    angle = 90 ;
                }
@@ -198,24 +198,24 @@ float get_angle(float latitude1, char latitude1_flag,float longitude1, char long
                         
 #else
 
-            if(dLa > 0)//ÔÚÄÏ±ß
+            if(dLa > 0)//ï¿½ï¿½ï¿½Ï±ï¿½
             {
-               if(dLo < 0) //ÔÚÎ÷±ß   180--270 -=-- Î÷ÄÏ
+               if(dLo < 0) //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½   180--270 -=-- ï¿½ï¿½ï¿½ï¿½
                {
                    angle = 180 + (90 - angle);
                }
-               else if(dLo >= 0)//  ¶«ÄÏ    90- 180
+               else if(dLo >= 0)//  ï¿½ï¿½ï¿½ï¿½    90- 180
                {
                    angle = 90 + (90 - angle);
                }
             }
-           else if(dLa < 0 ) // ±±±ß
+           else if(dLa < 0 ) // ï¿½ï¿½ï¿½ï¿½
            {
-               if(dLo <= 0) //ÔÚÎ÷±ß   270--360  Î÷±±
+               if(dLo <= 0) //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½   270--360  ï¿½ï¿½ï¿½ï¿½
                {
                    angle = 270 + (90 - angle);
                }
-               else    // ¶«±±
+               else    // ï¿½ï¿½ï¿½ï¿½
                {
                    angle = (90 - angle);
                }
@@ -224,11 +224,11 @@ float get_angle(float latitude1, char latitude1_flag,float longitude1, char long
            else
            {
 
-               if(dLo < 0) //ÔÚÎ÷±ß
+               if(dLo < 0) //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                {
                    angle = 270 ;
                }
-               else if(dLo > 0)  // ¶«
+               else if(dLo > 0)  // ï¿½ï¿½
                {
                    angle = 90 ;
                }
@@ -253,26 +253,26 @@ float get_angle(float latitude1, char latitude1_flag,float longitude1, char long
       
 
 #else
-            if(dLa < 0)//ÔÚÄÏ±ß
+            if(dLa < 0)//ï¿½ï¿½ï¿½Ï±ï¿½
             {
-               if(dLo <= 0) //ÔÚÎ÷±ß   180--270 -=-- Î÷ÄÏ
+               if(dLo <= 0) //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½   180--270 -=-- ï¿½ï¿½ï¿½ï¿½
                {
                    angle = 180 + (90 - angle);
                     print_usart1("\r\n angle11 :%.1f \r\n",angle);
                }
-               else if(dLo > 0)//  ¶«ÄÏ    90- 180
+               else if(dLo > 0)//  ï¿½ï¿½ï¿½ï¿½    90- 180
                {
                    angle = 90 + (90 - angle);
                     print_usart1("\r\n angle22 :%.1f \r\n",angle);
                }
             }
-           else if(dLa > 0 ) // ±±±ß
+           else if(dLa > 0 ) // ï¿½ï¿½ï¿½ï¿½
            {
-               if(dLo <= 0) //ÔÚÎ÷±ß   270--360  Î÷±±
+               if(dLo <= 0) //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½   270--360  ï¿½ï¿½ï¿½ï¿½
                {
                    angle = 270 + (90 - angle);
                }
-               else    // ¶«±±
+               else    // ï¿½ï¿½ï¿½ï¿½
                {
                    angle = (90 - angle);
                }
@@ -281,11 +281,11 @@ float get_angle(float latitude1, char latitude1_flag,float longitude1, char long
            else
            {
 
-               if(dLo < 0) //ÔÚÎ÷±ß
+               if(dLo < 0) //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                {
                    angle = 270 ;
                }
-               else if(dLo > 0)  // ¶«
+               else if(dLo > 0)  // ï¿½ï¿½
                {
                    angle = 90 ;
                }
@@ -311,24 +311,24 @@ float get_angle(float latitude1, char latitude1_flag,float longitude1, char long
             
 #else
 
-            if(dLa < 0)//ÔÚÄÏ±ß
+            if(dLa < 0)//ï¿½ï¿½ï¿½Ï±ï¿½
             {
-               if(dLo  > 0) //ÔÚÎ÷±ß   180--270 -=-- Î÷ÄÏ
+               if(dLo  > 0) //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½   180--270 -=-- ï¿½ï¿½ï¿½ï¿½
                {
                    angle = 180 + (90 - angle);
                }
-               else if(dLo  <= 0)//  ¶«ÄÏ    90- 180
+               else if(dLo  <= 0)//  ï¿½ï¿½ï¿½ï¿½    90- 180
                {
                    angle = 90 + (90 - angle);
                }
             }
-           else if(dLa > 0 ) // ±±±ß
+           else if(dLa > 0 ) // ï¿½ï¿½ï¿½ï¿½
            {
-               if(dLo >= 0) //ÔÚÎ÷±ß   270--360  Î÷±±
+               if(dLo >= 0) //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½   270--360  ï¿½ï¿½ï¿½ï¿½
                {
                    angle = 270 + (90 - angle);
                }
-               else    // ¶«±±
+               else    // ï¿½ï¿½ï¿½ï¿½
                {
                    angle = (90 - angle);
                }
@@ -337,11 +337,11 @@ float get_angle(float latitude1, char latitude1_flag,float longitude1, char long
            else
            {
 
-               if(dLo > 0) //ÔÚÎ÷±ß
+               if(dLo > 0) //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                {
                    angle = 270 ;
                }
-               else if(dLo < 0)  // ¶«
+               else if(dLo < 0)  // ï¿½ï¿½
                {
                    angle = 90 ;
                }
@@ -361,7 +361,7 @@ float get_angle(float latitude1, char latitude1_flag,float longitude1, char long
 
 
  #else
-//Èç¹ûÁ½µãµÄ×ø±ê·Ö±ðÎª£º¶«¾­20¶È£¬±±Î³45ºÍÎ÷¾­160¶È£¬ÄÏÎ³45¶È,ÔòÊäÈë"20 e 45 n 160 w 45 s"È»ºó»Ø³µ¡£
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö±ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½20ï¿½È£ï¿½ï¿½ï¿½Î³45ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½160ï¿½È£ï¿½ï¿½ï¿½Î³45ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"20 e 45 n 160 w 45 s"È»ï¿½ï¿½Ø³ï¿½ï¿½ï¿½
 float get_angle(float latitude1, char latitude1_flag,float longitude1, char longitude1_flag,
                  float latitude2, char latitude2_flag,float longitude2, char longitude2_flag )
 {
@@ -505,9 +505,9 @@ void getsunrise(void)
 float n0;
 float temp0;
 float temp1;
-unsigned long int total_day; //»ýÈÕ
-float dz_jingdu;//¾­¶È¶©Õý
-float dz_sk;//Ê±¿Ì¶©Õý
+unsigned long int total_day; //ï¿½ï¿½ï¿½ï¿½
+float dz_jingdu;//ï¿½ï¿½ï¿½È¶ï¿½ï¿½ï¿½
+float dz_sk;//Ê±ï¿½Ì¶ï¿½ï¿½ï¿½
 float temp2;
 float degree_sun;
 float Er,Ed,Et,Sd;
@@ -542,12 +542,12 @@ degree_sun=2*PI*( total_day-n0)/365.2422;
 Er=1.000423 + 0.032359*sin(degree_sun)+ 0.000086*sin(2*degree_sun)- 0.008349*cos(degree_sun)+ 0.000115*cos(2*degree_sun);
 Ed=0.3723 + 23.2567*sin(degree_sun)+ 0.1149*sin(2*degree_sun)-0.1712*sin(3*degree_sun)- 0.758*cos(degree_sun)+ 0.3656*cos(2*degree_sun)+ 0.0201*cos(3*degree_sun);
 Et=0.0028 - 1.9857*sin(degree_sun)+ 9.9059*sin(2*degree_sun)- 7.0924*cos(degree_sun)- 0.6882*cos(2*degree_sun);
-Sd=data_in.hour+(data_in.mintue-(120.0-data_in.longitude)*4)/60.0; //µ±µØÌ«ÑôÊ±¼ä
+Sd=data_in.hour+(data_in.mintue-(120.0-data_in.longitude)*4)/60.0; //ï¿½ï¿½ï¿½ï¿½Ì«ï¿½ï¿½Ê±ï¿½ï¿½
 
 
 print_usart1("\r\n Sd  %f",Sd);
 
-SD_sun= (Sd+Et/60.0-12)*15;//µ±µØÌ«Ñô½Ç¶È
+SD_sun= (Sd+Et/60.0-12)*15;//ï¿½ï¿½ï¿½ï¿½Ì«ï¿½ï¿½ï¿½Ç¶ï¿½
 
 
 print_usart1("\r\n SD_sun  %f",SD_sun);
@@ -561,7 +561,7 @@ if(temp4>1)
 else
    if(temp4<-1)
 	temp4=-1;
-h_sun=asin(temp4);//Ì«Ñô¸ß¶È½Ç
+h_sun=asin(temp4);//Ì«ï¿½ï¿½ï¿½ß¶È½ï¿½
 
 temp4=(sin(h_sun)*sin(temp3)-sin(temp1))/(cos(h_sun)*cos(temp3));
 if(temp4>1)
@@ -569,7 +569,7 @@ if(temp4>1)
 else
 	if(temp4<-1)
 		temp4=-1;
-a_sun=acos(temp4);//Ì«Ñô·½Î»½Ç
+a_sun=acos(temp4);//Ì«ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½
 
 h_sun=h_sun*360/(2*PI);
 a_sun=a_sun*360/(2*PI);
@@ -577,8 +577,8 @@ a_sun=a_sun*360/(2*PI);
 print_usart1("\r\n h_sun  %f",h_sun);
 print_usart1("\r\n a_sun  %f",a_sun);
 
-a_sun_up=acos(sin(temp1)/cos(temp3))*360/(2*PI);//ÈÕ³ö·½Î»
-a_sun_down=a_sun_up-180; //ÈÕÂä·½Î»
+a_sun_up=acos(sin(temp1)/cos(temp3))*360/(2*PI);//ï¿½Õ³ï¿½ï¿½ï¿½Î»
+a_sun_down=a_sun_up-180; //ï¿½ï¿½ï¿½ä·½Î»
 
 
 print_usart1("\r\n a_sun_up  %f",a_sun_up);
@@ -632,21 +632,21 @@ static void sunpos( float d, float *lon, float *r )
 /* computed, since it's always very near 0.           */
 /******************************************************/
 /******************************************************/
-/* ¼ÆËãÌ«ÑôµÄ»ÆµÀ¾­¶ÈºÍ¾àÀë							  */
-/* ÔÚdÖÆ¶¨µÄË²¼ä£¬Ì«ÑôµÄ»ÆµÀÎ³¶È²»¼ÆËã				  */
-/* ÒòÎªËüÎÞÏÞ½Ó½üÓÚ0								  */
+/* ï¿½ï¿½ï¿½ï¿½Ì«ï¿½ï¿½ï¿½Ä»Æµï¿½ï¿½ï¿½ï¿½ÈºÍ¾ï¿½ï¿½ï¿½							  */
+/* ï¿½ï¿½dï¿½Æ¶ï¿½ï¿½ï¿½Ë²ï¿½ä£¬Ì«ï¿½ï¿½ï¿½Ä»Æµï¿½Î³ï¿½È²ï¿½ï¿½ï¿½ï¿½ï¿½				  */
+/* ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½Þ½Ó½ï¿½ï¿½ï¿½0								  */
 /******************************************************/
 {
-      float M,			//Ì«ÑôµÄ½üµã¾àÀë
-             w,         //»ÆµÀ¾­¶È
-                        //×¢£ºÌ«ÑôµÄÆ½»Æ¾¶ = M + w
-             e,         //µØÇò¹ìµÀµÄÆ«ÒÆÁ¿
-             E,         //Æ«½üµã½Ç
-             x, y,      //¹ìµÀµÄ×ø±ê
-             v;         //ÕæÕýµÄ½üµã¾àÀë
+      float M,			//Ì«ï¿½ï¿½ï¿½Ä½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+             w,         //ï¿½Æµï¿½ï¿½ï¿½ï¿½ï¿½
+                        //×¢ï¿½ï¿½Ì«ï¿½ï¿½ï¿½ï¿½Æ½ï¿½Æ¾ï¿½ = M + w
+             e,         //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ«ï¿½ï¿½ï¿½ï¿½
+             E,         //Æ«ï¿½ï¿½ï¿½ï¿½ï¿½
+             x, y,      //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+             v;         //ï¿½ï¿½ï¿½ï¿½ï¿½Ä½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
       /* Compute mean elements */
-	  //¼ÆËã
+	  //ï¿½ï¿½ï¿½ï¿½
       M = revolution( 356.0470 + 0.9856002585 * d );
       w = 282.9404 + 4.70935E-5 * d;
       e = 0.016709 - 1.151E-9 * d;
@@ -668,7 +668,7 @@ static void sun_RA_dec( float d, float *RA, float *dec, float *r )
       float lon, obl_ecl, x, y, z;
 
       /* Compute Sun's ecliptical coordinates */
-	  //¼ÆËãÌ«ÑôµÄ»ÆµÀ×ø±ê
+	  //ï¿½ï¿½ï¿½ï¿½Ì«ï¿½ï¿½ï¿½Ä»Æµï¿½ï¿½ï¿½ï¿½ï¿½
       sunpos( d, &lon, r );
 
       /* Compute ecliptic rectangular coordinates (z=0) */
@@ -702,7 +702,7 @@ static float revolution( float x )
 /* Reduce angle to within 0..360 degrees */
 /*****************************************/
 /*****************************************/
-/* °Ñ½Ç¶È»»Ëãµ½0-360¶ÈÖ®¼ä				 */
+/* ï¿½Ñ½Ç¶È»ï¿½ï¿½ãµ½0-360ï¿½ï¿½Ö®ï¿½ï¿½				 */
 /*****************************************/
 {
       return( x - 360.0 * floor( x * INV360 ) );
@@ -713,7 +713,7 @@ static float rev180( float x )
 /* Reduce angle to within +180..+180 degrees */
 /*********************************************/
 /*********************************************/
-/* °Ñ½Ç¶È»»Ëãµ½-180µ½180¶ÈÖ®¼ä				 */
+/* ï¿½Ñ½Ç¶È»ï¿½ï¿½ãµ½-180ï¿½ï¿½180ï¿½ï¿½Ö®ï¿½ï¿½				 */
 /*********************************************/
 {
       return( x - 360.0 * floor( x * INV360 + 0.5 ) );
@@ -745,7 +745,7 @@ static float rev180( float x )
 /* or 1.33 seconds of time)                                        */
 /*                                                                 */
 /*******************************************************************/
-//È¡µÃ0Ê±µÄ¸ñÁÖÄáÖÎÊ±½Ç
+//È¡ï¿½ï¿½0Ê±ï¿½Ä¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 static float GMST0( float d )
 {
       float sidtim0;
@@ -793,49 +793,49 @@ int sunriset( int year, int month, int day, float lon, float lat,
 /*                                                                    */
 /**********************************************************************/
 /***************************************************************************/
-/* ÖÐÎÄ×¢ÊÍ: year,month,date = TICÈÕÆÚ, ·¶Î§Îª1801-2099Äê             */
-/*       ¶«¾­ÎªÕý, Î÷¾­Îª¸º	±±Î³ÎªÕý£¬ÄÏÎ³Îª¸º					      */
-/*       ¾­¶ÈµÄÖµÊÇº¯ÊýÀïµÄ¹Ø¼ü								          */
-/*       altit = ÈÕ³öÈÕÂäÊ±Ì«Ñô¶ÔµØÆ½ÏßµÄ½Ç¾à£¬ÇëÉèÖÃ³É-35/60¶È       */
-/*         upper_limb: ¼ÆËãÈÕ³öÈÕÂäÊ±¼äÉèÖÃÎª1				          */
-/*        *rise = ±£´æÈÕ³öÊ±¼ä					                      */
-/*        *set  = ±£´æÈÕÂäÊ±¼ä					                      */
-/*                ÕâÐ©¼ÆËã³öÀ´µÄÈÕ³öÈÕÂäÊ±¼ä¶¼ÊÇÔÚÌØ¶¨Î³¶ÈµÄÊ±¼ä,	  */
-/* Return value:  0 = ÈÕ³öÈÕÂäÊ±¼äÒÑ¾­±£´æÔÚ*triseºÍ*tsetÀï           */
-/*               +1 = Ê±¼ä±È¸ÃµØµã¿ìÁË24¸öÐ¡Ê±ÒÔÉÏ					  */
-/*               -1 = Ê±¼ä±È¸ÃµØµãÃ¦ÁË24Ð¡Ê±ÒÔÉÏ					  */
+/* ï¿½ï¿½ï¿½ï¿½×¢ï¿½ï¿½: year,month,date = TICï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½Î§Îª1801-2099ï¿½ï¿½             */
+/*       ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½	ï¿½ï¿½Î³Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î³Îªï¿½ï¿½					      */
+/*       ï¿½ï¿½ï¿½Èµï¿½Öµï¿½Çºï¿½ï¿½ï¿½ï¿½ï¿½Ä¹Ø¼ï¿½								          */
+/*       altit = ï¿½Õ³ï¿½ï¿½ï¿½ï¿½ï¿½Ê±Ì«ï¿½ï¿½ï¿½Ôµï¿½Æ½ï¿½ßµÄ½Ç¾à£¬ï¿½ï¿½ï¿½ï¿½ï¿½Ã³ï¿½-35/60ï¿½ï¿½       */
+/*         upper_limb: ï¿½ï¿½ï¿½ï¿½ï¿½Õ³ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îª1				          */
+/*        *rise = ï¿½ï¿½ï¿½ï¿½ï¿½Õ³ï¿½Ê±ï¿½ï¿½					                      */
+/*        *set  = ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½					                      */
+/*                ï¿½ï¿½Ð©ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ³ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ä¶¼ï¿½ï¿½ï¿½ï¿½ï¿½Ø¶ï¿½Î³ï¿½Èµï¿½Ê±ï¿½ï¿½,	  */
+/* Return value:  0 = ï¿½Õ³ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½Ñ¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*triseï¿½ï¿½*tsetï¿½ï¿½           */
+/*               +1 = Ê±ï¿½ï¿½È¸ÃµØµï¿½ï¿½ï¿½ï¿½24ï¿½ï¿½Ð¡Ê±ï¿½ï¿½ï¿½ï¿½					  */
+/*               -1 = Ê±ï¿½ï¿½È¸ÃµØµï¿½Ã¦ï¿½ï¿½24Ð¡Ê±ï¿½ï¿½ï¿½ï¿½					  */
 /*                                                                    */
 /**********************************************************************/
 {
-      float  d,		//´Ó2000Äê1ÔÂ1ÈÕµ½ÏÖÔÚµÄÌìÊý
-      sr,			//ÈÕµØ¾à£¬ÌìÎÄÑ§µ¥Î»
-      sRA,			//»ÆµÀ¾­¶È
-      sdec,			//Ì«ÑôµÄÇã½Ç
-      sradius,		//Ì«ÑôµÄÔ²ÖÜ°ë¾¶
-      t,			//Ã¿ÈÕµÄ»¡¶È(Æ«ÒÆÁ¿)
-      tsouth,		//Ì«ÑôÔÚ»ÆµÀÄÏ±ßµÄÊ±¼ä
-      sidtime;		//±¾µØºãÐÇÊ±
+      float  d,		//ï¿½ï¿½2000ï¿½ï¿½1ï¿½ï¿½1ï¿½Õµï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½
+      sr,			//ï¿½ÕµØ¾à£¬ï¿½ï¿½ï¿½ï¿½Ñ§ï¿½ï¿½Î»
+      sRA,			//ï¿½Æµï¿½ï¿½ï¿½ï¿½ï¿½
+      sdec,			//Ì«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+      sradius,		//Ì«ï¿½ï¿½ï¿½ï¿½Ô²ï¿½Ü°ë¾¶
+      t,			//Ã¿ï¿½ÕµÄ»ï¿½ï¿½ï¿½(Æ«ï¿½ï¿½ï¿½ï¿½)
+      tsouth,		//Ì«ï¿½ï¿½ï¿½Ú»Æµï¿½ï¿½Ï±ßµï¿½Ê±ï¿½ï¿½
+      sidtime;		//ï¿½ï¿½ï¿½Øºï¿½ï¿½ï¿½Ê±
 
-      int rc = 0;	//º¯Êý·µ»ØÖµ£¬Í¨³£Îª0
+      int rc = 0;	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½Í¨ï¿½ï¿½Îª0
 
     /* Compute d of 12h local mean solar time */
-	  //¼ÆËãd
+	  //ï¿½ï¿½ï¿½ï¿½d
       d = days_since_2000_Jan_0(year,month,day) + 0.5 - lon/360.0;
 
       /* Compute local sidereal time of this moment */
-	  //¼ÆËã´Ë¿ÌµÄ±¾µØºãÐÇÊ±
+	  //ï¿½ï¿½ï¿½ï¿½Ë¿ÌµÄ±ï¿½ï¿½Øºï¿½ï¿½ï¿½Ê±
       sidtime = revolution( GMST0(d) + 180.0 + lon );
 
       /* Compute Sun's RA + Decl at this moment */
-	  //¼ÆËã´Ë¿ÌÌ«ÑôµÄ»ÆµÀ¾­¶ÈºÍÌ«ÑôµÄÇã½Ç
+	  //ï¿½ï¿½ï¿½ï¿½Ë¿ï¿½Ì«ï¿½ï¿½ï¿½Ä»Æµï¿½ï¿½ï¿½ï¿½Èºï¿½Ì«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
       sun_RA_dec( d, &sRA, &sdec, &sr );
 
       /* Compute time when Sun is at south - in hours UT */
-	  //¼ÆËãÌ«ÑôÔÚ»ÆµÀÄÏ±ßµÄÊ±¼ä
+	  //ï¿½ï¿½ï¿½ï¿½Ì«ï¿½ï¿½ï¿½Ú»Æµï¿½ï¿½Ï±ßµï¿½Ê±ï¿½ï¿½
       tsouth = 12.0 - rev180(sidtime - sRA)/15.0;
 
       /* Compute the Sun's apparent radius, degrees */
-	  //¼ÆËãÌ«ÑôµÄÔ²ÖÜ°ë¾¶
+	  //ï¿½ï¿½ï¿½ï¿½Ì«ï¿½ï¿½ï¿½ï¿½Ô²ï¿½Ü°ë¾¶
       sradius = 0.2666 / sr;
 
       /* Do correction to upper limb, if necessary */
@@ -879,9 +879,9 @@ typedef struct SUN
 //	float dbDayTime;
 //	float dbSunMoon;
 //	float dbIllumTime;
-	//char dayTime[10]; //Öç³¤
-	//char SunNoon[10]; //ÖÐÎç
-	//char IllumTime[10]; //¹âÕÕÊ±¼ä ÌìÁÁ-ÌìºÚ
+	//char dayTime[10]; //ï¿½ç³¤
+	//char SunNoon[10]; //ï¿½ï¿½ï¿½ï¿½
+	//char IllumTime[10]; //ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½-ï¿½ï¿½ï¿½
 }*PSunMoonTime,SunMoonTime;
 
 float frac(float x)
@@ -1229,16 +1229,16 @@ void find_sun_and_twi_events_for_date(float mjd,float tz, float glong,float  gla
 		// and sett flags
 		if(j == 0)
 		{
-			//¼ÆËãÖç³¤
+			//ï¿½ï¿½ï¿½ï¿½ï¿½ç³¤
 			//hrsmin(utset-utrise,(char *)&SolTimes->dayTime);
 			SolTimes->dbDayTime=utset-utrise;
-			//¼ÆËãÕýÎç
+			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			//hrsmin((utset+utrise)/2,(char *)&SolTimes->SunNoon);
 			SolTimes->dbSunMoon=(utset+utrise)/2;
 		}
 		else
 		{
-			//¼ÆËã¹âÕÕ
+			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			//hrsmin(utset-utrise,(char *)&SolTimes->IllumTime);
 			SolTimes->dbIllumTime=utset-utrise;
 		}
@@ -1321,7 +1321,7 @@ void moon_test(float dbLon,float dbLat,int year,int month,int day,float TimeZone
     PSunMoonTime pTime=&SMTime;
     uint8_t hour,minute;
     uint32_t tp;
-    __align(4) uint8_t dtbuf[50];   								//´òÓ¡»º´æÆ÷
+    __align(4) uint8_t dtbuf[50];   								//ï¿½ï¿½Ó¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
     GetSunMoonTime(dbLon, dbLat, year, month, day, TimeZone, pTime);
     // print_usart1("\r\n dbMoonRise  %.1f",pTime->dbMoonRise);
@@ -1330,18 +1330,18 @@ void moon_test(float dbLon,float dbLat,int year,int month,int day,float TimeZone
 	hour = (uint8_t)(tp/1000);
 	minute = (uint8_t)((tp -hour*1000)*0.06);
     if(gpsx->gpssta!=3)
-        sprintf((char *)dtbuf,"--:--");	//ÏÔÊ¾UTCÈÕÆÚ
+        sprintf((char *)dtbuf,"--:--");	//ï¿½ï¿½Ê¾UTCï¿½ï¿½ï¿½ï¿½
     else
-        sprintf((char *)dtbuf,"%02d:%02d",hour,minute);	//ÏÔÊ¾UTCÈÕÆÚ
+        sprintf((char *)dtbuf,"%02d:%02d",hour,minute);	//ï¿½ï¿½Ê¾UTCï¿½ï¿½ï¿½ï¿½
 	print_usart1("%s\r\n",dtbuf);
 
     tp = pTime->dbMoonSet*1000;
 	hour = (uint8_t)(tp/1000);
 	minute = (uint8_t)((tp -hour*1000)*0.06);
     if((gpsx->fixmode!=3)||(pTime->dbMoonSet<0.0))
-       sprintf((char *)dtbuf,"--:--");	//ÏÔÊ¾UTCÈÕÆÚ
+       sprintf((char *)dtbuf,"--:--");	//ï¿½ï¿½Ê¾UTCï¿½ï¿½ï¿½ï¿½
     else
-       sprintf((char *)dtbuf,"%02d:%02d",hour,minute);	//ÏÔÊ¾UTCÈÕÆÚ
+       sprintf((char *)dtbuf,"%02d:%02d",hour,minute);	//ï¿½ï¿½Ê¾UTCï¿½ï¿½ï¿½ï¿½
     print_usart1("%s\r\n",dtbuf);
 }
 

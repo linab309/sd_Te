@@ -3915,7 +3915,7 @@ void update_info(void const * argument)
   if(adc_cnt > 600)
   {
       vddmv_adc_proess(system_flag_table); /*���µ��״̬*/   
-	  adc_cnt = 0; 
+      adc_cnt = 0; 
   }
   else
   	   adc_cnt ++;
