@@ -129,7 +129,7 @@
 
 //#define HDOP_RECODE_VAULE 150
 //#define HDOP_RECODE_VAULE 120
-#define HDOP_RECODE_VAULE 100
+#define HDOP_RECODE_VAULE 500
 
 extern void print_usart1(char *format, ...);
 extern void SystemClock_Config_msi(void);

@@ -845,6 +845,7 @@ void vddmv_adc_proess(system_flag *system_flag_table)
          ADCdata = HAL_ADC_GetValue(&hadc);
      }
 
+     HAL_ADC_Stop(&hadc);
     /* Calculate voltage value*/
     VDDmV = (uint32_t)((uint32_t)ADCdata *6600/4095);
    
