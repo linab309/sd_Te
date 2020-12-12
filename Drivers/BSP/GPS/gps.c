@@ -67,7 +67,7 @@ int NMEA_Str2num(uint8_t *buf,uint8_t*dx)
 	{  
 		ires+=NMEA_Pow(10,ilen-1-i)*(buf[i]-'0');
 	}
-	if(flen>6)flen=6;	//最多取5位小数
+	if(flen>7)flen=7;	//最多取5位小数
 	*dx=flen;	 		//小数点位数
 	for(i=0;i<flen;i++)	//得到小数部分数据
 	{  

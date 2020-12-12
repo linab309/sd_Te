@@ -450,18 +450,20 @@ uint8_t configfs_set(FIL *update_config_fp)
         system_flag_table->guji_record.by_time_vaule   = 1000; /*ms*/
         system_flag_table->guji_record.recoed_formats  = BY_TIMES;
     }
-    else if(strcmp("5Hz",string) == 0)    
-    {
-        system_flag_table->guji_record.by_time_vaule   = 200; /*ms*/
-        system_flag_table->guji_record.recoed_formats  = BY_TIMES;
+    // else if(strcmp("5Hz",string) == 0)    
+    // {
+    //     system_flag_table->guji_record.by_time_vaule   = 1000; /*ms*/
+    //     system_flag_table->guji_record.recoed_formats  = BY_TIMES;
+    //     no_support_char = 1;
 
-    } 
-    else if(strcmp("10Hz",string) == 0)    
-    {
-        system_flag_table->guji_record.by_time_vaule   = 100; /*ms*/
-        system_flag_table->guji_record.recoed_formats  = BY_TIMES;
+    // } 
+    // else if(strcmp("10Hz",string) == 0)    
+    // {
+    //     system_flag_table->guji_record.by_time_vaule   = 1000; /*ms*/
+    //     system_flag_table->guji_record.recoed_formats  = BY_TIMES;
+    //     no_support_char = 1;
 
-    } 
+    // } 
     else if(strcmp("5m",string) == 0)    
     {
         system_flag_table->guji_record.by_distance_vaule   = 5; /*ms*/

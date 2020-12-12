@@ -659,13 +659,13 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
                      */  
 			if(lat_flag == 'S')
 		    {
-				sprintf((char *)dtbuf,"<trkpt lat=\"-%.6f\"",tp_lat/1000000);	
+				sprintf((char *)dtbuf,"<trkpt lat=\"-%.7f\"",tp_lat/10000000);	
 
 		    
 		    }
 			else 
 		    {
-				sprintf((char *)dtbuf,"<trkpt lat=\"%.6f\"",tp_lat/1000000);	
+				sprintf((char *)dtbuf,"<trkpt lat=\"%.7f\"",tp_lat/10000000);	
 
 		    }
 
@@ -673,12 +673,12 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
             f_printf(sys_fp,"%s",(char *)dtbuf);
 			if(lon_flag == 'W')
 		    {
-				sprintf((char *)dtbuf," lon=\"-%.6f\">",tp_lon/1000000);	
+				sprintf((char *)dtbuf," lon=\"-%.7f\">",tp_lon/10000000);	
 		    
 		    }
 			else 
 		    {
-		        sprintf((char *)dtbuf," lon=\"%.6f\">",tp_lon/1000000);	
+		        sprintf((char *)dtbuf," lon=\"%.7f\">",tp_lon/10000000);	
 		    }
 		    f_printf(sys_fp,"%s",(char *)dtbuf);
             sprintf((char *)dtbuf,"<ele>%d</ele>",attiautl/10);	

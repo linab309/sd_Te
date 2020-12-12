@@ -55,10 +55,28 @@
 #define usb_hotplug_GPIO_Port GPIOA
 #define surprot_line_Pin GPIO_PIN_1
 #define surprot_line_GPIO_Port GPIOA
+
+#ifdef  BOARD_P_TYPE_1
 #define GPS_POWER_Pin GPIO_PIN_8
 #define GPS_POWER_GPIO_Port GPIOA
 #define SD_POWER_Pin GPIO_PIN_2
 #define SD_POWER_GPIO_Port GPIOA
+#else
+//PA8，GPS电源，高电平使能，输入为关闭
+#define GPS_POWER_Pin GPIO_PIN_8   
+#define GPS_POWER_GPIO_Port GPIOA
+
+//增加PA5引脚作为GPS SLEEP控制
+#define GPS_SLEEP_Pin GPIO_PIN_5   
+#define GPS_SLEEP_GPIO_Port GPIOA
+
+// //增加PB8作为GPS的第二个指示灯（蓝色，高电平使能，见后页）
+// #define GPS_SENCOND_LED_Pin GPIO_PIN_8  
+// #define GPS_SENCOND_LED_GPIO_Port GPIOB
+
+#define SD_POWER_Pin GPIO_PIN_2
+#define SD_POWER_GPIO_Port GPIOA
+#endif
 
 /* USER CODE BEGIN Private defines */
 #define  MAX_BMP_FILES  25
