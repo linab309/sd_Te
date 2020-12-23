@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    ADC/ADC1_IDDmeas/main.c 
+  * @file    ADC/ADC1_IDDmeas/main.c
   * @author  MCD Application Team
   * @version V1.1.1
   * @date    13-April-2012
@@ -16,8 +16,8 @@
   *
   *        http://www.st.com/software_license_agreement_liberty_v2
   *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   * See the License for the specific language governing permissions and
   * limitations under the License.
@@ -41,7 +41,7 @@ extern ADC_HandleTypeDef hadc;
 
 
 //	ncl = (res == FR_DISK_ERR) ? 0xFFFFFFFF : 1;
-static bool IsBatteryPoweroff(uint16_t mv) 
+static bool IsBatteryPoweroff(uint16_t mv)
 {
     return (mv<=3200)? TRUE:FALSE;
 }
@@ -53,7 +53,7 @@ static bool IsBatteryDead(uint16_t mv) {return mv>=3200 ? TRUE:FALSE;}
 static bool IsBatteryMid(uint16_t mv) {return mv>3550 ? TRUE:FALSE;}
 static bool IsBatteryHIGH(uint16_t mv) {return mv>3850 ? TRUE:FALSE;}
 static bool IsBatteryFull(uint16_t mv) {return mv>=4100 ? TRUE:FALSE;}
-	
+
 /**
   * @brief  Display the IDD measured Value On the LCD Glass.
   * @param  IDD measure
@@ -61,7 +61,7 @@ static bool IsBatteryFull(uint16_t mv) {return mv>=4100 ? TRUE:FALSE;}
   */
 
 void DisplayIDDrunmV(uint32_t IDDmeas)
-{ 
+{
     static int ddrunmv = 0;
     /* x  current value*/
     static u8 ddrunmv_cnt = 0;
@@ -69,7 +69,7 @@ void DisplayIDDrunmV(uint32_t IDDmeas)
     ddrunmv += IDDmeas;
     if(ddrunmv_cnt<10)
     {
-        ddrunmv_cnt++;         
+        ddrunmv_cnt++;
         return;
     }
     else
@@ -83,7 +83,7 @@ void DisplayIDDrunmV(uint32_t IDDmeas)
     {
         //  headsetPowerOff(getApp());system_flag_table->batt_Status
         system_flag_table->batt_Status = 0xFF;
-    }			  
+    }
 
     else
     {
@@ -103,33 +103,33 @@ void DisplayIDDrunmV(uint32_t IDDmeas)
                 system_flag_table->batt_Status  = BATT_HIGH;
             }
 
-        }                    
+        }
 
         else if (IsBatteryHIGH(ddrunmv))
         {
             if((system_flag_table->charger_connected == 1)&&(system_flag_table->batt_Status  ==  BATT_CHARG_OK))
                 ;
-            else	
+            else
                 system_flag_table->batt_Status  =  BATT_HIGH;
 
-        }       
+        }
         else if (IsBatteryMid(ddrunmv))
-        {                        
+        {
             system_flag_table->batt_Status  =  BATT_MID;
         }
         else  if (IsBatteryLow(ddrunmv))
-        {                                	           
+        {
             system_flag_table->batt_Status  =  BATT_LOW;
         }
         else if (IsBatteryDead(ddrunmv))
-        {                        
+        {
             system_flag_table->batt_Status  = BATT_EMPTY;
         }
 
-    }  
+    }
 
     ddrunmv = 0;
-	
+
 }
 
 
@@ -141,7 +141,7 @@ void DisplayIDDrunmV(uint32_t IDDmeas)
   */
 void vddmv_adc_proess(void)
 {
-  /*!< At this stage the microcontroller clock setting is already configured, 
+  /*!< At this stage the microcontroller clock setting is already configured,
        this is done through SystemInit() function which is called from startup
        file (startup_stm32l1xx_xx.s) before to branch to application main.
        To reconfigure the default setting of SystemInit() function, refer to
@@ -153,7 +153,7 @@ void vddmv_adc_proess(void)
 
     /* Start the conversion process */
      HAL_ADC_Start(&hadc);
-       
+
      /* Wait for the end of conversion */
      if (HAL_ADC_PollForConversion(&hadc, 10) != HAL_TIMEOUT)
      {
@@ -163,7 +163,7 @@ void vddmv_adc_proess(void)
 
     /* Calculate voltage value*/
     VDDmV = (uint32_t)((uint32_t)ADCdata *6000/4095);
-   
+
 
     /* Display the IDD measured Value On the LCD Glass (mA) */
     DisplayIDDrunmV(VDDmV);
