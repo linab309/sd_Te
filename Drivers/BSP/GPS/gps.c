@@ -438,8 +438,8 @@ uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	if(posx!=0XFF)
 	{
 		temp=NMEA_Str2num(p1+posx,&dx);
-		print_usart1("temp = %d \r\n",temp);
-		print_usart1("dx = %d \r\n",dx);
+		// print_usart1("temp = %d \r\n",temp);
+		// print_usart1("dx = %d \r\n",dx);
 #ifdef NG_LG_ENABLE
 
         if(NS_LG > 0)
@@ -496,8 +496,8 @@ uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 
 //		gpsx->longitude = temp;
 	}
-	print_usart1("gpsx->latitude = %d \r\n",gpsx->latitude);
-	print_usart1("gpsx->longitude = %d \r\n",gpsx->longitude);
+	// print_usart1("gpsx->latitude = %d \r\n",gpsx->latitude);
+	// print_usart1("gpsx->longitude = %d \r\n",gpsx->longitude);
 	posx=NMEA_Comma_Pos(p1,6);								//东经还是西经
 	if(posx!=0XFF)
 	{

@@ -1064,7 +1064,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : GPS_POWER_Pin */
+  /*Configure GPIO pin : SD_POWER_Pin */
   GPIO_InitStruct.Pin = SD_POWER_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
@@ -1255,6 +1255,7 @@ void gps_reset_mode(void)
     HAL_UART_Transmit(&huart3,(uint8_t*)reset_1_config,sizeof(reset_1_config),0xFFF);
     osDelay(1000);
     HAL_UART_Transmit(&huart3,(uint8_t*)reset_2_config,sizeof(reset_2_config),0xFFF);
+    osDelay(500);
 
 }
 
@@ -1274,6 +1275,7 @@ void gps_sleep_mode(uint8_t mode)
     if(mode == 1)
     {
         HAL_UART_Transmit(&huart3,(uint8_t*)sleep_on_config,sizeof(sleep_on_config),0xFFF);
+        osDelay(200);
     }
     else
     {
@@ -1299,28 +1301,29 @@ void gps_standby_mode(uint8_t mode)
     GPIO_InitTypeDef GPIO_InitStruct;
 
     GPIO_InitStruct.Pin = GPS_POWER_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
-    //HAL_GPIO_WritePin(GPS_SLEEP_GPIO_Port, GPIO_PIN_8, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPS_POWER_GPIO_Port, GPIO_PIN_8, GPIO_PIN_SET);
     print_usart1("standby mode :%d \r\n",mode);
+    osDelay(500);
     if(mode == 1)
     {
         HAL_UART_Transmit(&huart3,(uint8_t*)standby_on_config,sizeof(standby_on_config),0xFFF);
         osDelay(1000);
-        GPIO_InitStruct.Pin = GPS_SLEEP_Pin;
+        GPIO_InitStruct.Pin = GPS_POWER_Pin;
         GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
         GPIO_InitStruct.Pull = GPIO_NOPULL;
-        HAL_GPIO_Init(GPS_SLEEP_GPIO_Port, &GPIO_InitStruct);
+        HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
         memset(gpsx,0,sizeof(nmea_msg));
     }
     else
     {
-		GPIO_InitStruct.Pin = GPS_POWER_Pin;
-		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
-        HAL_GPIO_WritePin(GPS_POWER_GPIO_Port, GPIO_PIN_8, GPIO_PIN_SET);
+		// GPIO_InitStruct.Pin = GPS_POWER_Pin;
+		// GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		// GPIO_InitStruct.Pull = GPIO_NOPULL;
+		// HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
+        // HAL_GPIO_WritePin(GPS_POWER_GPIO_Port, GPIO_PIN_8, GPIO_PIN_SET);
     }
 
 }
@@ -1688,7 +1691,7 @@ static void StopSequence_Config(void)
        BSP_LED_Init(LED_GREEN);
        BSP_LED_Init(LED_RED);
        BSP_LED_Init(LED_BULE);
-       BSP_LED_DeInit(LED_GPS);
+       BSP_LED_Init(LED_GPS);
        BSP_LED_Init(LED_SD);
        BSP_LED_Init(LED_SURPORT);
        BSP_LED_Init(LED_GPS_2);
@@ -1701,8 +1704,8 @@ static void StopSequence_Config(void)
 
        /*Configure GPIO pin : GPS_POWER_Pin */
        GPIO_InitStruct.Pin = GPS_POWER_Pin;
-       GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-       GPIO_InitStruct.Pull = GPIO_PULLUP;
+       GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+       GPIO_InitStruct.Pull = GPIO_NOPULL;
        HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
 
        /*Configure GPIO pin : GPS_POWER_Pin */
@@ -1717,9 +1720,9 @@ static void StopSequence_Config(void)
        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
        GPIO_InitStruct.Pull = GPIO_PULLUP;
        HAL_GPIO_Init(surprot_line_GPIO_Port, &GPIO_InitStruct);
-         /* EXTI interrupt init*/
-       //HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
-       //HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+        /* EXTI interrupt init*/
+        //HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
+        //HAL_NVIC_EnableIRQ(EXTI0_IRQn);
         GPIO_InitStruct.Pin = GPS_SLEEP_Pin;
         GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
         GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -2546,7 +2549,6 @@ void auto_power_off(void)
 //    uint32_t eeprom_flag = 0;
 
 
-
     if((system_flag_table->charger_connected  == 1)||(is_power_from_auto  == 0))
     {
         auto_power_timer = 0;
@@ -2561,6 +2563,7 @@ void auto_power_off(void)
            system_flag_table->power_status = POWER_STANBY;
            system_flag_table->auto_power_Status = 0;
            print_usart1("AUTO POWER OFF \r\n");
+           gps_standby_mode(1);
            is_power_from_auto = 0;
            start_hotplug = 0;
            BSP_LED_Off(LED_GREEN);
@@ -2572,29 +2575,30 @@ void auto_power_off(void)
            {
                MX_USB_DEVICE_Init();
                usb_init_flag = 1;
-       	  }
+       	   }
 
-          SystemClock_Config_resume();
-          MX_TIM10_Init();
-          sound_toggle_simple(1,500,150);
+            SystemClock_Config_resume();
+            MX_TIM10_Init();
+            sound_toggle_simple(1,500,150);
+          
+            while(osThreadGetState(Get_gps_info_Handle) != osThreadSuspended) { osDelay(10);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
+            while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(10);}
 
- 		  while(osThreadGetState(Get_gps_info_Handle) != osThreadSuspended) { osDelay(10);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
- 		  while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(10);}
+            //gps_power_mode(0);
+            
+            sd_power_mode(0);
 
-          //gps_power_mode(0);
-          gps_standby_mode(1);
-          sd_power_mode(0);
-
- 		  print_usart1("************\r\n");
- 		  print_usart1("goto stanby.\r\n");
- 		  print_usart1("************\r\n");
- 		  StopSequence_Config();
-
-
+            print_usart1("************\r\n");
+            print_usart1("goto stanby.\r\n");
+            print_usart1("************\r\n");
+            StopSequence_Config();
        }
     }
-      else
-          auto_power_timer = 0;
+    else
+    {
+        auto_power_timer = 0;
+    }
+          
 
 
 }
@@ -2640,7 +2644,7 @@ void auto_power_on(void)
                }
                BSP_LED_On(LED_SURPORT);
             }
-            gps_sleep_mode(1);
+            gps_standby_mode(1);
             sd_power_mode(1);
             print_usart1("AUTO POWER ON -2 \r\n");
             system_flag_table->guji_mode = RECORED_START;
@@ -3299,10 +3303,10 @@ void Get_gps_info(void const * argument)
   HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_dma_buffer, 100);
   for(;;)
   {
-      // �ж�rxp_init_pcrx()�Ƿ���������õ�NMEA���
+     
       if(rxp_inst_avail(&rRawData.i2PacketType, &i2DataIdx, &m_i2PktDataSize))
       {
-          // ������NMEA��俽����rRawData.Data[]
+     
           memset(&rRawData,0x00,sizeof(NMEA_STN_DATA_T));
           rxp_get_inst(i2DataIdx, m_i2PktDataSize, &rRawData.Data[0]);
 
@@ -3320,7 +3324,6 @@ void Get_gps_info(void const * argument)
               recode_cnt++;
           }
           print_usart1("%s",rRawData.Data);
-          // ����NMEA���
           ProcNmeaSentence(gpsx);
 
 
@@ -3560,7 +3563,7 @@ void MySystem(void const * argument)
                     SystemClock_Config_resume();
 
     				// gps_power_mode(1);
-                    gps_sleep_mode(0);
+                    //gps_sleep_mode(0);
     				sd_power_mode(1) ;
 
     				HAL_NVIC_DisableIRQ(EXTI1_IRQn);
@@ -3589,7 +3592,7 @@ void MySystem(void const * argument)
     			   print_usart1("levef lprun mode  resume \r\n");
     			   print_usart1("******** \r\n");
     			//    gps_power_mode(1);
-                   gps_sleep_mode(0);
+                   //gps_sleep_mode(0);
     			   sd_power_mode(1);
                    osDelay(500);
 //    			   HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);
@@ -3882,7 +3885,7 @@ void MySystem(void const * argument)
                     // gps_power_mode(1);
                     gps_sleep_mode(0);
                     sd_power_mode(1);
-//                    HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);
+                    //HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_buffer, 1);
                     osThreadResume(Get_gps_info_Handle);
                     osThreadResume(defaultTaskHandle);
                     sound_toggle_simple(1,50,50);
