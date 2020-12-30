@@ -142,8 +142,8 @@ const uint8_t week_word[7][3]={"SUN","MON","TUE","WED","THU","FRI","SAT"};
 
 
 
-const uint8_t  table_week[12]={0,3,3,6,1,4,6,2,5,0,3,5}; //ÔÂÐÞÕýÊý¾Ý±í
-//Æ½ÄêµÄÔÂ·ÝÈÕÆÚ±í
+const uint8_t  table_week[12]={0,3,3,6,1,4,6,2,5,0,3,5}; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý±ï¿½
+//Æ½ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½ï¿½ï¿½Ú±ï¿½
 const uint8_t mon_table[12]={31,28,31,30,31,30,31,31,30,31,30,31};
 
 
@@ -151,10 +151,10 @@ const uint8_t mon_table[12]={31,28,31,30,31,30,31,31,30,31,30,31};
 
 
 
-//»ñµÃÏÖÔÚÊÇÐÇÆÚ¼¸
-//¹¦ÄÜÃèÊö:ÊäÈë¹«ÀúÈÕÆÚµÃµ½ÐÇÆÚ(Ö»ÔÊÐí1901-2099Äê)
-//ÊäÈë²ÎÊý£º¹«ÀúÄêÔÂÈÕ
-//·µ»ØÖµ£ºÐÇÆÚºÅ
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¼ï¿½
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½:ï¿½ï¿½ï¿½ë¹«ï¿½ï¿½ï¿½ï¿½ï¿½ÚµÃµï¿½ï¿½ï¿½ï¿½ï¿½(Ö»ï¿½ï¿½ï¿½ï¿½1901-2099ï¿½ï¿½)
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½Úºï¿½
 uint8_t RTC_Get_Week(uint16_t year,uint8_t month,uint8_t day)
 {
 	uint16_t temp2;
@@ -162,9 +162,9 @@ uint8_t RTC_Get_Week(uint16_t year,uint8_t month,uint8_t day)
 
 	yearH = year/100;
     yearL = year%100;
-	// Èç¹ûÎª21ÊÀ¼Í,Äê·ÝÊý¼Ó100
+	// ï¿½ï¿½ï¿½Îª21ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½100
 	if (yearH>19)yearL += 100;
-	// Ëù¹ýÈòÄêÊýÖ»Ëã1900ÄêÖ®ºóµÄ
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½1900ï¿½ï¿½Ö®ï¿½ï¿½ï¿½
 	temp2 = yearL+yearL/4;
 	temp2 = temp2%7;
 	temp2 = temp2 + day + table_week[month-1];
@@ -173,19 +173,19 @@ uint8_t RTC_Get_Week(uint16_t year,uint8_t month,uint8_t day)
 }
 
 
-//ÅÐ¶ÏÊÇ·ñÊÇÈòÄêº¯Êý
-//ÔÂ·Ý   1  2  3  4  5  6  7  8  9  10 11 12
-//ÈòÄê   31 29 31 30 31 30 31 31 30 31 30 31
-//·ÇÈòÄê 31 28 31 30 31 30 31 31 30 31 30 31
-//ÊäÈë:Äê·Ý
-//Êä³ö:¸ÃÄê·ÝÊÇ²»ÊÇÈòÄê.1,ÊÇ.0,²»ÊÇ
+//ï¿½Ð¶ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½êº¯ï¿½ï¿½
+//ï¿½Â·ï¿½   1  2  3  4  5  6  7  8  9  10 11 12
+//ï¿½ï¿½ï¿½ï¿½   31 29 31 30 31 30 31 31 30 31 30 31
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 31 28 31 30 31 30 31 31 30 31 30 31
+//ï¿½ï¿½ï¿½ï¿½:ï¿½ï¿½ï¿½
+//ï¿½ï¿½ï¿½:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.1,ï¿½ï¿½.0,ï¿½ï¿½ï¿½ï¿½
 uint8_t Is_Leap_Year(uint16_t year)
 {
-	if(year%4==0) //±ØÐëÄÜ±»4Õû³ý
+	if(year%4==0) //ï¿½ï¿½ï¿½ï¿½ï¿½Ü±ï¿½4ï¿½ï¿½ï¿½ï¿½
 	{
 		if(year%100==0)
 		{
-			if(year%400==0)return 1;//Èç¹ûÒÔ00½áÎ²,»¹ÒªÄÜ±»400Õû³ý
+			if(year%400==0)return 1;//ï¿½ï¿½ï¿½ï¿½ï¿½00ï¿½ï¿½Î²,ï¿½ï¿½Òªï¿½Ü±ï¿½400ï¿½ï¿½ï¿½ï¿½
 			else return 0;
 		}else return 1;
 	}else return 0;
@@ -194,15 +194,15 @@ uint8_t Is_Leap_Year(uint16_t year)
 
 
 
-//µÃµ½µ±Ç°µÄÊ±¼ä
-//·µ»ØÖµ:0,³É¹¦;ÆäËû:´íÎó´úÂë.
+//ï¿½Ãµï¿½ï¿½ï¿½Ç°ï¿½ï¿½Ê±ï¿½ï¿½
+//ï¿½ï¿½ï¿½ï¿½Öµ:0,ï¿½É¹ï¿½;ï¿½ï¿½ï¿½ï¿½:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
 uint8_t RTC_Get(uint8_t flag,tm *my_timer)
 {
 //	extern tm my_timer;
 	uint16_t temp1=0;
 	if(flag)
 	{
-		my_timer->w_date +=1;  //µÃµ½ÈÕÆÚ
+		my_timer->w_date +=1;  //ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½
 		if(Is_Leap_Year(my_timer->w_year)&&(my_timer->w_month == 1))
 		{
 			temp1 = 29;
@@ -214,8 +214,8 @@ uint8_t RTC_Get(uint8_t flag,tm *my_timer)
 
 		if(my_timer->w_date>temp1 )
 	    {
-			my_timer->w_date=1;//Æ½Äê
-			my_timer->w_month++;//µÃµ½ÔÂ·Ý
+			my_timer->w_date=1;//Æ½ï¿½ï¿½
+			my_timer->w_month++;//ï¿½Ãµï¿½ï¿½Â·ï¿½
 			if(my_timer->w_month>12)
 				{
 				my_timer->w_month = 1;
@@ -226,10 +226,10 @@ uint8_t RTC_Get(uint8_t flag,tm *my_timer)
 	}
     else
 	{
-	    my_timer->w_date -=1;  //µÃµ½ÈÕÆÚ
+	    my_timer->w_date -=1;  //ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½
 	    if(my_timer->w_date == 0)
 		{
-	    	my_timer->w_month--;//µÃµ½ÔÂ·Ý
+	    	my_timer->w_month--;//ï¿½Ãµï¿½ï¿½Â·ï¿½
 
 		    if(Is_Leap_Year(my_timer->w_year)&&my_timer->w_month==1)
 			{
@@ -239,7 +239,7 @@ uint8_t RTC_Get(uint8_t flag,tm *my_timer)
 			    temp1 = mon_table[my_timer->w_month - 1];
 
 
-		    my_timer->w_date= temp1;//Æ½Äê
+		    my_timer->w_date= temp1;//Æ½ï¿½ï¿½
 
 		    if(my_timer->w_month == 0)
 			{
@@ -250,7 +250,7 @@ uint8_t RTC_Get(uint8_t flag,tm *my_timer)
 
     }
 
-	my_timer->week = RTC_Get_Week(my_timer->w_year,my_timer->w_month,my_timer->w_date);//»ñÈ¡ÐÇÆÚ
+	my_timer->week = RTC_Get_Week(my_timer->w_year,my_timer->w_month,my_timer->w_date);//ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½
 	return 0;
 }
 
@@ -592,7 +592,7 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
     GUJI_DATE guji_data ;
     //FRESULT sys_fr ;
 
-    __align(4) uint8_t dtbuf[80];                                //´òÓ¡»º´æÆ÷
+    __align(4) uint8_t dtbuf[80];                                //ï¿½ï¿½Ó¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 
     do
@@ -659,13 +659,13 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
                      */
 			if(lat_flag == 'S')
 		    {
-				sprintf((char *)dtbuf,"<trkpt lat=\"-%.7f\"",tp_lat/10000000);
+				sprintf((char *)dtbuf,"<trkpt lat=\"-%.7f\"",tp_lat/1000000);
 
 
 		    }
 			else
 		    {
-				sprintf((char *)dtbuf,"<trkpt lat=\"%.7f\"",tp_lat/10000000);
+				sprintf((char *)dtbuf,"<trkpt lat=\"%.7f\"",tp_lat/1000000);
 
 		    }
 
@@ -673,12 +673,12 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
             f_printf(sys_fp,"%s",(char *)dtbuf);
 			if(lon_flag == 'W')
 		    {
-				sprintf((char *)dtbuf," lon=\"-%.7f\">",tp_lon/10000000);
+				sprintf((char *)dtbuf," lon=\"-%.7f\">",tp_lon/1000000);
 
 		    }
 			else
 		    {
-		        sprintf((char *)dtbuf," lon=\"%.7f\">",tp_lon/10000000);
+		        sprintf((char *)dtbuf," lon=\"%.7f\">",tp_lon/1000000);
 		    }
 		    f_printf(sys_fp,"%s",(char *)dtbuf);
             sprintf((char *)dtbuf,"<ele>%d</ele>",attiautl/10);

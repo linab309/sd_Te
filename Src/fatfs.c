@@ -145,7 +145,7 @@ FRESULT open_append_sp (
             fr = f_lseek(fp, f_size(fp)-27);        
             f_gets(sLine, 20, fp);
             if (0 == strncmp("</trkseg>", sLine, 9)) 
-            { // ³¤¶ÈÒÀÎÄ¼þ¶ÁÈ¡µÄÎª×¼
+            { // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½È¡ï¿½ï¿½Îª×¼
                  //print_usart1("%s sLine 1 \r\n",sLine);
 #if 1                 
                  if(NULL != f_gets(sLine, 20, fp))
@@ -253,6 +253,7 @@ uint8_t configfs_set(FIL *update_config_fp)
     uint8_t no_support_char = 0;
 
     BSP_LED_Init(LED_GPS);  
+    BSP_LED_Init(LED_GPS_2);  
     BSP_LED_Init(LED_SD);  
     BSP_LED_Init(LED_SURPORT); 
     BSP_LED_Init(LED_RED); 
@@ -672,7 +673,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
     if(f_open(&update_config_fp,(TCHAR const*)"P-1.BIN",FA_READ) == FR_OK)
     {
         f_close(&update_config_fp);
-        __set_FAULTMASK(1);      // ¹Ø±ÕËùÓÐÖÐ¶Ë
+        __set_FAULTMASK(1);      // ï¿½Ø±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
         HAL_NVIC_SystemReset();
      
     }

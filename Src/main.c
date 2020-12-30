@@ -1276,6 +1276,7 @@ void gps_sleep_mode(uint8_t mode)
     {
         HAL_UART_Transmit(&huart3,(uint8_t*)sleep_on_config,sizeof(sleep_on_config),0xFFF);
         osDelay(200);
+        memset(gpsx,0,sizeof(nmea_msg));
     }
     else
     {
@@ -1987,6 +1988,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                     //Recording_guji(&gps_fp,system_flag_table,gpsx);
                     BSP_LED_Off(LED_SD);
                     BSP_LED_Off(LED_GPS);
+                    BSP_LED_Off(LED_GPS_2);
                     BSP_LED_Off(LED_SURPORT);
                     osDelay(1000);
                     while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(10);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
@@ -2480,7 +2482,16 @@ void gps_led_config(void)
     }
     else
     {
-        BSP_LED_On(LED_GPS);
+        if((gpsx ->hdop > 100)||(gpsx->posslnum < 15))
+        {
+            BSP_LED_Off(LED_GPS_2);
+            BSP_LED_On(LED_GPS);
+        }
+        else
+        {
+            BSP_LED_Off(LED_GPS);
+            BSP_LED_On(LED_GPS_2);
+        }
     }
 
 }
@@ -2573,6 +2584,7 @@ void auto_power_off(void)
            //USBD_Start(&hUsbDeviceFS);
 
            BSP_LED_Off(LED_GPS);
+           BSP_LED_Off(LED_GPS_2);
            BSP_LED_Off(LED_SD);
            if(usb_init_flag == 0)
            {
@@ -2721,7 +2733,11 @@ void status_led_config(void)
             gps_led_config();
         }
         else
+        {
             BSP_LED_Off(LED_GPS);
+            BSP_LED_Off(LED_GPS_2);
+
+        }
 
        if(system_flag_table->power_status == POWER_LRUN_SLEEP)
        {
@@ -2874,6 +2890,7 @@ void status_led_config(void)
         {
 
             BSP_LED_Off(LED_GPS);
+            BSP_LED_Off(LED_GPS_2);
             if(system_flag_table->power_status == POWER_STANBY)
                 BSP_LED_Off(LED_GREEN);
 
@@ -4120,7 +4137,8 @@ void update_info(void const * argument)
                    }
                    BSP_LED_Off(LED_SURPORT);
                    BSP_LED_Off(LED_SD);
-
+                   BSP_LED_Off(LED_GPS);
+                   BSP_LED_Off(LED_GPS_2);
 
                    system_flag_table->power_status = POWER_SURPORT_SLEEP;
                    //gps_power_mode(0);
