@@ -1307,7 +1307,7 @@ void gps_standby_mode(uint8_t mode)
     HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
     HAL_GPIO_WritePin(GPS_POWER_GPIO_Port, GPIO_PIN_8, GPIO_PIN_SET);
     print_usart1("standby mode :%d \r\n",mode);
-    
+
     if(mode == 1)
     {
         osDelay(500);
@@ -1318,7 +1318,7 @@ void gps_standby_mode(uint8_t mode)
         GPIO_InitStruct.Pull = GPIO_NOPULL;
         HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
         memset(gpsx,0,sizeof(nmea_msg));
-       
+
     }
     else
     {
@@ -1798,7 +1798,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
         case POWER_RUN:
         case POWER_SURPORT_RUN:
             //print_usart1("gpsx->gpssta :%d \r\n",gpsx->gpssta); /*��ӡ��ʻ����*/
-             if((gpsx->gpssta >= 1)&&(rRawData.eType == STN_RMC))
+             if((gpsx->gpssta >= 1)&&(rRawData.eType == STN_GGA))
              {
 				if((system_flag_table->guji_mode == RECORED_START_DOING)||(system_flag_table->guji_mode == RECORED_SAVE)\
 				||(system_flag_table->guji_mode == RECORED_T)||(system_flag_table->guji_mode == RECORED_D))
@@ -1923,6 +1923,8 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                      else
                          save_guiji_message(gpsx,system_flag_table,'T');
 
+
+                   f_printf(&gps_fp,"%s\n",(char *)rRawData.Data);
                 }
 
                 system_flag_table->tp_long = gpsx->longitude;
@@ -2595,12 +2597,12 @@ void auto_power_off(void)
             SystemClock_Config_resume();
             MX_TIM10_Init();
             sound_toggle_simple(1,500,150);
-          
+
             while(osThreadGetState(Get_gps_info_Handle) != osThreadSuspended) { osDelay(10);}//|| (osThreadGetState(defaultTaskHandle) == osThreadSuspended))
             while(osThreadGetState(defaultTaskHandle) != osThreadSuspended) { osDelay(10);}
 
             //gps_power_mode(0);
-            
+
             sd_power_mode(0);
 
             print_usart1("************\r\n");
@@ -2613,7 +2615,7 @@ void auto_power_off(void)
     {
         auto_power_timer = 0;
     }
-          
+
 
 
 }
@@ -3323,10 +3325,10 @@ void Get_gps_info(void const * argument)
   HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_dma_buffer, 100);
   for(;;)
   {
-     
+
       if(rxp_inst_avail(&rRawData.i2PacketType, &i2DataIdx, &m_i2PktDataSize))
       {
-     
+
           memset(&rRawData,0x00,sizeof(NMEA_STN_DATA_T));
           rxp_get_inst(i2DataIdx, m_i2PktDataSize, &rRawData.Data[0]);
 
@@ -3343,7 +3345,8 @@ void Get_gps_info(void const * argument)
           {
               recode_cnt++;
           }
-          print_usart1("%s",rRawData.Data);
+          //print_usart1("%s",rRawData.Data);
+          //memset(gpsx,0,sizeof(nmea_msg));
           ProcNmeaSentence(gpsx);
 
 
@@ -3391,6 +3394,7 @@ void Get_gps_info(void const * argument)
 
           }
           surport_mode_config(system_flag_table->power_status,rRawData.Data,m_i2PktDataSize+1);
+
 
       }
 

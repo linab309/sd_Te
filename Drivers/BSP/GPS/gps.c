@@ -77,6 +77,49 @@ int NMEA_Str2num(uint8_t *buf,uint8_t*dx)
 	if(mask&0X02)res=-res;
 	return res;
 }
+
+//str转换为数字,以','或者'*'结束
+//buf:数字存储区
+//dx:小数点位数,返回给调用函数
+//返回值:转换后的数值
+uint64_t NMEA_Str2num_64(uint8_t *buf,uint8_t*dx)
+{
+	uint8_t *p=buf;
+	uint64_t ires=0,fres=0;
+	uint8_t ilen=0,flen=0,i;
+	uint8_t mask=0;
+	uint64_t res;
+	while(1) //得到整数和小数的长度
+	{
+		if(*p=='-'){mask|=0X02;p++;}//是负数
+		if(*p==','||(*p=='*')||(*p=='\0'))break;//遇到结束了
+		if(*p=='.'){mask|=0X01;p++;}//遇到小数点了
+		else if(*p>'9'||(*p<'0'))	//有非法字符
+		{
+			ilen=0;
+			flen=0;
+			break;
+		}
+		if(mask&0X01)flen++;
+		else ilen++;
+		p++;
+	}
+	if(mask&0X02)buf++;	//去掉负号
+	for(i=0;i<ilen;i++)	//得到整数部分数据
+	{
+		ires+=NMEA_Pow(10,ilen-1-i)*(buf[i]-'0');
+	}
+	if(flen>7) flen=7;	//最多取5位小数
+	*dx=flen;	 		//小数点位数
+	for(i=0;i<flen;i++)	//得到小数部分数据
+	{
+		fres+=NMEA_Pow(10,flen-1-i)*(buf[ilen+1+i]-'0');
+	}
+	res=ires*NMEA_Pow(10,flen)+fres;
+	if(mask&0X02)res=-res;
+	return res;
+}
+
 //分析GPGSV信息
 //gpsx:nmea信息结构体
 //buf:接收到的GPS数据缓冲区首地址
@@ -421,8 +464,9 @@ uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 {
 	uint8_t *p,*p1,dx;
 	uint8_t posx;
-	uint32_t temp;
+	uint64_t temp;
 	float rs;
+	uint32_t rs_64;
 
     p = buf;
 	p1=(uint8_t*)strstr((const char *)buf,"$GNRMC");
@@ -437,7 +481,7 @@ uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	posx=NMEA_Comma_Pos(p1,3);								//得到纬度
 	if(posx!=0XFF)
 	{
-		temp=NMEA_Str2num(p1+posx,&dx);
+		temp=NMEA_Str2num_64(p1+posx,&dx);
 		// print_usart1("temp = %d \r\n",temp);
 		// print_usart1("dx = %d \r\n",dx);
 #ifdef NG_LG_ENABLE
@@ -452,7 +496,7 @@ uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 #endif
 
 		{
-		    gpsx->latitude=temp/NMEA_Pow(10,dx+2);	//得到°
+		    gpsx->latitude=(uint32_t)(temp/NMEA_Pow(10,dx+2));	//得到°
 		    rs= temp%NMEA_Pow(10,dx+2);
 		}//得到'
 		gpsx->latitude=gpsx->latitude*NMEA_Pow(10,6)+(rs*NMEA_Pow(10,6-dx))/60;//转换为°
@@ -475,7 +519,7 @@ uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
  	posx=NMEA_Comma_Pos(p1,5);								//得到经度
 	if(posx!=0XFF)
 	{
-		temp=NMEA_Str2num(p1+posx,&dx);
+		temp=NMEA_Str2num_64(p1+posx,&dx);
 #ifdef NG_LG_ENABLE
 
 
@@ -489,10 +533,13 @@ uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 #endif
 
 		{
-    		gpsx->longitude=temp/NMEA_Pow(10,dx+2);	//得到°
-    		rs=temp%NMEA_Pow(10,dx+2);				//得到'
+    		gpsx->longitude=(uint32_t)(temp/NMEA_Pow(10,dx+2));	//得到°
+    		rs_64 = temp%NMEA_Pow(10,dx+2);				//得到'
+			//print_usart1("rs_64 = %f \r\n",rs_64);
+			//rs = (float)rs_64;
+			//print_usart1("rs = %f \r\n",rs);
 		}
-		gpsx->longitude=gpsx->longitude*NMEA_Pow(10,6)+(rs*NMEA_Pow(10,6-dx))/60;//转换为°
+		gpsx->longitude=gpsx->longitude*NMEA_Pow(10,6)+(rs_64*NMEA_Pow(10,6-dx))/600;//转换为°
 
 //		gpsx->longitude = temp;
 	}
