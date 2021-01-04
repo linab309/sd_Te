@@ -95,6 +95,7 @@ void Ublox_Cfg_Rate(uint16_t measrate,uint8_t reftime);
 uint8_t NMEA_Comma_Pos(uint8_t *buf,uint8_t cx);
 uint32_t NMEA_Pow(uint8_t m,uint8_t n);
 
+//void test_float_double_u32_u64(uint8_t *buf);
 extern nmea_msg *gpsx; //GPS–≈œ¢
 #endif
 

@@ -266,6 +266,55 @@ uint8_t NMEA_GNGGA_Analysis(nmea_msg *gpsx,uint8_t *buf)
 }
 
 
+
+// void test_float_double_u32_u64(uint8_t *buf)
+// {
+    		
+//     uint32_t longitude = 0;     
+//     double   rs_64 = 0;
+//     uint64_t temp = 0;
+//     uint8_t dx;
+//     uint8_t one_shot_buffer[4] = {0};
+
+//     double tp_lon =0.0;
+//     float  tp_lon_float = 0.0;
+
+//     temp=NMEA_Str2num_64(buf,&dx);
+// 	print_usart1("temp = %d \r\n",temp);
+//     longitude = (uint32_t)(temp/NMEA_Pow(10,dx+2));	//得到°
+//     rs_64 = temp%NMEA_Pow(10,dx+2);				//得到'
+//     print_usart1("rs_64 = %f \r\n",rs_64);
+  
+//     print_usart1("longitude-1 = %d \r\n",longitude);
+//     longitude = longitude*NMEA_Pow(10,7)+(rs_64*NMEA_Pow(10,7-dx))/60;//转换为°
+//     print_usart1("(rs_64*NMEA_Pow(10,6-dx)) = %f \r\n",(rs_64*NMEA_Pow(10,6-dx)));	
+// 	print_usart1("/60 = %f \r\n",(rs_64*NMEA_Pow(10,6-dx))/60);		
+// 	print_usart1("/60 = %d \r\n",(rs_64*NMEA_Pow(10,6-dx))/60);	
+// 	print_usart1("longitude-2 = %d \r\n",longitude);	
+
+
+// 	one_shot_buffer[0] = (uint8_t)(longitude>>24)&0xff;  // 1mb
+// 	one_shot_buffer[1] = (uint8_t)(longitude>>16)&0xff;  // 2mb
+// 	one_shot_buffer[2] = (uint8_t)(longitude>>8)&0xff;  // 3mb
+// 	one_shot_buffer[3] = (uint8_t)(longitude)&0xff;  // 4 mb	
+
+
+//     tp_lon = (one_shot_buffer[3]|(one_shot_buffer[2]<<8)\
+// 			 |(one_shot_buffer[1]<<16)|(one_shot_buffer[0]<<24));
+
+//     tp_lon_float = (one_shot_buffer[3]|(one_shot_buffer[2]<<8)\
+// 			 |(one_shot_buffer[1]<<16)|(one_shot_buffer[0]<<24));
+
+//     longitude = (one_shot_buffer[3]|(one_shot_buffer[2]<<8)\
+// 			 |(one_shot_buffer[1]<<16)|(one_shot_buffer[0]<<24));
+//     print_usart1("tp_lon = %f \r\n",tp_lon);
+//     print_usart1("tp_lon = %.7f \r\n",tp_lon/10000000);	
+// 	print_usart1("tp_lon_float = %f \r\n",tp_lon_float);	
+// 	print_usart1("tp_lon_float = %.7f \r\n",tp_lon_float/10000000);				 
+// 	print_usart1("longitude = %d \r\n",longitude);				 
+// }
+
+
 //分析GPGSA信息
 //gpsx:nmea信息结构体
 //buf:接收到的GPS数据缓冲区首地址
@@ -466,7 +515,7 @@ uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	uint8_t posx;
 	uint64_t temp;
 	float rs;
-	uint32_t rs_64;
+	double rs_64;
 
     p = buf;
 	p1=(uint8_t*)strstr((const char *)buf,"$GNRMC");
@@ -539,7 +588,7 @@ uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 			//rs = (float)rs_64;
 			//print_usart1("rs = %f \r\n",rs);
 		}
-		gpsx->longitude=gpsx->longitude*NMEA_Pow(10,6)+(rs_64*NMEA_Pow(10,6-dx))/600;//转换为°
+		gpsx->longitude=gpsx->longitude*NMEA_Pow(10,7)+(rs_64*NMEA_Pow(10,7-dx))/60;//转换为°
 
 //		gpsx->longitude = temp;
 	}

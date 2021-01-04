@@ -364,7 +364,7 @@ void reset_eeprom(void)
 
 
 /* USER CODE END 0 */
-
+uint8_t test_buffer[]="11306.932637,\0";
 
 
 int main(void)
@@ -485,6 +485,13 @@ int main(void)
 
   stm_read_eerpom(0xf0,&eeprom_flag);
   //system_flag_table->gujiFormats				 = GUJI_FORMATS_MEA;
+
+
+/*****************************/
+   //test_float_double_u32_u64(test_buffer);
+		
+
+/*****************************/
 
 
 
@@ -1924,7 +1931,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                          save_guiji_message(gpsx,system_flag_table,'T');
 
 
-                   f_printf(&gps_fp,"%s\n",(char *)rRawData.Data);
+                   //f_printf(&gps_fp,"%s\n",(char *)rRawData.Data);
                 }
 
                 system_flag_table->tp_long = gpsx->longitude;

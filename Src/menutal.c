@@ -587,7 +587,8 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
     float hodp = 0.0;
 #endif
     //int16_t temp;
-    float tp_lat =0.0,tp_lon =0.0,speed =0.0;
+    double tp_lat =0.0,tp_lon =0.0;
+    float speed =0.0;
     GUJI_TAG flag ;
     GUJI_DATE guji_data ;
     //FRESULT sys_fr ;
@@ -659,13 +660,13 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
                      */
 			if(lat_flag == 'S')
 		    {
-				sprintf((char *)dtbuf,"<trkpt lat=\"-%.7f\"",tp_lat/1000000);
+				sprintf((char *)dtbuf,"<trkpt lat=\"-%.7f\"",tp_lat/10000000);
 
 
 		    }
 			else
 		    {
-				sprintf((char *)dtbuf,"<trkpt lat=\"%.7f\"",tp_lat/1000000);
+				sprintf((char *)dtbuf,"<trkpt lat=\"%.7f\"",tp_lat/10000000);
 
 		    }
 
@@ -673,12 +674,12 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
             f_printf(sys_fp,"%s",(char *)dtbuf);
 			if(lon_flag == 'W')
 		    {
-				sprintf((char *)dtbuf," lon=\"-%.7f\">",tp_lon/1000000);
+				sprintf((char *)dtbuf," lon=\"-%.7f\">",tp_lon/10000000);
 
 		    }
 			else
 		    {
-		        sprintf((char *)dtbuf," lon=\"%.7f\">",tp_lon/1000000);
+		        sprintf((char *)dtbuf," lon=\"%.7f\">",tp_lon/10000000);
 		    }
 		    f_printf(sys_fp,"%s",(char *)dtbuf);
             sprintf((char *)dtbuf,"<ele>%d</ele>",attiautl/10);
@@ -703,7 +704,7 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
             sprintf((char *)dtbuf,"%d,%c,%02d%02d%02d,",message_number_index,record_type,
                 guji_data.bitc.year+16,guji_data.bitc.month,guji_data.bitc.date);
             f_printf(sys_fp,"%s",(char *)dtbuf);
-            sprintf((char *)dtbuf,"%02d%02d%02d,%.7f%c,",guji_data.bitc.hour,guji_data.bitc.min,guji_data.bitc.sec,tp_lat/1000000,lat_flag);
+            sprintf((char *)dtbuf,"%02d%02d%02d,%.7f%c,",guji_data.bitc.hour,guji_data.bitc.min,guji_data.bitc.sec,tp_lat/10000000,lat_flag);
             f_printf(sys_fp,"%s",(char *)dtbuf);
 
 #ifdef P1_USAD
@@ -719,7 +720,7 @@ void buffer_Analysis(FIL *sys_fp ,system_flag *system_flag_table, uint8_t *buffe
 
             f_printf(sys_fp,"%s\n",(char *)dtbuf);
 #else
-            sprintf((char *)dtbuf,"%.7f%c,%d,%.1f,%d",tp_lon/1000000,lon_flag,attiautl/10,(speed/10),angle);
+            sprintf((char *)dtbuf,"%.7f%c,%d,%.1f,%d",tp_lon/10000000,lon_flag,attiautl/10,(speed/10),angle);
             f_printf(sys_fp,"%s\n",(char *)dtbuf);
 
 #endif
