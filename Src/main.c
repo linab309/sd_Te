@@ -1814,10 +1814,10 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                      tp_long = system_flag_table->tp_long;
                      latitude = gpsx->latitude;
                      longitude = gpsx->longitude;
-                     tp_lati /=1000000;
-                     tp_long /=1000000;
-                     latitude /=1000000;
-                     longitude /=1000000;
+                     tp_lati /=10000000;
+                     tp_long /=10000000;
+                     latitude /=10000000;
+                     longitude /=10000000;
 
                      tp_distance = getDistanceVer2( tp_lati,gpsx->nshemi,tp_long,
                                                    gpsx->ewhemi, latitude, gpsx->nshemi, longitude,gpsx->ewhemi);

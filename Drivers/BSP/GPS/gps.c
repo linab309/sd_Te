@@ -548,7 +548,7 @@ uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 		    gpsx->latitude=(uint32_t)(temp/NMEA_Pow(10,dx+2));	//得到°
 		    rs= temp%NMEA_Pow(10,dx+2);
 		}//得到'
-		gpsx->latitude=gpsx->latitude*NMEA_Pow(10,6)+(rs*NMEA_Pow(10,6-dx))/60;//转换为°
+		gpsx->latitude=gpsx->latitude*NMEA_Pow(10,7)+(rs*NMEA_Pow(10,7-dx))/60;//转换为°
 
 //		gpsx->latitude = temp;
 	}
