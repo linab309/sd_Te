@@ -273,7 +273,7 @@ static int inHandlerMode (void)
 
 void print_usart1(char *format, ...)
 {
-#if 1
+#if 0
     char buf[160];
     uint32_t timer_out = 0;
     va_list ap;
