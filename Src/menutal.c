@@ -405,6 +405,12 @@ uint8_t save_guiji_message(nmea_msg *gpsx ,system_flag *system_flag_table,uint8_
                 return 1;
         }
 
+        if(gpsx->longitude == 0)
+            return 1;
+
+        if(gpsx->latitude == 0)
+            return 1;
+
         one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>24)&0xff;  // 1mb
         one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>16)&0xff;  // 2mb
         one_shot_buffer[index++] = (uint8_t)(( system_flag_table->Message_head_number +1)>>8)&0xff;  // 3mb

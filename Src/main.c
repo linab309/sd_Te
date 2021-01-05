@@ -1959,7 +1959,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
                 }
                 else
                 {
-                    if((gpsx->hdop < HDOP_RECODE_VAULE)&&(rRawData.eType == STN_RMC))
+                    if((gpsx->hdop < HDOP_RECODE_VAULE)&&(rRawData.eType == STN_GGA))
                     {
                         if(800 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
                          {
@@ -3379,7 +3379,7 @@ void Get_gps_info(void const * argument)
           //if(rRawData.eType == STN_RMC)
           if((system_flag_table->guji_mode == RECORED_START_DOING)||(system_flag_table->guji_mode == RECORED_START))
           {
-              if((rRawData.eType == STN_RMC)&&(system_flag_table->ODOR == 1))
+              if((rRawData.eType == STN_GGA)&&(system_flag_table->ODOR == 1))
               {
                   check_time(gpsx,system_flag_table);
                   print_usart1("**%04d-%02d/%02d%02d%02d%02d\r\n",system_flag_table->sys_tm.w_year+2000,system_flag_table->sys_tm.w_month,
