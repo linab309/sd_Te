@@ -273,7 +273,7 @@ static int inHandlerMode (void)
 
 void print_usart1(char *format, ...)
 {
-#if 0
+#if 1
     char buf[160];
     uint32_t timer_out = 0;
     va_list ap;
@@ -364,7 +364,7 @@ void reset_eeprom(void)
 
 
 /* USER CODE END 0 */
-uint8_t test_buffer[]="11306.932637,\0";
+//uint8_t test_buffer[]="11306.932637,\0";
 
 
 int main(void)
@@ -1949,7 +1949,7 @@ void surport_mode_config(uint8_t mode,GCHAR *buf,uint16_t rxlen)
 
             if((system_flag_table->guji_mode == RECORED_START_DOING)||(system_flag_table->guji_mode == RECORED_RESTART_2))
             {
-                if(gpsx->gpssta == 0 )
+                if((gpsx->gpssta == 0 ) || (gpsx->longitude == 0) || (gpsx->latitude == 0))                
                 {
                     if(180000 <= (HAL_GetTick() - system_flag_table->grecord_timer_cnt))
                     {
@@ -2461,7 +2461,7 @@ void gps_led_config(void)
         {
             gps_timer_cnt = HAL_GetTick();
             gps_led_flag = 1;
-            if((gpsx ->hdop > 100)||(gpsx->posslnum < 15))
+            if((gpsx ->hdop > 120)||(gpsx->posslnum < 13))
             {
                 BSP_LED_Off(LED_GPS_2);
                 BSP_LED_On(LED_GPS);
@@ -2477,7 +2477,7 @@ void gps_led_config(void)
         if((gps_led_flag == 1)&&(HAL_GetTick() >= (gps_timer_cnt + 250)))
         {
             gps_timer_cnt = HAL_GetTick();
-            if((gpsx ->hdop > 100)||(gpsx->posslnum < 15))
+            if((gpsx ->hdop > 120)||(gpsx->posslnum < 13))
             {
                 BSP_LED_Off(LED_GPS);
             }
@@ -2491,7 +2491,7 @@ void gps_led_config(void)
     }
     else
     {
-        if((gpsx ->hdop > 100)||(gpsx->posslnum < 15))
+        if((gpsx ->hdop > 120)||(gpsx->posslnum < 13))
         {
             BSP_LED_Off(LED_GPS_2);
             BSP_LED_On(LED_GPS);
@@ -2966,9 +2966,11 @@ void status_led_config(void)
                      //gps_power_mode(1);
                      gps_sleep_mode(0);
                      sd_power_mode(1);
-                     HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_dma_buffer, 1);
+                     HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_dma_buffer, 100);
                      osThreadResume(Get_gps_info_Handle);
                      osThreadResume(defaultTaskHandle);
+                     osDelay(1000);
+                     memset(gpsx,0,sizeof(nmea_msg));
                      if(system_flag_table->guji_mode == RECORED_IDLE)
                          system_flag_table->guji_mode = RECORED_RESTART_2;
                      else
@@ -3304,6 +3306,11 @@ void ProcNmeaSentence(nmea_msg *Proc_gpsx)
 
       m_eLastDecodedSTN = rRawData.eType;
    }
+   else
+   {
+       //memset(&gpsx)
+       m_eLastDecodedSTN = STN_OTHER;
+   }
 
 
 }
@@ -3540,6 +3547,8 @@ void MySystem(void const * argument)
                     osThreadResume(Get_gps_info_Handle);
                     osThreadResume(defaultTaskHandle);
                     sound_toggle_simple(1,50,50);
+                    osDelay(1000);
+                    memset(gpsx,0,sizeof(nmea_msg));
                     system_flag_table->guji_mode = RECORED_RESTART_2;
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
                     break;
@@ -3622,7 +3631,7 @@ void MySystem(void const * argument)
     			   print_usart1("*********\r\n");
     			   print_usart1("levef lprun mode  resume \r\n");
     			   print_usart1("******** \r\n");
-    			//    gps_power_mode(1);
+    			// gps_power_mode(1);
                    gps_sleep_mode(0);
     			   sd_power_mode(1);
                    osDelay(500);
@@ -3924,6 +3933,8 @@ void MySystem(void const * argument)
                     osThreadResume(Get_gps_info_Handle);
                     osThreadResume(defaultTaskHandle);
                     sound_toggle_simple(1,50,50);
+                    osDelay(500);
+                    memset(gpsx,0,sizeof(nmea_msg));
                     system_flag_table->guji_mode = RECORED_RESTART_2;
                     system_flag_table->grecord_timer_cnt = HAL_GetTick();
                     break;
@@ -4130,7 +4141,7 @@ void update_info(void const * argument)
        usb_timer_cnt = 0;
        if(system_flag_table->power_status == POWER_SURPORT_RUN)
        {
-           if((gpsx->speed < 3000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
+           if((gpsx->speed < 2000)&&(system_flag_table->Message_head_number > 0)&&(system_flag_table->guji_mode != RECORED_IDLE))
            {
                support_timer_cnt ++;
                if(support_timer_cnt == 3000)  //3000

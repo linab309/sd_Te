@@ -770,7 +770,7 @@ void DisplayIDDrunmV(system_flag *system_flag_table,uint32_t IDDmeas)
             {
                 if(system_flag_table->batt_change_ok_cnt == 0)
                 {
-                    system_flag_table->batt_change_ok_cnt = 120;//ms
+                    system_flag_table->batt_change_ok_cnt = 150;//ms
                     //system_flag_table->batt_Status  =  BATT_CHARG_OK;
                 }
             }

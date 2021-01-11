@@ -578,7 +578,7 @@ uint8_t configfs_set(FIL *update_config_fp)
 
     }
 #else
-    if(system_flag_table->lowpower_timer < 5 || system_flag_table->lowpower_timer>60)
+    if(system_flag_table->lowpower_timer < 1 || system_flag_table->lowpower_timer> 120)
     {
          system_flag_table->lowpower_timer = 15;
          no_support_char = 1;
@@ -670,7 +670,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
     uint8_t ret  = 0; 
     uint32_t logmod = 0;
   
-    if(f_open(&update_config_fp,(TCHAR const*)"P-1.BIN",FA_READ) == FR_OK)
+    if(f_open(&update_config_fp,(TCHAR const*)"P-10.BIN",FA_READ) == FR_OK)
     {
         f_close(&update_config_fp);
         __set_FAULTMASK(1);      // �ر������ж�
@@ -774,7 +774,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
         #ifdef SpyMode_1sec
             f_printf(&update_config_fp,"Firmware: V1.2_SpyMode_1sec \n");
         #else
-            f_printf(&update_config_fp,"Firmware: V1.2B \n");
+            f_printf(&update_config_fp,"Firmware: V1.2 \n");
         #endif
 #endif
         stm_read_eerpom(11,&eeprom_flag);
