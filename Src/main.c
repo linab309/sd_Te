@@ -1302,7 +1302,7 @@ void gps_sleep_mode(uint8_t mode)
     }
 
 }
-
+#if 0
 void gps_standby_mode(uint8_t mode)
 {
     const uint8_t standby_on_config[]="$PQSTOPGNSS*10\r\n";
@@ -1325,7 +1325,6 @@ void gps_standby_mode(uint8_t mode)
         GPIO_InitStruct.Pull = GPIO_NOPULL;
         HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
         memset(gpsx,0,sizeof(nmea_msg));
-
     }
     else
     {
@@ -1334,10 +1333,17 @@ void gps_standby_mode(uint8_t mode)
 		// GPIO_InitStruct.Pull = GPIO_NOPULL;
 		// HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
         // HAL_GPIO_WritePin(GPS_POWER_GPIO_Port, GPIO_PIN_8, GPIO_PIN_SET);
-        //HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_dma_buffer, 100);
+        // HAL_UART_Receive_DMA(&huart3, (uint8_t *)uart3_dma_buffer, 100);
     }
 
 }
+#else
+// 暂时先用sleep 模式来代替standby
+void gps_standby_mode(uint8_t mode)
+{
+    gps_sleep_mode(mode);
+}
+#endif
 
 #if 0
 void gps_power_mode(uint8_t mode)
@@ -1389,7 +1395,7 @@ void sd_power_mode(uint8_t mode)
     }
     else
     {
-        /*Configure GPIO pin : GPS_POWER_Pin */
+        /*Configure GPIO pin : SD_POWER_Pin */
         GPIO_InitStruct.Pin = SD_POWER_Pin;
         GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
         GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -1719,7 +1725,7 @@ static void StopSequence_Config(void)
        GPIO_InitStruct.Pull = GPIO_NOPULL;
        HAL_GPIO_Init(GPS_POWER_GPIO_Port, &GPIO_InitStruct);
 
-       /*Configure GPIO pin : GPS_POWER_Pin */
+       /*Configure GPIO pin : SD_POWER_Pin */
        GPIO_InitStruct.Pin = SD_POWER_Pin;
        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
        GPIO_InitStruct.Pull = GPIO_PULLUP;
