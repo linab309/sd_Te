@@ -774,7 +774,7 @@ uint8_t entry_config_mode(system_flag *system_flag_table)
         #ifdef SpyMode_1sec
             f_printf(&update_config_fp,"Firmware: V1.2_SpyMode_1sec \n");
         #else
-            f_printf(&update_config_fp,"Firmware: V1.2 \n");
+            f_printf(&update_config_fp,"Firmware: V1.0 \n");
         #endif
 #endif
         stm_read_eerpom(11,&eeprom_flag);
