@@ -269,8 +269,8 @@ uint8_t NMEA_GNGGA_Analysis(nmea_msg *gpsx,uint8_t *buf)
 
 // void test_float_double_u32_u64(uint8_t *buf)
 // {
-    		
-//     uint32_t longitude = 0;     
+
+//     uint32_t longitude = 0;
 //     double   rs_64 = 0;
 //     uint64_t temp = 0;
 //     uint8_t dx;
@@ -284,19 +284,19 @@ uint8_t NMEA_GNGGA_Analysis(nmea_msg *gpsx,uint8_t *buf)
 //     longitude = (uint32_t)(temp/NMEA_Pow(10,dx+2));	//得到°
 //     rs_64 = temp%NMEA_Pow(10,dx+2);				//得到'
 //     print_usart1("rs_64 = %f \r\n",rs_64);
-  
+
 //     print_usart1("longitude-1 = %d \r\n",longitude);
 //     longitude = longitude*NMEA_Pow(10,7)+(rs_64*NMEA_Pow(10,7-dx))/60;//转换为°
-//     print_usart1("(rs_64*NMEA_Pow(10,6-dx)) = %f \r\n",(rs_64*NMEA_Pow(10,6-dx)));	
-// 	print_usart1("/60 = %f \r\n",(rs_64*NMEA_Pow(10,6-dx))/60);		
-// 	print_usart1("/60 = %d \r\n",(rs_64*NMEA_Pow(10,6-dx))/60);	
-// 	print_usart1("longitude-2 = %d \r\n",longitude);	
+//     print_usart1("(rs_64*NMEA_Pow(10,6-dx)) = %f \r\n",(rs_64*NMEA_Pow(10,6-dx)));
+// 	print_usart1("/60 = %f \r\n",(rs_64*NMEA_Pow(10,6-dx))/60);
+// 	print_usart1("/60 = %d \r\n",(rs_64*NMEA_Pow(10,6-dx))/60);
+// 	print_usart1("longitude-2 = %d \r\n",longitude);
 
 
 // 	one_shot_buffer[0] = (uint8_t)(longitude>>24)&0xff;  // 1mb
 // 	one_shot_buffer[1] = (uint8_t)(longitude>>16)&0xff;  // 2mb
 // 	one_shot_buffer[2] = (uint8_t)(longitude>>8)&0xff;  // 3mb
-// 	one_shot_buffer[3] = (uint8_t)(longitude)&0xff;  // 4 mb	
+// 	one_shot_buffer[3] = (uint8_t)(longitude)&0xff;  // 4 mb
 
 
 //     tp_lon = (one_shot_buffer[3]|(one_shot_buffer[2]<<8)\
@@ -308,10 +308,10 @@ uint8_t NMEA_GNGGA_Analysis(nmea_msg *gpsx,uint8_t *buf)
 //     longitude = (one_shot_buffer[3]|(one_shot_buffer[2]<<8)\
 // 			 |(one_shot_buffer[1]<<16)|(one_shot_buffer[0]<<24));
 //     print_usart1("tp_lon = %f \r\n",tp_lon);
-//     print_usart1("tp_lon = %.7f \r\n",tp_lon/10000000);	
-// 	print_usart1("tp_lon_float = %f \r\n",tp_lon_float);	
-// 	print_usart1("tp_lon_float = %.7f \r\n",tp_lon_float/10000000);				 
-// 	print_usart1("longitude = %d \r\n",longitude);				 
+//     print_usart1("tp_lon = %.7f \r\n",tp_lon/10000000);
+// 	print_usart1("tp_lon_float = %f \r\n",tp_lon_float);
+// 	print_usart1("tp_lon_float = %.7f \r\n",tp_lon_float/10000000);
+// 	print_usart1("longitude = %d \r\n",longitude);
 // }
 
 
@@ -514,6 +514,7 @@ uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	uint8_t *p,*p1,dx;
 	uint8_t posx;
 	uint64_t temp;
+	uint32_t temp_32;
 	//float rs;
 	double rs_64;
 
@@ -645,10 +646,10 @@ uint8_t NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	posx=NMEA_Comma_Pos(p1,9);								//得到UTC日期
 	if(posx!=0XFF)
 	{
-		temp=NMEA_Str2num(p1+posx,&dx);		 				//得到UTC日期
-		gpsx->utc.date=temp/10000;
-		gpsx->utc.month=(temp/100)%100;
-		gpsx->utc.year=2000+temp%100;
+		temp_32=NMEA_Str2num(p1+posx,&dx);		 				//得到UTC日期
+		gpsx->utc.date=temp_32/10000;
+		gpsx->utc.month=(temp_32/100)%100;
+		gpsx->utc.year=2000+temp_32%100;
 	}
 #endif
 

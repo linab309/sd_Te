@@ -1588,7 +1588,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
              rxp_pcrx_nmea(uart3_dma_buffer[i]);
         }
-        print_usart1("%s",uart3_dma_buffer);
+        //print_usart1("%s",uart3_dma_buffer);
 #if 0
     	if(USART2_RX_STA_WP < (MAX_UART3_LEN - 100))		//�����Խ�������
     	{
