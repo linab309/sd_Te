@@ -277,7 +277,7 @@ static int inHandlerMode (void)
 
 void print_usart1(char *format, ...)
 {
-#if 1
+#if 0
     char buf[160];
     uint32_t timer_out = 0;
     va_list ap;
@@ -1591,7 +1591,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         {
              rxp_pcrx_nmea(uart3_dma_buffer[i]);
         }
-        print_usart1("%s",uart3_dma_buffer);
+        //print_usart1("%s",uart3_dma_buffer);
 #if 0
     	if(USART2_RX_STA_WP < (MAX_UART3_LEN - 100))		//�����Խ�������
     	{
@@ -3343,6 +3343,7 @@ void ProcNmeaSentence(nmea_msg *Proc_gpsx)
    else
    {
        //memset(&gpsx)
+       //rRawData.eType =
        m_eLastDecodedSTN = STN_OTHER;
    }
 
@@ -3397,7 +3398,10 @@ void Get_gps_info(void const * argument)
           //memset(gpsx,0,sizeof(nmea_msg));
           ProcNmeaSentence(gpsx);
 
-
+        if(m_eLastDecodedSTN == STN_OTHER)
+        {
+            continue;
+        }
 
 #ifdef TEST_WRITE_SD
           gpsx->gpssta = 2; /*for test*/
@@ -3840,6 +3844,7 @@ void MySystem(void const * argument)
                   MX_TIM10_Init();
 
                   BSP_LED_Off(LED_GREEN);
+                  BSP_LED_Off(LED_BULE);
                   //USBD_Start(&hUsbDeviceFS);
                   if(usb_init_flag == 0)
                   {
